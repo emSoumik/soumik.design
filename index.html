@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Soumik — Coming soon</title>
+<meta name="description" content="Soumik, design engineer. New site coming soon. Meanwhile, see WhyClub.">
+<meta name="theme-color" content="#ece8e1">
+<link rel="canonical" href="https://soumik.design/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://soumik.design/">
+<meta property="og:title" content="Soumik — Coming soon">
+<meta property="og:description" content="Design engineer. New site coming soon.">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/whyclub.avif" type="image/avif">
+<style>
+  :root {
+    --paper: #ece8e1;
+    --ink: #1a1918;
+    --ink-2: rgba(26, 25, 24, .62);
+    --line: rgba(26, 25, 24, .16);
+    --ease: cubic-bezier(.22, 1, .36, 1);
+    --gutter: clamp(16px, 3vw, 36px);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 500 14px/1.4 "Archivo", system-ui, sans-serif;
+    font-stretch: 100%;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--ink); color: var(--paper); }
+
+  canvas {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    opacity: 0;
+    transition: opacity 1.6s var(--ease);
+  }
+  canvas.on { opacity: 1; }
+
+  .page {
+    position: relative;
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr);
+    padding: calc(var(--gutter) + env(safe-area-inset-top)) var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom));
+  }
+
+  /* Difference blend keeps the header legible when ink drifts under it */
+  header { display: flex; justify-content: space-between; align-items: baseline; color: #fff; mix-blend-mode: difference; position: relative; z-index: 1; }
+  .name { font-weight: 650; letter-spacing: -.01em; }
+  .role { opacity: .7; }
+
+  /* Title: heavy grotesk + italic serif, inked through a grain filter */
+  h1 {
+    align-self: center; justify-self: center;
+    display: flex; align-items: baseline;
+    font-weight: 900;
+    font-stretch: 112%;
+    font-size: clamp(64px, 11.5vw, 188px);
+    line-height: .86;
+    letter-spacing: -.045em;
+    filter: url(#ink);
+    user-select: none;
+  }
+  h1 .serif {
+    font-family: "Instrument Serif", serif;
+    font-style: italic; font-weight: 400;
+    font-stretch: 100%;
+    letter-spacing: -.02em;
+    font-size: 1.06em;
+    margin-left: .04em;
+  }
+  h1 span span {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(.18em);
+    filter: blur(14px);
+    animation: rise 1.4s var(--ease) forwards;
+    animation-delay: calc(.35s + var(--i) * 55ms);
+  }
+  @keyframes rise { to { opacity: 1; transform: none; filter: blur(0); } }
+
+
+  .fade { opacity: 0; animation: fade 1.2s var(--ease) forwards; animation-delay: var(--d, 1s); }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  footer { display: flex; justify-content: center; }
+
+  /* Work: a pill that grows a preview above it on hover */
+  .work {
+    position: relative;
+    display: flex; align-items: center; gap: 12px;
+    padding: 6px 16px 6px 6px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--paper) 78%, transparent);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    box-shadow: 0 0 0 1px var(--line), 0 8px 24px -12px rgba(26, 25, 24, .25);
+    transition: box-shadow .4s var(--ease);
+  }
+  .work .thumb {
+    width: 34px; height: 34px; border-radius: 99px; overflow: hidden; flex: none;
+    background: #d9d6cf;
+  }
+  .work img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .work .meta { display: flex; gap: 10px; align-items: baseline; white-space: nowrap; }
+  .work .label { color: var(--ink-2); }
+  .work .title { font-weight: 650; }
+  .work .desc { color: var(--ink-2); }
+  .work .arrow { transition: transform .4s var(--ease); display: inline-block; }
+
+  .preview {
+    position: absolute; left: 50%; bottom: calc(100% + 12px);
+    width: 216px; aspect-ratio: 3 / 4;
+    border-radius: 18px; overflow: hidden;
+    background: #d9d6cf;
+    box-shadow: 0 0 0 1px var(--line), 0 24px 48px -20px rgba(26, 25, 24, .45);
+    transform: translateX(-50%) translateY(10px) scale(.92);
+    transform-origin: 50% 100%;
+    clip-path: inset(30% 20% 0 20% round 18px);
+    opacity: 0;
+    transition: transform .55s var(--ease), clip-path .55s var(--ease), opacity .3s var(--ease);
+    pointer-events: none;
+  }
+  .preview img { transform: scale(1.08); transition: transform .9s var(--ease); }
+  @media (hover: hover) {
+    .work:hover .preview, .work:focus-visible .preview {
+      opacity: 1; transform: translateX(-50%); clip-path: inset(0 round 18px);
+    }
+    .work:hover .preview img, .work:focus-visible .preview img { transform: none; }
+    .work:hover .arrow { transform: translate(2px, -2px); }
+  }
+  .work:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  /* ---------- Mobile: a different composition, not a squeezed desktop ---------- */
+  @media (max-width: 640px) {
+    .role { display: none; }
+    h1 {
+      align-self: end; justify-self: stretch;
+      flex-direction: column; align-items: flex-start;
+      font-size: 21vw;
+      line-height: .82;
+      margin-bottom: 28px;
+    }
+    h1 .serif {
+      align-self: flex-end;
+      font-size: 1.12em;
+      margin: -.04em .02em 0 0;
+    }
+    footer { display: block; }
+    .work {
+      border-radius: 22px;
+      padding: 8px 18px 8px 8px;
+      gap: 14px;
+    }
+    .work .thumb { width: 58px; height: 76px; border-radius: 14px; }
+    .work .meta { flex-direction: column; gap: 1px; flex: 1; min-width: 0; white-space: normal; }
+    .work .label { font-size: 12px; order: -1; }
+    .work .title { font-size: 16px; }
+    .work .arrow { margin-left: auto; font-size: 18px; }
+    .work:active { transform: scale(.985); transition: transform .15s var(--ease); }
+    .preview { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    h1 span span, .fade { animation: none; opacity: 1; transform: none; filter: none; }
+    canvas { transition: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+
+<!-- Grain + eroded edges on the title, like ink pressed into paper -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="4" result="w"/>
+    <feDisplacementMap in="SourceAlpha" in2="w" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="a"/>
+    <feGaussianBlur in="a" stdDeviation="1.3" result="b"/>
+    <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="9" result="g"/>
+    <feComposite in="b" in2="g" operator="arithmetic" k2="1" k3=".9" k4="-.45" result="m"/>
+    <feComponentTransfer in="m" result="t"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+    <feFlood flood-color="#1a1918"/>
+    <feComposite in2="t" operator="in"/>
+  </filter>
+</svg>
+
+<main class="page">
+  <header class="fade" style="--d:.2s">
+    <span class="name">Soumik</span>
+    <span class="role">Design engineer</span>
+  </header>
+
+  <h1 aria-label="Coming soon">
+    <span aria-hidden="true"><span style="--i:0">C</span><span style="--i:1">o</span><span style="--i:2">m</span><span style="--i:3">i</span><span style="--i:4">n</span><span style="--i:5">g</span></span>
+    <span class="serif" aria-hidden="true"><span style="--i:6">s</span><span style="--i:7">o</span><span style="--i:8">o</span><span style="--i:9">n</span></span>
+  </h1>
+
+
+  <footer class="fade" style="--d:1.3s">
+    <a class="work" href="https://whyclub.in" target="_blank" rel="noopener">
+      <span class="preview" aria-hidden="true">
+        <picture><source srcset="assets/whyclub.avif" type="image/avif"><img src="assets/whyclub.webp" alt="" width="480" height="640"></picture>
+      </span>
+      <span class="thumb">
+        <picture><source srcset="assets/whyclub.avif" type="image/avif"><img src="assets/whyclub.webp" alt="" width="480" height="640"></picture>
+      </span>
+      <span class="meta">
+        <span class="label">Meanwhile</span>
+        <span class="title">WhyClub</span>
+        <span class="desc">Storefront design &amp; build</span>
+      </span>
+      <span class="arrow" aria-hidden="true">↗</span>
+    </a>
+  </footer>
+</main>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
+  if (!gl) return;
+
+  const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+  const fs = `
+  #ifdef GL_FRAGMENT_PRECISION_HIGH
+  precision highp float;
+  #else
+  precision mediump float;
+  #endif
+  uniform vec2 r; uniform float t; uniform vec2 m; uniform float mob; uniform float px;
+
+  float h(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+  float n(vec2 p){
+    vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+    return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + 1.), f.x), f.y);
+  }
+  float fbm(vec2 p){
+    float v = 0., a = .5; mat2 R = mat2(.8, .6, -.6, .8);
+    for (int i = 0; i < 5; i++) { v += a * n(p); p = R * p * 2.03 + 3.1; a *= .5; }
+    return v;
+  }
+
+  void main(){
+    vec2 fc = gl_FragCoord.xy;
+    vec2 uv = fc / r;
+    vec2 p = (fc - .5 * r) / r.y;
+    float T = t * .028;
+
+    // Pointer gently drags the ink toward it
+    vec2 d = p - (m - .5 * r) / r.y;
+    float pull = exp(-dot(d, d) * 5.) * .35;
+
+    vec2 q = vec2(fbm(p * 1.4 + T), fbm(p * 1.4 + vec2(5.2, 1.3) - T));
+    vec2 w = p * 1.5 + 2.4 * q + vec2(T * .7, -T * .5) - d * pull;
+    float f = fbm(w);
+    float o = (f - .5);
+
+    // Where ink is allowed to live: framing the sides on desktop, top + bottom corner on mobile
+    float edge;
+    if (mob < .5) {
+      float x = abs(uv.x - .5) * 2.;
+      edge = smoothstep(.5, 1.12, x + o * .75 + (uv.y - .5) * .12) * .92;
+    } else {
+      float top = smoothstep(.5, 1.0, uv.y + o * .55 + (uv.x - .5) * .35);
+      float corner = smoothstep(.82, 1.1, (1. - uv.y) * .75 + uv.x * .4 + o * .6);
+      edge = max(top, corner * .8);
+    }
+
+    float ink = f * edge;
+    float g = h(floor(fc / px) + .5);
+
+    // Dense core prints solid; the rim breaks into stipple like dry ink
+    float body = smoothstep(.43, .56, ink);
+    float rim = smoothstep(.27, .44, ink);
+    float coverage = mix(rim * .55, 1., body);
+    float dots = step(g + .002, coverage);
+
+    // Thin fibrous strands drifting out of the blooms
+    float s = abs(fbm(w * 1.8 + 4.) - .5);
+    float vein = (1. - smoothstep(.0, .01, s)) * smoothstep(.25, .7, edge);
+    dots = max(dots, step(g + .002, vein * .85));
+
+    vec3 paper = vec3(.925, .909, .882);
+    paper -= (h(fc * .731) - .5) * .03;
+    paper -= n(fc * .015) * .018;
+    vec3 inkc = vec3(.102, .098, .094);
+    gl_FragColor = vec4(mix(paper, inkc, dots * .93), 1.);
+  }`;
+
+  const sh = (type, src) => {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  const U = n => gl.getUniformLocation(prog, n);
+  const uR = U('r'), uT = U('t'), uM = U('m'), uMob = U('mob'), uPx = U('px');
+
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const mobileQ = matchMedia('(max-width: 640px)');
+  let dpr = 1, running = false, raf = 0, start = performance.now();
+  const target = { x: -1e4, y: -1e4 }, mouse = { x: -1e4, y: -1e4 };
+
+  function resize() {
+    // Cap resolution: the grain is meant to read at CSS-pixel scale, and it keeps phones cool
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.round(innerWidth * dpr);
+    canvas.height = Math.round(innerHeight * dpr);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.uniform2f(uR, canvas.width, canvas.height);
+    gl.uniform1f(uMob, mobileQ.matches ? 1 : 0);
+    gl.uniform1f(uPx, dpr);
+    if (!running) draw(performance.now());
+  }
+
+  function draw(now) {
+    mouse.x += (target.x - mouse.x) * .06;
+    mouse.y += (target.y - mouse.y) * .06;
+    gl.uniform1f(uT, (now - start) / 1000 + 40);
+    gl.uniform2f(uM, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  function loop(now) { draw(now); raf = requestAnimationFrame(loop); }
+  function play() {
+    if (running || reduced.matches || document.hidden) return;
+    running = true; raf = requestAnimationFrame(loop);
+  }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+
+  addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    if (mouse.x < -1e3) { mouse.x = e.clientX * dpr; mouse.y = (innerHeight - e.clientY) * dpr; }
+    target.x = e.clientX * dpr; target.y = (innerHeight - e.clientY) * dpr;
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => { target.x = target.y = -1e4; });
+  addEventListener('resize', resize);
+  document.addEventListener('visibilitychange', () => document.hidden ? stop() : play());
+  reduced.addEventListener('change', () => reduced.matches ? stop() : play());
+
+  resize();
+  requestAnimationFrame(() => canvas.classList.add('on'));
+  play();
+})();
+</script>
+</body>
+</html>
