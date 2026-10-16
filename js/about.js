@@ -56,7 +56,7 @@ export function createAbout({ bee } = {}) {
       <div class="ab-top"><img src="${AVATAR}" alt="" onerror="this.onerror=null;this.src=this.src.replace('avatar.png','avatar-src.jpg')">
         <h2 id="ab-title">Hi, I’m <i>Soumik</i>.</h2>
         <button class="ab-x" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3L3 9"/></svg></button></div>
-      <p>Design engineer. I design and build interfaces end to end: the brand, the motion, the WebGL, and the code that ships it.</p>
+      <p>Soumik Halder, design engineer. I design and build interfaces end to end: the brand, the motion, the WebGL, and the code that ships it.</p>
       <dl>
         <dt>made</dt><dd><a href="${WHYCLUB.href}" target="_blank" rel="noopener">${WHYCLUB.domain} ↗</a><span class="sep">·</span><button type="button" data-work>see the work ↓</button></dd>
         <dt>say hi</dt><dd><a href="mailto:${EMAIL}">${EMAIL}</a></dd>
