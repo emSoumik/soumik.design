@@ -167,6 +167,24 @@ export const feel = {
     });
     haptic(5);
   },
+  // the bee, tapped: a short wingbeat buzz that swoops up and settles
+  buzz() {
+    sound((t) => {
+      const dur = 0.42;
+      const g = env(t, 0.07, dur, 0.02);
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 1400; lp.Q.value = 2;
+      lp.connect(g);
+      // wings: the tone flutters ~34 times a second
+      const am = ctx.createGain(); am.gain.value = 0.55; am.connect(lp);
+      const lfo = osc('sine', 34, t, dur, am.gain);
+      lfo.connect(am.gain);
+      const o = osc('sawtooth', 190, t, dur, am);
+      o.frequency.linearRampToValueAtTime(245, t + dur * 0.35);
+      o.frequency.linearRampToValueAtTime(205, t + dur);
+    });
+    haptic([14, 24, 12, 24, 16]);
+  },
   get muted() { return muted; },
   set muted(v) {
     v = !!v;

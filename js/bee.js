@@ -2,24 +2,36 @@
 // to see what the cursor is doing, loops when you tap it, and rushes to every new patch.
 // One transformed element, so it moves on the compositor.
 import { beeSVG } from './cats.js';
+import { feel } from './feel.js';
 
 export const BEE_CSS = `
-.bee { position: absolute; left: 0; top: 0; width: 34px; height: 26px; z-index: 30; cursor: pointer;
+.bee { position: absolute; left: 0; top: 0; width: 36px; height: 23px; z-index: 30; cursor: pointer;
   will-change: transform; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+/* a 48px target around a small bee, so a thumb can catch it */
+.bee::before { content: ""; position: absolute; inset: -13px -6px; }
+.bee .jig, .bee .tilt { width: 100%; height: 100%; }
+.bee.hit .jig { animation: jig .42s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes jig { 0% { transform: scale(1); } 20% { transform: scale(1.18, .86) rotate(-6deg); } 45% { transform: scale(.94, 1.08) rotate(5deg); } 70% { transform: rotate(-3deg); } 100% { transform: none; } }
 .bee .flip { width: 100%; height: 100%; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1); }
 .bee.right .flip { transform: scaleX(-1); }
 .bee-svg { width: 100%; height: 100%; overflow: visible; display: block; }
-.bee .wings { transform-box: fill-box; transform-origin: 50% 100%; animation: flap 70ms linear infinite alternate; }
-.bee.rest .wings { animation: rest 2.4s ease-in-out infinite; }
-@keyframes flap { from { transform: scaleY(1); } to { transform: scaleY(.35); } }
-@keyframes rest { 0%, 86%, 100% { transform: scaleY(1); } 90%, 96% { transform: scaleY(.5); } }
+.bee-svg { image-rendering: pixelated; }
+/* two wing frames, swapped in steps like a sprite */
+.bee .wa { animation: wa 90ms steps(1) infinite; } .bee .wd { animation: wd 90ms steps(1) infinite; }
+@keyframes wa { 0% { opacity: 1; } 50% { opacity: 0; } } @keyframes wd { 0% { opacity: 0; } 50% { opacity: 1; } }
+.bee.rest .wa { animation: rwa 2.6s steps(1) infinite; } .bee.rest .wd { animation: rwd 2.6s steps(1) infinite; }
+@keyframes rwa { 0% { opacity: 1; } 88% { opacity: 0; } 92% { opacity: 1; } 95% { opacity: 0; } 98% { opacity: 1; } }
+@keyframes rwd { 0% { opacity: 0; } 88% { opacity: 1; } 92% { opacity: 0; } 95% { opacity: 1; } 98% { opacity: 0; } }
 .bee .say { position: absolute; left: 70%; bottom: 95%; padding: 3px 8px; border-radius: 10px 10px 10px 2px;
-  background: #fff; color: #2a2826; font: 600 11px/1.2 ui-rounded, system-ui, sans-serif; white-space: nowrap;
+  background: #fff; color: #1d1c1b; font: 500 11.5px/1.2 "Instrument Sans", system-ui, sans-serif; white-space: nowrap;
   box-shadow: 0 0 0 1px rgba(42, 40, 38, .14), 0 6px 14px -8px rgba(0, 0, 0, .3);
   opacity: 0; transform: translateY(4px) scale(.9); transform-origin: 0 100%;
   transition: opacity .2s, transform .3s cubic-bezier(.3, 1.5, .5, 1); pointer-events: none; }
 .bee.talk .say { opacity: 1; transform: none; }
-@media (max-width: 640px) { .bee { width: 28px; height: 22px; } }
+/* near the right edge the bubble opens to the left, so it never runs off a phone screen */
+.bee.edge .say { left: auto; right: 70%; border-radius: 10px 10px 2px 10px; transform-origin: 100% 100%; }
+@media (max-width: 640px) { .bee { width: 32px; height: 21px; } }
+@media (prefers-reduced-motion: reduce) { .bee .wa, .bee .wd, .bee.hit .jig { animation: none; } .bee .wd { opacity: 0; } }
 `;
 
 const LINES = ['bzz!', 'hi :)', 'bzzt', 'busy bee', 'tickles!', 'plant more?'];
@@ -32,9 +44,9 @@ export function createBee({ spots, start = 1.4 }) {
   el.className = 'bee';
   el.setAttribute('role', 'img');
   el.setAttribute('aria-label', 'A little bee');
-  el.innerHTML = `<div class="flip">${beeSVG()}</div><span class="say"></span>`;
+  el.innerHTML = `<div class="tilt"><div class="flip"><div class="jig">${beeSVG()}</div></div></div><span class="say"></span>`;
   document.body.appendChild(el);
-  const say = el.querySelector('.say');
+  const say = el.querySelector('.say'), tilt = el.querySelector('.tilt');
 
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = matchMedia('(pointer: fine)').matches;
@@ -63,6 +75,7 @@ export function createBee({ spots, start = 1.4 }) {
 
   function talk(text, ms = 1600) {
     say.textContent = text;
+    el.classList.toggle('edge', pos.x - scrollX > innerWidth * .62);
     el.classList.add('talk');
     clearTimeout(talk.t);
     talk.t = setTimeout(() => el.classList.remove('talk'), ms);
@@ -70,6 +83,8 @@ export function createBee({ spots, start = 1.4 }) {
 
   el.addEventListener('click', () => {
     if (mode === 'held') return;
+    feel.buzz();
+    el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
     talk(any(LINES));
     if (reduced) return;
     mode = 'loop'; timer = .9; current = null;
@@ -77,7 +92,9 @@ export function createBee({ spots, start = 1.4 }) {
   });
 
   function place(x, y, rotDeg) {
-    el.style.transform = `translate3d(${(x - el.offsetWidth / 2).toFixed(1)}px, ${(y - el.offsetHeight * .82).toFixed(1)}px, 0) rotate(${rotDeg.toFixed(1)}deg)`;
+    // the bee tilts; its speech bubble stays upright
+    el.style.transform = `translate3d(${(x - el.offsetWidth / 2).toFixed(1)}px, ${(y - el.offsetHeight * .82).toFixed(1)}px, 0)`;
+    tilt.style.transform = `rotate(${rotDeg.toFixed(1)}deg)`;
   }
 
   function step(now) {

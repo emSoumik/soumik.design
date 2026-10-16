@@ -88,18 +88,16 @@ export const CAT_CSS = `
 @media (prefers-reduced-motion: reduce) { .cat * { animation: none !important; } .cat .zz text { opacity: .7; } }
 `;
 
+// the bee, in pixels to match the garden. two wing frames swap while it flies.
+const BEE = {
+  up: ['.....ooo.ooo.', '....owwwowwwo', '.....owwwwwo.', '..K.K.oooo...'],
+  down: ['.............', '.....oo..oo..', '....owwoowwo.', '..K.Kowwwwo..'],
+  body: ['.KKKKYYKKYYK.', 'KKEKKYYKKYYKK', 'KpKKKYYKKYYKKK', '.KKKKyyKKyyK.', '..K...K..K...'],
+};
+const BEE_COL = { K: '#1d1c1b', Y: '#ffc93c', y: '#f0a51c', E: '#fff', p: '#f594b8', w: '#eef6ff', o: '#9fb6d3' };
+const beeRects = (rows, y0) => rows.flatMap((row, r) => [...row].map((k, c) => k === '.' ? '' :
+  `<rect x="${c}" y="${y0 + r}" width="1.04" height="1.04" fill="${BEE_COL[k]}"/>`)).join('');
 export const beeSVG = () => `
-<svg class="bee-svg" viewBox="0 0 44 34" aria-hidden="true" stroke="${INK}" stroke-linecap="round" stroke-linejoin="round">
-  <g class="wings" stroke-width="1.2">
-    <ellipse class="wb" cx="22" cy="8" rx="5.5" ry="8.5" fill="#fff" fill-opacity=".75" stroke-opacity=".5" transform="rotate(18 22 14)"/>
-    <ellipse class="wf" cx="17" cy="8" rx="6" ry="9" fill="#fff" fill-opacity=".85" stroke-opacity=".6" transform="rotate(-18 17 15)"/>
-  </g>
-  <ellipse cx="22" cy="20" rx="11.5" ry="8.5" fill="#f6c945" stroke-width="1.6"/>
-  <path d="M19 12q-2.4 8 0 16M25.5 12.4q-2.2 7.6 0 15.2" stroke-width="3"/>
-  <path d="M33.5 20l4 .6" stroke-width="1.6"/>
-  <circle cx="10.5" cy="19" r="5.6" fill="${INK}" stroke="none"/>
-  <circle cx="8.8" cy="17.6" r="1.3" fill="#fff" stroke="none"/>
-  <path d="M9 14q-2-5-5.5-6M11.5 13.6q.5-5 3.5-7" fill="none" stroke-width="1.1"/>
-  <circle cx="3.5" cy="8" r="1" fill="${INK}" stroke="none"/><circle cx="15" cy="6.6" r="1" fill="${INK}" stroke="none"/>
-  <ellipse cx="7.5" cy="21.6" rx="1.6" ry="1" fill="${BLUSH}" stroke="none"/>
+<svg class="bee-svg" viewBox="0 0 14 9" shape-rendering="crispEdges" aria-hidden="true">
+  <g class="wa">${beeRects(BEE.up, 0)}</g><g class="wd">${beeRects(BEE.down, 0)}</g>${beeRects(BEE.body, 4)}
 </svg>`;
