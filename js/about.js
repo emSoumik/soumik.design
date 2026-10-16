@@ -10,7 +10,7 @@ const OUT = 'cubic-bezier(.23,1,.32,1)';
 const CSS = `
 .ab { position: fixed; z-index: 70; width: min(372px, calc(100vw - 24px)); padding: 20px 22px 18px; border-radius: 28px; color: #1f1d1b;
   background: rgba(255,255,255,.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  box-shadow: 0 0 0 1px rgba(29,27,26,.08), inset 0 1px 0 rgba(255,255,255,.9), 0 24px 50px -20px rgba(50,35,20,.4), 0 6px 18px -10px rgba(50,35,20,.25);
+  box-shadow: 0 0 0 1px rgba(29,27,26,.08), inset 0 1px 0 rgba(255,255,255,.9), 0 24px 50px -20px rgba(20,20,30,.4), 0 6px 18px -10px rgba(20,20,30,.25);
   font: 400 14px/1.5 -apple-system, system-ui, sans-serif; will-change: clip-path; }
 .ab:focus { outline: none; }
 /* the bee's skin, which fades as the panel takes shape */

@@ -407,7 +407,7 @@ export function createGarden(canvas, opts = {}) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  const PAPER = hex('#f6f4ef');
+  const PAPER = hex("#ffffff");
   function renderPresent() {
     gl.viewport(0, 0, W, H);
     gl.useProgram(presP);
