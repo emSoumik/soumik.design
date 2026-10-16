@@ -1,0 +1,7 @@
+next
+prototype
+_dev
+CNAME
+.DS_Store
+.env*
+.vercel
