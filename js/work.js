@@ -395,9 +395,10 @@ const STYLE = `
   .wk-meta { flex-direction: column; justify-content: flex-start; }
   .wk-meta a { align-self: flex-start; }
   .wk-wc.is-pending { aspect-ratio: 1 / 1.3; }
-  .wk-screen { aspect-ratio: 4 / 5; border-radius: 22px; }
-  .wk-rt { font-size: clamp(44px, 14vw, 60px); }
-  .wk-cap { left: 20px; right: 20px; bottom: 22px; }
+  /* a landscape rectangle on phones too, so each shader reads whole instead of cropped */
+  .wk-screen { aspect-ratio: 4 / 3; border-radius: 18px; }
+  .wk-rt { font-size: clamp(28px, 8.6vw, 38px); }
+  .wk-cap { left: 16px; right: 16px; bottom: 14px; gap: 5px; }
   .wk-btns button { width: 44px; height: 44px; }
   /* small text links get a 44px tall hit area without moving their underline */
   .wk-meta a, .wk-soc a, .wk-top, .wk-mail { position: relative; }
