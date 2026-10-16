@@ -15,19 +15,17 @@ export const SCREENS = {
     { src: asset('d-01.avif'), alt: 'WhyClub home page: a full-bleed campaign hero with the new drop', label: 'Home', path: '', tint: ['#7f9bc9', '#b9c9e6'] },
     { src: asset('d-02.avif'), alt: 'WhyClub shop page: a clean grid of tees with prices', label: 'Shop', path: '/shop', tint: ['#a88f82', '#ddd3c9'] },
     { src: asset('d-03.avif'), alt: 'WhyClub product page for the Please, I’m a Star tee', label: 'Product', path: '/products/please-im-a-star', tint: ['#7a70c4', '#b392c0'] },
-    { src: asset('d-04.avif'), alt: 'WhyClub story page with the “why?” manifesto', label: 'Story', path: '/story', tint: ['#b9b3a8', '#dcd6ca'] },
     { src: asset('d-05.avif'), alt: 'WhyClub 404 page: a prism splitting light through a 4-triangle-4', label: '404', path: '/nope', tint: ['#5b8c68', '#7a5ea8'] },
   ],
   phone: [
     { src: asset('m-01.avif'), alt: 'WhyClub home on a phone: the campaign hero with the new drop', label: 'Home', path: '', tint: ['#7f9bc9', '#c9d8f0'] },
-    { src: asset('m-04.avif'), alt: 'WhyClub mobile navigation opened: the More menu with Our story, Track an order, Returns and Contact', label: 'Menu', path: '', tint: ['#8097c4', '#c3cbe0'] },
     { src: asset('m-02.avif'), alt: 'WhyClub shop on a phone: a two-column grid of tees', label: 'Shop', path: '/shop', tint: ['#a88f82', '#ddd3c9'] },
     { src: asset('m-03.avif'), alt: 'WhyClub product page on a phone with the Please, I’m a Star tee', label: 'Product', path: '/products/please-im-a-star', tint: ['#7a70c4', '#b392c0'] },
     { src: asset('m-05.avif'), alt: 'WhyClub 404 on a phone: a prism splitting light', label: '404', path: '/nope', tint: ['#5b8c68', '#7a5ea8'] },
   ],
 };
 
-const DEVICES = ['desktop', 'phone'];
+const DEVICES = ['phone', 'desktop'];   // phone first, in the switch and by default
 const NEUTRAL_TINT = ['#c9c5bc', '#e4e0d6'];
 
 // one shape for everything the renderer touches; every URL absolute
@@ -152,11 +150,11 @@ export function mountSlideshow(host, { device = 'desktop', interval = 2800, phon
   const lists = { desktop: SCREENS.desktop.map(normalize).filter(Boolean), phone: SCREENS.phone.map(normalize).filter(Boolean) };
   let phoneLoaded = false;
   const auto = device === 'auto';
-  if (auto) device = window.matchMedia('(max-width: 640px)').matches ? 'phone' : 'desktop';
+  if (auto) device = 'phone';
   injectCSS();
   const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
   let reduced = mq.matches;
-  let dev = DEVICES.includes(device) ? device : 'desktop';
+  let dev = DEVICES.includes(device) ? device : 'phone';
   let idx = 0;
   let p = 0;
   let raf = 0;
@@ -178,8 +176,8 @@ export function mountSlideshow(host, { device = 'desktop', interval = 2800, phon
     <div class="wcs-meta">
       <div class="wcs-label" aria-live="polite"><span class="wcs-name"></span><span class="wcs-count"></span></div>
       <div class="wcs-seg" role="group" aria-label="Device">
-        <button type="button" data-d="desktop" aria-pressed="false">Desktop</button>
         <button type="button" data-d="phone" aria-pressed="false">Phone</button>
+        <button type="button" data-d="desktop" aria-pressed="false">Desktop</button>
       </div>
     </div>
     <div class="wcs-stage" tabindex="0" role="group" aria-roledescription="slideshow" aria-label="WhyClub screens. Use left and right arrow keys to browse.">
