@@ -3,369 +3,270 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Soumik — Coming soon</title>
-<meta name="description" content="Soumik, design engineer. New site coming soon. Meanwhile, see WhyClub.">
-<meta name="theme-color" content="#ece8e1">
-<link rel="canonical" href="https://soumik.design/">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://soumik.design/">
-<meta property="og:title" content="Soumik — Coming soon">
-<meta property="og:description" content="Design engineer. New site coming soon.">
-<meta name="twitter:card" content="summary">
+<title>Soumik, design engineer</title>
+<meta name="description" content="Soumik designs and builds interfaces end to end: brand, motion, WebGL, and the code that ships it.">
+<meta name="theme-color" content="#f6f4ef">
+<meta property="og:title" content="Soumik, design engineer">
+<meta property="og:description" content="Grow a flower, meet the bee, see the work.">
+<meta property="og:image" content="https://soumik.design/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/whyclub.avif" type="image/avif">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap" rel="stylesheet">
 <style>
+  @font-face { font-family: "Faculty Glyphic"; src: url(assets/faculty-glyphic.woff2) format("woff2"); font-display: swap; }
   :root {
-    --paper: #ece8e1;
-    --ink: #1a1918;
-    --ink-2: rgba(26, 25, 24, .62);
-    --line: rgba(26, 25, 24, .16);
-    --ease: cubic-bezier(.22, 1, .36, 1);
-    --gutter: clamp(16px, 3vw, 36px);
+    --paper: #f6f4ef; --ink: #1f1d1b; --ink-2: rgba(31, 29, 27, .56); --ink-3: rgba(31, 29, 27, .34); --line: rgba(31, 29, 27, .12);
+    --ease: cubic-bezier(.23, 1, .32, 1); --spring: cubic-bezier(.3, 1.4, .5, 1);
+    --display: "Instrument Sans", -apple-system, system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace; --ui: -apple-system, system-ui, sans-serif;
+    --gut: clamp(16px, 2.6vw, 36px);
   }
   * { box-sizing: border-box; margin: 0; }
-  html, body { height: 100%; }
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font: 500 14px/1.4 "Archivo", system-ui, sans-serif;
-    font-stretch: 100%;
-    -webkit-font-smoothing: antialiased;
-    -webkit-tap-highlight-color: transparent;
-    overflow: hidden;
-  }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { background: var(--paper); color: var(--ink); font: 400 13px/1.45 var(--ui); overflow-x: hidden;
+    -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
   a { color: inherit; text-decoration: none; }
-  ::selection { background: var(--ink); color: var(--paper); }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  ::selection { background: #d9def2; }
+  :focus-visible { outline: 1.5px solid currentColor; outline-offset: 4px; border-radius: 6px; }
 
-  canvas {
-    position: fixed; inset: 0;
-    width: 100%; height: 100%;
-    display: block;
-    opacity: 0;
-    transition: opacity 1.6s var(--ease);
+  /* ---- hero: one screen, the garden, the name, two links */
+  .hero { position: relative; height: 100svh; min-height: 560px; overflow: hidden; }
+  #garden { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: manipulation; }
+  /* the UI floats over the garden; only real controls take the pointer, so every empty spot plants */
+  .ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .ui a, .ui button { pointer-events: auto; }
+
+  .top { position: absolute; left: var(--gut); right: var(--gut); top: max(var(--gut), env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; }
+  .me { display: flex; align-items: center; gap: 10px; font: 500 12px/1.2 var(--mono); }
+  .me img { width: 40px; height: 40px; object-fit: contain; mix-blend-mode: multiply; transition: transform .5s var(--spring); }
+  .me small { display: block; color: var(--ink-2); font-size: 11px; }
+  .icons { display: flex; gap: 4px; }
+  .icons a { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; color: var(--ink-2); transition: color .2s, background .2s, transform .16s var(--ease); }
+  .icons a:active { transform: scale(.94); }
+  .icons svg { width: 16px; height: 16px; }
+
+  .mark { position: absolute; left: 50%; top: 17svh; translate: -50% 0; text-align: center; white-space: nowrap; }
+  .mark h1 { font: 500 clamp(60px, 7.2vw, 108px)/1 var(--display); letter-spacing: -.055em; }
+  .mark h1 span { display: inline-block; }
+  .mark h1.load span { animation: ink .9s var(--ease) both; animation-delay: calc(.25s + var(--i) * 60ms); }
+  @keyframes ink { from { opacity: 0; translate: 0 .12em; filter: blur(10px); } to { opacity: 1; translate: none; filter: none; } }
+  .mark p { margin-top: clamp(14px, 1.6vw, 20px); font: 400 12px/1.4 var(--mono); color: var(--ink-2); letter-spacing: .01em; }
+
+  .nav { position: absolute; left: 50%; top: 77svh; translate: -50% 0; display: flex; gap: clamp(20px, 3.4vw, 56px); align-items: center; font: 500 13px/1 var(--mono); }
+  .nav button { white-space: nowrap; display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 99px;
+    transition: background .25s var(--ease), box-shadow .25s var(--ease), transform .16s var(--ease); }
+  .nav button:active { transform: scale(.97); }
+  .nav .arr { display: inline-block; transition: transform .4s var(--spring); }
+  .nav .ic { width: 26px; height: 26px; display: grid; place-items: center; }
+  .nav .ic img { width: 26px; height: 26px; object-fit: contain; mix-blend-mode: multiply; }
+  .nav .ic svg { width: 30px; height: auto; overflow: visible; }
+
+  .hint { position: absolute; left: 50%; top: calc(77svh + 48px); translate: -50% 0; font: 400 12px/1 var(--mono); color: var(--ink-2); white-space: nowrap;
+    padding: 8px 12px; border-radius: 99px; transition: color .2s, transform .16s var(--ease); }
+  .hint:active { transform: scale(.97); }
+  .hint .fl span { display: inline-block; animation: bob 2.8s var(--ease) infinite; animation-delay: calc(var(--i) * .09s); }
+  .hint .fl span:nth-child(1) { color: #3e4f9c; } .hint .fl span:nth-child(2) { color: #c25a7c; } .hint .fl span:nth-child(3) { color: #4b8bbf; }
+  .hint .fl span:nth-child(4) { color: #3e4f9c; } .hint .fl span:nth-child(5) { color: #c25a7c; } .hint .fl span:nth-child(6) { color: #4b8bbf; }
+  @keyframes bob { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-3px); } }
+  .hint .swap { display: inline-block; transition: opacity .3s, filter .3s; }
+  .hint .swap.out { opacity: 0; filter: blur(4px); }
+
+  .mochi { position: absolute; width: 104px; left: calc(50% + 276px); top: calc(55svh + 96px); transition: transform .5s var(--spring); }
+  .mochi svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .mochi .tag { position: absolute; left: 50%; bottom: 100%; translate: -50% 0; font: 500 11px/1 var(--mono); color: var(--ink-2); white-space: nowrap;
+    opacity: 0; transform: translateY(4px); transition: opacity .25s, transform .35s var(--spring); }
+  .mochi:focus-visible .tag { opacity: 1; transform: none; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .me:hover img { transform: rotate(-8deg) scale(1.08); }
+    .icons a:hover { color: var(--ink); background: rgba(31, 29, 27, .05); }
+    .nav button:hover { background: rgba(255, 255, 255, .6); box-shadow: 0 0 0 1px var(--line); }
+    .nav button:hover .arr.r { transform: translateX(4px); }
+    .nav button:hover .arr.d { transform: translateY(3px); }
+    .hint:hover { color: var(--ink); }
+    .mochi:hover { transform: translateY(-3px) rotate(-2deg); }
+    .mochi:hover .tag { opacity: 1; transform: none; }
   }
-  canvas.on { opacity: 1; }
 
-  .page {
-    position: relative;
-    height: 100dvh;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    grid-template-columns: minmax(0, 1fr);
-    padding: calc(var(--gutter) + env(safe-area-inset-top)) var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom));
-  }
+  /* ---- the work lives right under the garden */
+  #work { position: relative; scroll-margin-top: 0; }
+  .foot { display: flex; justify-content: space-between; gap: 16px; padding: 28px var(--gut) max(22px, env(safe-area-inset-bottom));
+    font: 400 10.5px/1.2 var(--mono); color: var(--ink-3); letter-spacing: .02em; }
+  .foot nav { display: flex; gap: 14px; }
+  .foot a { transition: color .2s; }
+  @media (hover: hover) and (pointer: fine) { .foot a:hover { color: var(--ink); } }
 
-  /* Difference blend keeps the header legible when ink drifts under it */
-  header { display: flex; justify-content: space-between; align-items: baseline; color: #fff; mix-blend-mode: difference; position: relative; z-index: 1; }
-  .name { font-weight: 650; letter-spacing: -.01em; }
-  .role { opacity: .7; }
+  .in { opacity: 0; animation: in 1.1s var(--ease) forwards; animation-delay: var(--d, .2s); }
+  @keyframes in { from { opacity: 0; translate: var(--tx, 0) 10px; filter: blur(6px); } to { opacity: 1; translate: var(--tx, 0) 0; filter: none; } }
+  .mark.in, .nav.in, .hint.in { --tx: -50%; }
 
-  /* Title: heavy grotesk + italic serif, inked through a grain filter */
-  h1 {
-    align-self: center; justify-self: center;
-    display: flex; align-items: baseline;
-    font-weight: 900;
-    font-stretch: 112%;
-    font-size: clamp(64px, 11.5vw, 188px);
-    line-height: .86;
-    letter-spacing: -.045em;
-    filter: url(#ink);
-    user-select: none;
-  }
-  h1 .serif {
-    font-family: "Instrument Serif", serif;
-    font-style: italic; font-weight: 400;
-    font-stretch: 100%;
-    letter-spacing: -.02em;
-    font-size: 1.06em;
-    margin-left: .04em;
-  }
-  h1 span span {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(.18em);
-    filter: blur(14px);
-    animation: rise 1.4s var(--ease) forwards;
-    animation-delay: calc(.35s + var(--i) * 55ms);
-  }
-  @keyframes rise { to { opacity: 1; transform: none; filter: blur(0); } }
-
-
-  .fade { opacity: 0; animation: fade 1.2s var(--ease) forwards; animation-delay: var(--d, 1s); }
-  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-  footer { display: flex; justify-content: center; }
-
-  /* Work: a pill that grows a preview above it on hover */
-  .work {
-    position: relative;
-    display: flex; align-items: center; gap: 12px;
-    padding: 6px 16px 6px 6px;
-    border-radius: 99px;
-    background: color-mix(in srgb, var(--paper) 78%, transparent);
-    backdrop-filter: blur(10px) saturate(1.2);
-    -webkit-backdrop-filter: blur(10px) saturate(1.2);
-    box-shadow: 0 0 0 1px var(--line), 0 8px 24px -12px rgba(26, 25, 24, .25);
-    transition: box-shadow .4s var(--ease);
-  }
-  .work .thumb {
-    width: 34px; height: 34px; border-radius: 99px; overflow: hidden; flex: none;
-    background: #d9d6cf;
-  }
-  .work img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .work .meta { display: flex; gap: 10px; align-items: baseline; white-space: nowrap; }
-  .work .label { color: var(--ink-2); }
-  .work .title { font-weight: 650; }
-  .work .desc { color: var(--ink-2); }
-  .work .arrow { transition: transform .4s var(--ease); display: inline-block; }
-
-  .preview {
-    position: absolute; left: 50%; bottom: calc(100% + 12px);
-    width: 216px; aspect-ratio: 3 / 4;
-    border-radius: 18px; overflow: hidden;
-    background: #d9d6cf;
-    box-shadow: 0 0 0 1px var(--line), 0 24px 48px -20px rgba(26, 25, 24, .45);
-    transform: translateX(-50%) translateY(10px) scale(.92);
-    transform-origin: 50% 100%;
-    clip-path: inset(30% 20% 0 20% round 18px);
-    opacity: 0;
-    transition: transform .55s var(--ease), clip-path .55s var(--ease), opacity .3s var(--ease);
-    pointer-events: none;
-  }
-  .preview img { transform: scale(1.08); transition: transform .9s var(--ease); }
-  @media (hover: hover) {
-    .work:hover .preview, .work:focus-visible .preview {
-      opacity: 1; transform: translateX(-50%); clip-path: inset(0 round 18px);
-    }
-    .work:hover .preview img, .work:focus-visible .preview img { transform: none; }
-    .work:hover .arrow { transform: translate(2px, -2px); }
-  }
-  .work:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-
-  /* ---------- Mobile: a different composition, not a squeezed desktop ---------- */
   @media (max-width: 640px) {
-    .role { display: none; }
-    h1 {
-      align-self: end; justify-self: stretch;
-      flex-direction: column; align-items: flex-start;
-      font-size: 21vw;
-      line-height: .82;
-      margin-bottom: 28px;
-    }
-    h1 .serif {
-      align-self: flex-end;
-      font-size: 1.12em;
-      margin: -.04em .02em 0 0;
-    }
-    footer { display: block; }
-    .work {
-      border-radius: 22px;
-      padding: 8px 18px 8px 8px;
-      gap: 14px;
-    }
-    .work .thumb { width: 58px; height: 76px; border-radius: 14px; }
-    .work .meta { flex-direction: column; gap: 1px; flex: 1; min-width: 0; white-space: normal; }
-    .work .label { font-size: 12px; order: -1; }
-    .work .title { font-size: 16px; }
-    .work .arrow { margin-left: auto; font-size: 18px; }
-    .work:active { transform: scale(.985); transition: transform .15s var(--ease); }
-    .preview { display: none; }
+    .icons { display: none; }
+    .mark { top: 15svh; }
+    .mark h1 { font-size: clamp(60px, 19vw, 84px); }
+    .mark p { font-size: 11px; }
+    .nav { top: auto; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); gap: 4px; font-size: 12.5px; }
+    .nav button { padding: 0 10px; min-height: 44px; gap: 7px; }
+    .nav .ic, .nav .ic img { width: 20px; height: 20px; }
+    .nav .ic svg { width: 24px; }
+    .hint { top: auto; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 18px); font-size: 11.5px; min-height: 44px; }
+    .mochi { width: 78px; left: auto; right: 14px; top: calc(50svh + 128px); }
+    .foot { justify-content: center; }
+    .foot > span { display: none; }
   }
-
+  @media (max-height: 640px) and (min-width: 641px) { .mark { top: 11svh; } .nav { top: 78svh; } .hint { top: calc(78svh + 42px); } }
   @media (prefers-reduced-motion: reduce) {
-    h1 span span, .fade { animation: none; opacity: 1; transform: none; filter: none; }
-    canvas { transition: none; }
+    .in { animation: none; opacity: 1; }
+    .hint .fl span { animation: none; }
+    .mark h1.load span { animation: none; }
   }
 </style>
 </head>
 <body>
-<canvas id="c" aria-hidden="true"></canvas>
+<main>
+  <section class="hero" id="top" aria-label="Garden">
+    <canvas id="garden" aria-hidden="true"></canvas>
+    <div class="ui">
+      <div class="top in" style="--d:.1s">
+        <a class="me" href="#about" data-about>
+          <img src="assets/avatar.png" alt="" width="40" height="40" onerror="this.onerror=null;this.src='assets/avatar-src.jpg'">
+          <span>soumik<small>design engineer</small></span>
+        </a>
+        <nav class="icons" aria-label="Elsewhere" id="icons"></nav>
+      </div>
 
-<!-- Grain + eroded edges on the title, like ink pressed into paper -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <filter id="ink" x="-5%" y="-10%" width="110%" height="120%" color-interpolation-filters="sRGB">
-    <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="4" result="w"/>
-    <feDisplacementMap in="SourceAlpha" in2="w" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="a"/>
-    <feGaussianBlur in="a" stdDeviation="1.3" result="b"/>
-    <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="9" result="g"/>
-    <feComposite in="b" in2="g" operator="arithmetic" k2="1" k3=".9" k4="-.45" result="m"/>
-    <feComponentTransfer in="m" result="t"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
-    <feFlood flood-color="#1a1918"/>
-    <feComposite in2="t" operator="in"/>
-  </filter>
-</svg>
+      <div class="mark in" style="--d:.25s">
+        <h1 class="load" aria-label="Soumik"></h1>
+        <p>I design and build interfaces, end to end.</p>
+      </div>
 
-<main class="page">
-  <header class="fade" style="--d:.2s">
-    <span class="name">Soumik</span>
-    <span class="role">Design engineer</span>
-  </header>
+      <button class="mochi in" style="--d:1.4s" id="mochi" aria-label="mochi the cat, she shows you the work">
+        <span class="tag">mochi · <span class="v">click</span> to see the work</span>
+        <span id="mochi-art"></span>
+      </button>
 
-  <h1 aria-label="Coming soon">
-    <span aria-hidden="true"><span style="--i:0">C</span><span style="--i:1">o</span><span style="--i:2">m</span><span style="--i:3">i</span><span style="--i:4">n</span><span style="--i:5">g</span></span>
-    <span class="serif" aria-hidden="true"><span style="--i:6">s</span><span style="--i:7">o</span><span style="--i:8">o</span><span style="--i:9">n</span></span>
-  </h1>
+      <nav class="nav in" style="--d:.9s" aria-label="Main">
+        <button data-about><span class="ic"><img src="assets/avatar.png" alt="" onerror="this.onerror=null;this.src='assets/avatar-src.jpg'"></span><span class="arr r">→</span> About me</button>
+        <button data-work>My work <span class="arr d">↓</span><span class="ic" id="cat-ic"></span></button>
+      </nav>
 
+      <button class="hint in" style="--d:1.6s" id="hint"><span class="swap"><span class="v">click</span> anywhere to grow a <span class="fl"><span style="--i:0">f</span><span style="--i:1">l</span><span style="--i:2">o</span><span style="--i:3">w</span><span style="--i:4">e</span><span style="--i:5">r</span></span></span></button>
+    </div>
+  </section>
 
-  <footer class="fade" style="--d:1.3s">
-    <a class="work" href="https://whyclub.in" target="_blank" rel="noopener">
-      <span class="preview" aria-hidden="true">
-        <picture><source srcset="assets/whyclub.avif" type="image/avif"><img src="assets/whyclub.webp" alt="" width="480" height="640"></picture>
-      </span>
-      <span class="thumb">
-        <picture><source srcset="assets/whyclub.avif" type="image/avif"><img src="assets/whyclub.webp" alt="" width="480" height="640"></picture>
-      </span>
-      <span class="meta">
-        <span class="label">Meanwhile</span>
-        <span class="title">WhyClub</span>
-        <span class="desc">Storefront design &amp; build</span>
-      </span>
-      <span class="arrow" aria-hidden="true">↗</span>
-    </a>
-  </footer>
+  <section id="work" aria-label="My work"></section>
 </main>
 
-<script>
-(() => {
-  const canvas = document.getElementById('c');
-  const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
-  if (!gl) return;
+<footer class="foot">
+  <span>© 2026 soumik</span>
+  <nav aria-label="Socials" id="socials"></nav>
+  <span>flowers painted in webgl</span>
+</footer>
 
-  const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
-  const fs = `
-  #ifdef GL_FRAGMENT_PRECISION_HIGH
-  precision highp float;
-  #else
-  precision mediump float;
-  #endif
-  uniform vec2 r; uniform float t; uniform vec2 m; uniform float mob; uniform float px;
+<script type="module">
+  import { SOCIALS, css } from './js/content.js';
+  import { sleepyCat, CAT_CSS } from './js/cats.js';
+  import { createBee, BEE_CSS } from './js/bee.js';
+  import { peek } from './js/peek.js';
+  import { createAbout } from './js/about.js';
 
-  float h(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-  float n(vec2 p){
-    vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
-    return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + 1.), f.x), f.y);
-  }
-  float fbm(vec2 p){
-    float v = 0., a = .5; mat2 R = mat2(.8, .6, -.6, .8);
-    for (int i = 0; i < 5; i++) { v += a * n(p); p = R * p * 2.03 + 3.1; a *= .5; }
-    return v;
-  }
+  css(CAT_CSS + BEE_CSS);
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const touch = matchMedia('(hover: none)').matches;
+  if (touch) document.querySelectorAll('.v').forEach(v => v.textContent = 'tap');
 
-  void main(){
-    vec2 fc = gl_FragCoord.xy;
-    vec2 uv = fc / r;
-    vec2 p = (fc - .5 * r) / r.y;
-    float T = t * .028;
-
-    // Pointer gently drags the ink toward it
-    vec2 d = p - (m - .5 * r) / r.y;
-    float pull = exp(-dot(d, d) * 5.) * .35;
-
-    vec2 q = vec2(fbm(p * 1.4 + T), fbm(p * 1.4 + vec2(5.2, 1.3) - T));
-    vec2 w = p * 1.5 + 2.4 * q + vec2(T * .7, -T * .5) - d * pull;
-    float f = fbm(w);
-    float o = (f - .5);
-
-    // Where ink is allowed to live: framing the sides on desktop, top + bottom corner on mobile
-    float edge;
-    if (mob < .5) {
-      float x = abs(uv.x - .5) * 2.;
-      edge = smoothstep(.5, 1.12, x + o * .75 + (uv.y - .5) * .12) * .92;
-    } else {
-      float top = smoothstep(.5, 1.0, uv.y + o * .55 + (uv.x - .5) * .35);
-      float corner = smoothstep(.82, 1.1, (1. - uv.y) * .75 + uv.x * .4 + o * .6);
-      edge = max(top, corner * .8);
-    }
-
-    float ink = f * edge;
-    float g = h(floor(fc / px) + .5);
-
-    // Dense core prints solid; the rim breaks into stipple like dry ink
-    float body = smoothstep(.43, .56, ink);
-    float rim = smoothstep(.27, .44, ink);
-    float coverage = mix(rim * .55, 1., body);
-    float dots = step(g + .002, coverage);
-
-    // Thin fibrous strands drifting out of the blooms
-    float s = abs(fbm(w * 1.8 + 4.) - .5);
-    float vein = (1. - smoothstep(.0, .01, s)) * smoothstep(.25, .7, edge);
-    dots = max(dots, step(g + .002, vein * .85));
-
-    vec3 paper = vec3(.925, .909, .882);
-    paper -= (h(fc * .731) - .5) * .03;
-    paper -= n(fc * .015) * .018;
-    vec3 inkc = vec3(.102, .098, .094);
-    gl_FragColor = vec4(mix(paper, inkc, dots * .93), 1.);
-  }`;
-
-  const sh = (type, src) => {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src); gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-    return s;
+  const ICON = {
+    LinkedIn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.6h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.76v5.59h-4v-4.96c0-1.18-.02-2.7-1.7-2.7-1.7 0-1.95 1.28-1.95 2.61v5.05h-4v-11Z"/></svg>',
+    X: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.32l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>',
+    Email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>',
   };
-  const prog = gl.createProgram();
-  gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
-  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
+  const ext = s => s.href.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
+  document.getElementById('icons').innerHTML = SOCIALS.map(s => `<a href="${s.href}"${ext(s)} aria-label="${s.label}">${ICON[s.label]}</a>`).join('');
+  document.getElementById('socials').innerHTML = SOCIALS.map(s => `<a href="${s.href}"${ext(s)}>${s.label === 'X' ? 'x.com' : s.label.toLowerCase()}</a>`).join('');
+  document.getElementById('mochi-art').innerHTML = sleepyCat();
+  document.getElementById('cat-ic').innerHTML = sleepyCat();
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  // ---- the name writes itself in, letter by letter
+  const name = document.querySelector('.mark h1');
+  name.innerHTML = [...'Soumik'].map((c, i) => `<span aria-hidden="true" style="--i:${i}">${c}</span>`).join('');
+  setTimeout(() => name.classList.remove('load'), 1600);
 
-  const U = n => gl.getUniformLocation(prog, n);
-  const uR = U('r'), uT = U('t'), uM = U('m'), uMob = U('mob'), uPx = U('px');
+  // ---- garden + bee
+  const canvas = document.getElementById('garden');
+  let garden = { plant() {}, patches: () => [] };
+  try {
+    const { createGarden } = await import('./js/garden.js');
+    garden = createGarden(canvas, {
+      initial: 'auto',
+      // sit the bed between the name and the nav
+      bed: (w, h, mob) => mob ? { cx: w / 2, cy: h * .52, bw: Math.min(250, w - 120), bh: 200 }
+                              : { cx: w / 2, cy: h * .55, bw: Math.min(620, w - 80), bh: 190 },
+    });
+  } catch (e) { console.warn('garden unavailable', e); }
 
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const mobileQ = matchMedia('(max-width: 640px)');
-  let dpr = 1, running = false, raf = 0, start = performance.now();
-  const target = { x: -1e4, y: -1e4 }, mouse = { x: -1e4, y: -1e4 };
+  const bee = createBee({ spots: () => garden.patches().flatMap(p => p.flowers), start: 2.4 });
+  const about = createAbout({ bee });
 
-  function resize() {
-    // Cap resolution: the grain is meant to read at CSS-pixel scale, and it keeps phones cool
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    canvas.width = Math.round(innerWidth * dpr);
-    canvas.height = Math.round(innerHeight * dpr);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.uniform2f(uR, canvas.width, canvas.height);
-    gl.uniform1f(uMob, mobileQ.matches ? 1 : 0);
-    gl.uniform1f(uPx, dpr);
-    if (!running) draw(performance.now());
+  const hint = document.getElementById('hint'), swap = hint.querySelector('.swap');
+  const AFTER = ['lovely. the bee noticed.', 'keep going, it suits you.', 'a little garden of your own.', 'the bee is very busy now.'];
+  let planted = 0, hintT;
+  function nudgeHint() {
+    if (planted > AFTER.length + 2) return;
+    const text = AFTER[Math.min(planted - 1, AFTER.length - 1)];
+    swap.classList.add('out');
+    clearTimeout(hintT);
+    hintT = setTimeout(() => {
+      const keep = swap.innerHTML;
+      swap.textContent = text; swap.classList.remove('out');
+      hintT = setTimeout(() => { swap.classList.add('out'); setTimeout(() => { swap.innerHTML = keep; swap.classList.remove('out'); }, 300); }, 2600);
+    }, 300);
   }
-
-  function draw(now) {
-    mouse.x += (target.x - mouse.x) * .06;
-    mouse.y += (target.y - mouse.y) * .06;
-    gl.uniform1f(uT, (now - start) / 1000 + 40);
-    gl.uniform2f(uM, mouse.x, mouse.y);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  function plant(x, y) {
+    const p = garden.plant(x, y);
+    planted++;
+    nudgeHint();
+    const fl = p?.flowers?.length ? p.flowers[Math.floor(Math.random() * p.flowers.length)] : null;
+    if (fl) setTimeout(() => bee.visit(fl), reduced ? 0 : 500);
   }
-
-  function loop(now) { draw(now); raf = requestAnimationFrame(loop); }
-  function play() {
-    if (running || reduced.matches || document.hidden) return;
-    running = true; raf = requestAnimationFrame(loop);
+  // somewhere open near the bed, for the keyboard
+  function plantSomewhere() {
+    const m = innerWidth <= 640, w = canvas.clientWidth, h = canvas.clientHeight;
+    const a = Math.random() * Math.PI * 2, r = .55 + Math.random() * .45;
+    plant(w / 2 + Math.cos(a) * (m ? 130 : 380) * r, h * (m ? .52 : .55) + Math.sin(a) * (m ? 110 : 150) * r);
   }
-  function stop() { running = false; cancelAnimationFrame(raf); }
+  canvas.addEventListener('click', e => { if (!about.isOpen) plant(e.offsetX, e.offsetY); });
+  hint.addEventListener('click', plantSomewhere);
 
-  addEventListener('pointermove', e => {
-    if (e.pointerType !== 'mouse') return;
-    if (mouse.x < -1e3) { mouse.x = e.clientX * dpr; mouse.y = (innerHeight - e.clientY) * dpr; }
-    target.x = e.clientX * dpr; target.y = (innerHeight - e.clientY) * dpr;
-  }, { passive: true });
-  document.addEventListener('pointerleave', () => { target.x = target.y = -1e4; });
-  addEventListener('resize', resize);
-  document.addEventListener('visibilitychange', () => document.hidden ? stop() : play());
-  reduced.addEventListener('change', () => reduced.matches ? stop() : play());
+  // ---- work: one scroll below; mounted when it gets close
+  const work = document.getElementById('work');
+  const toWork = () => work.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+  document.querySelectorAll('[data-work], #mochi').forEach(b => b.addEventListener('click', toWork));
+  let mounted = false;
+  const mountWork = async () => {
+    if (mounted) return; mounted = true;
+    try { (await import('./js/work.js')).mountWork(work); } catch (e) { console.warn('work unavailable', e); }
+  };
+  new IntersectionObserver((es, io) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); mountWork(); } }, { rootMargin: '100% 0px' }).observe(work);
 
-  resize();
-  requestAnimationFrame(() => canvas.classList.add('on'));
-  play();
-})();
+  // ---- about: the bee flies over and becomes the panel
+  document.querySelectorAll('[data-about]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); about.isOpen ? about.close() : about.open(b); }));
+
+  // ---- mochi nudges once, unless they're already looking at the work
+  setTimeout(() => {
+    if (scrollY > innerHeight * .3 || about.isOpen) return;
+    const pk = peek({ text: 'psst. want to see what soumik made?', onOpen: toWork });
+    // once they're looking at the work, mochi has nothing left to say
+    const off = () => { if (scrollY > innerHeight * .5) { pk.hide(); removeEventListener('scroll', off); } };
+    addEventListener('scroll', off, { passive: true });
+  }, 4200);
+  if (location.hash === '#about') setTimeout(() => about.open(document.querySelector('.nav [data-about]')), 1200);
 </script>
 </body>
 </html>
