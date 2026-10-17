@@ -9,6 +9,6 @@ export const SOCIALS = [
 
 export const WHYCLUB = { href: 'https://whyclub.in', domain: 'whyclub.in' };
 
-export const SHADERS = { href: 'https://prototype.whyclub.in/', domain: 'prototype.whyclub.in' };
+export const SHADERS = { href: 'https://prototype.whyclub.in/', domain: 'prototype.whyclub.in', built: 'https://prototype.whyclub.in/case-study/' };
 
 export const css = (text) => document.head.insertAdjacentHTML('beforeend', `<style>${text}</style>`);

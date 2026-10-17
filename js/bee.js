@@ -119,7 +119,7 @@ export function createBee({ spots, start = 1.4 }) {
     }
     // fly: steer toward the target with a lazy, loopy wander that settles on arrival
     const dx = target.x - pos.x, dy = target.y - pos.y, dist = Math.hypot(dx, dy) || 1;
-    const speed = fast ? Math.min(620, dist * 5 + 40) : Math.min(150, dist * 2.4 + 8);
+    const speed = fast ? Math.min(760, dist * 7 + 60) : Math.min(150, dist * 2.4 + 8);
     const wob = Math.min(1, dist / 160) * (fast ? 30 : 70);
     const px = -dy / dist, py = dx / dist;
     const w = Math.sin(t * 2.7 + phase) * wob;

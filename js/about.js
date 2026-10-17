@@ -8,11 +8,14 @@ const MORPH = 'cubic-bezier(.32,.72,0,1)';
 const OUT = 'cubic-bezier(.23,1,.32,1)';
 
 const CSS = `
-.ab { position: fixed; z-index: 70; width: min(372px, calc(100vw - 24px)); padding: 20px 22px 18px; border-radius: 28px; color: #1f1d1b;
+.ab { position: fixed; z-index: 70; width: min(440px, calc(100vw - 24px)); padding: 20px 22px 18px; border-radius: 28px; color: #1f1d1b;
   background: rgba(255,255,255,.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
   box-shadow: 0 0 0 1px rgba(29,27,26,.08), inset 0 1px 0 rgba(255,255,255,.9), 0 24px 50px -20px rgba(20,20,30,.4), 0 6px 18px -10px rgba(20,20,30,.25);
   font: 400 14px/1.5 -apple-system, system-ui, sans-serif; will-change: clip-path; }
 .ab:focus { outline: none; }
+/* soft veil over the garden so the panel reads on its own, not on top of the wordmark */
+.ab-veil { position: fixed; inset: 0; z-index: 69; background: rgba(255,255,255,.62); opacity: 0; pointer-events: none; transition: opacity .32s cubic-bezier(.23,1,.32,1); }
+.ab-veil.on { opacity: 1; pointer-events: auto; }
 /* the bee's skin, which fades as the panel takes shape */
 .ab-skin { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
   background: radial-gradient(120% 140% at 50% 100%, #f6d777, #f3c64b 55%, #eab53a); }
@@ -28,10 +31,13 @@ const CSS = `
 .ab dd a, .ab dd button { position: relative; } .ab dd a::before, .ab dd button::before { content: ""; position: absolute; inset: -10px -4px; }
 .ab-x:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
 .ab-x svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
-.ab p { color: rgba(31,29,27,.72); margin: 0 0 16px; text-wrap: pretty; }
+.ab p { color: rgba(31,29,27,.74); margin: 0 0 10px; text-wrap: pretty; } .ab p:last-of-type { margin-bottom: 16px; }
+.ab p a { color: #1f1d1b; text-decoration: underline; text-decoration-color: rgba(31,29,27,.25); text-underline-offset: 3px; text-decoration-thickness: 1px; transition: text-decoration-color .2s; border-radius: 3px; }
+.ab p a:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .ab p a:hover { text-decoration-color: currentColor; } }
 .ab dl { display: grid; grid-template-columns: 74px 1fr; gap: 9px 12px; margin: 0; padding-top: 14px; border-top: 1px solid rgba(31,29,27,.1);
   font: 400 12px/1.3 ui-monospace, "SF Mono", Menlo, monospace; }
-.ab dt { color: rgba(31,29,27,.45); } .ab dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.ab dt { color: rgba(31,29,27,.5); } .ab dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .ab dd a, .ab dd button { all: unset; cursor: pointer; border-radius: 4px; transition: color .2s; }
 .ab dd a:focus-visible, .ab dd button:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
 .ab dd .sep { color: rgba(31,29,27,.3); margin: 0 6px; }
@@ -54,16 +60,19 @@ export function createAbout({ bee } = {}) {
   el.innerHTML = `<div class="ab-skin" aria-hidden="true"></div>
     <div class="ab-in">
       <div class="ab-top"><img src="${AVATAR}" alt="" onerror="this.onerror=null;this.src=this.src.replace('avatar.png','avatar-src.jpg')">
-        <h2 id="ab-title">Hi, I’m <i>Soumik</i>.</h2>
+        <h2 id="ab-title">hi, i'm <i>soumik</i>.</h2>
         <button class="ab-x" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3L3 9"/></svg></button></div>
-      <p>Soumik Halder, design engineer. I design and build interfaces end to end: the brand, the motion, the WebGL, and the code that ships it.</p>
+      <p>i design websites and apps, and then i write the code that builds them. usually that's two different jobs done by two people, and the small details, like how a button feels when you tap it, get lost in between. i like doing both so they don't.</p>
+      <p>the biggest thing i've made is <a href="${WHYCLUB.href}" target="_blank" rel="noopener">whyclub</a>, a streetwear brand i built on my own, from how it looks to the website to the system behind every order.</p>
       <dl>
-        <dt>made</dt><dd><a href="${WHYCLUB.href}" target="_blank" rel="noopener">${WHYCLUB.domain} ↗</a><span class="sep">·</span><button type="button" data-work>see the work ↓</button></dd>
+        <dt>work</dt><dd><button type="button" data-work>see what i've made ↓</button></dd>
         <dt>say hi</dt><dd><a href="mailto:${EMAIL}">${EMAIL}</a></dd>
         <dt>elsewhere</dt><dd>${SOCIALS.filter(s => s.label !== 'Email').map(s => `<a href="${s.href}"${ext(s)}>${s.label} ↗</a>`).join('<span class="sep">·</span>')}</dd>
       </dl>
     </div>`;
-  document.body.appendChild(el);
+  const veil = document.createElement('div');
+  veil.className = 'ab-veil';
+  document.body.append(veil, el);
   const skin = el.querySelector('.ab-skin');
   const kids = [...el.querySelector('.ab-in').children];
   let isOpen = false, busy = false, opener = null, anim = [];
@@ -102,6 +111,7 @@ export function createAbout({ bee } = {}) {
     const ly = p.below ? p.top + 22 : p.top + p.h - 12;
     if (bee && !reduced) await Promise.race([bee.flyTo(lx + scrollX, ly + scrollY), new Promise(res => setTimeout(res, 1600))]);
     el.style.visibility = '';
+    veil.classList.add('on');
     stop();
     if (reduced || !bee) {
       anim = [el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: OUT })];
@@ -125,6 +135,7 @@ export function createAbout({ bee } = {}) {
     if (!isOpen || busy) return;
     busy = true;
     const p = { left: el.offsetLeft, top: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
+    veil.classList.remove('on');
     stop();
     if (reduced || !bee) {
       await el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: OUT }).finished;

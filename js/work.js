@@ -28,7 +28,7 @@ function injectCSS() {
 const ARROW_L = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8H3M7.5 3.5 3 8l4.5 4.5"/></svg>';
 const ARROW_R = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M8.5 3.5 13 8l-4.5 4.5"/></svg>';
 
-const project = ({ n, id, title, line, tags, href, domain, stage }) => `
+const project = ({ n, id, title, line, tags, href, domain, more = '', stage }) => `
   <article class="wk-p" id="${id}">
     <header class="wk-head">
       <span class="wk-idx" data-wk-r>${n} / 02</span>
@@ -36,6 +36,7 @@ const project = ({ n, id, title, line, tags, href, domain, stage }) => `
       <a class="wk-link" data-wk-r href="${href}" target="_blank" rel="noopener">${domain} <span aria-hidden="true">↗</span></a>
       <p class="wk-line" data-wk-r>${line}</p>
       <p class="wk-meta" data-wk-r>${tags}</p>
+      ${more && `<p class="wk-more" data-wk-r>${more}</p>`}
     </header>
     ${stage}
   </article>`;
@@ -65,8 +66,9 @@ export function mountWork(section) {
 
       ${project({
         n: '02', id: 'work-shaders', title: 'Shaders',
-        line: 'Order passes that bloom, riso badges, and a 404 made of light. Live WebGL, written by hand for WhyClub.',
-        tags: 'glsl · webgl · motion', href: SHADERS.href, domain: 'see them live',
+        line: 'A drop pass that blooms after you order, riso badges, and a 404 made of light. Live WebGL, written by hand for WhyClub.',
+        tags: 'glsl · webgl · motion', href: SHADERS.href, domain: 'prototype<span class="wk-dom">.whyclub.in</span>',
+        more: `<a href="${SHADERS.href}" target="_blank" rel="noopener">try the drop pass <span aria-hidden="true">↗</span></a><a href="${SHADERS.built}" target="_blank" rel="noopener">how it was built <span aria-hidden="true">↗</span></a>`,
         stage: `
         <div class="wk-stage wk-rl" data-wk-r>
           <div class="wk-screen" tabindex="0" role="group" aria-roledescription="carousel" aria-label="Shader reel. Use the left and right arrow keys to browse.">
@@ -277,7 +279,7 @@ const STYLE = `
 /* a project */
 .wk-p + .wk-p { margin-top: clamp(112px, 17vw, 220px); }
 .wk-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 16px; margin-bottom: clamp(32px, 4.4vw, 52px);
-  grid-template-areas: "idx idx" "title link" "line line" "meta meta"; }
+  grid-template-areas: "idx idx" "title link" "line line" "meta meta" "more more"; }
 .wk-idx { grid-area: idx; margin-bottom: clamp(14px, 2vw, 22px); }
 .wk-title { grid-area: title; margin: 0; align-self: last baseline; font: 500 clamp(52px, 8.6vw, 104px)/.95 var(--wk-serif); letter-spacing: -.05em; padding-bottom: .04em; }
 .wk-line { grid-area: line; margin: clamp(22px, 3vw, 32px) 0 0; max-width: 31em; font: 400 clamp(16px, 1.55vw, 19px)/1.5 system-ui, -apple-system, "SF Pro Text", sans-serif; color: rgba(31,29,27,.72); text-wrap: pretty; }
@@ -286,10 +288,16 @@ const STYLE = `
 .wk-link { grid-area: link; position: relative; align-self: last baseline; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px;
   border-radius: 99px; font: 400 11.5px/1 var(--wk-mono); color: var(--wk-ink); box-shadow: inset 0 0 0 1px var(--wk-line);
   transition: background .25s, box-shadow .25s, transform .16s var(--wk-ease); }
-.wk-link span { display: inline-block; transition: transform .4s var(--wk-spring); }
+.wk-more { grid-area: more; margin: 18px 0 0; display: flex; flex-wrap: wrap; gap: 8px 20px; font: 400 12px/1.4 var(--wk-mono); }
+.wk-more a { position: relative; color: var(--wk-ink); text-decoration: underline; text-decoration-color: rgba(31,29,27,.25); text-underline-offset: 4px; text-decoration-thickness: 1px; transition: text-decoration-color .2s; border-radius: 3px; }
+.wk-more a::before { content: ""; position: absolute; inset: -10px -4px; }
+.wk-more a span { display: inline-block; transition: transform .4s var(--wk-spring); }
+.wk-more a:focus-visible { outline: 1.5px solid currentColor; outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .wk-more a:hover { text-decoration-color: currentColor; } .wk-more a:hover span { transform: translate(2px, -2px); } }
+.wk-link span:not(.wk-dom) { display: inline-block; transition: transform .4s var(--wk-spring); }
 .wk-link::before { content: ""; position: absolute; inset: -6px -4px; }
 .wk-link:active { transform: scale(.97); }
-@media (hover: hover) and (pointer: fine) { .wk-link:hover { background: rgba(31,29,27,.04); box-shadow: inset 0 0 0 1px rgba(31,29,27,.24); } .wk-link:hover span { transform: translate(2px, -2px); } }
+@media (hover: hover) and (pointer: fine) { .wk-link:hover { background: rgba(31,29,27,.04); box-shadow: inset 0 0 0 1px rgba(31,29,27,.24); } .wk-link:hover span:not(.wk-dom) { transform: translate(2px, -2px); } }
 
 /* stages */
 .wk-stage { position: relative; }
@@ -333,6 +341,7 @@ const STYLE = `
   .wk-title { font-size: clamp(46px, 14vw, 64px); }
   .wk-head { column-gap: 10px; }
   .wk-link { padding: 9px 12px; }
+  .wk-link .wk-dom { display: none; }
   .wk-line { margin-top: 18px; }
   .wk-wc.is-pending { aspect-ratio: 1 / 1.3; }
   /* a landscape rectangle on phones too, so each shader reads whole instead of cropped */
