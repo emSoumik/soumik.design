@@ -81,19 +81,22 @@ function burst(t, dur, peak, type, freq, q) {
 function haptic(pattern) {
   // browsers only allow haptics after the visitor has touched the page
   if (muted || navigator.userActivation?.hasBeenActive === false) return;
+  const vibrate = typeof navigator.vibrate === 'function';
+  // ios only buzzes inside the tap itself; skip calls from timers so the switch isn't flipped for nothing
+  if (!vibrate && navigator.userActivation && !navigator.userActivation.isActive) return;
   const now = performance.now();
   if (now - lastHaptic < 30) return;
   lastHaptic = now;
   try {
-    if (typeof navigator.vibrate === 'function') {
+    if (vibrate) {
       navigator.vibrate(pattern);
     } else {
-      // ios: toggling a switch checkbox inside a gesture fires a system haptic
+      // ios 18+: toggling a switch checkbox inside a gesture fires a system haptic. the label is
+      // display:none, so it never covers anything, never takes focus and can't get in the way of scrolling
       if (!hapticLabel) {
         hapticLabel = document.createElement('label');
         hapticLabel.setAttribute('aria-hidden', 'true');
-        hapticLabel.style.cssText =
-          'position:fixed;left:0;top:0;opacity:0;pointer-events:none;width:1px;height:1px;overflow:hidden';
+        hapticLabel.style.display = 'none';
         hapticLabel.innerHTML = '<input type="checkbox" switch tabindex="-1">';
         document.body.appendChild(hapticLabel);
       }

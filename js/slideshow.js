@@ -119,11 +119,11 @@ export const SLIDESHOW_CSS = `
 .wcs-shot img,.wcs-shot video{display:block;width:100%;height:100%;object-fit:cover;object-position:top;pointer-events:none;-webkit-user-drag:none}
 .wcs-shot.is-on{opacity:1;transform:none;z-index:2}
 .wcs-shot.is-prev{opacity:0;transform:none;z-index:1}
-.wcs .wcs-arrow{all:unset;box-sizing:border-box;position:absolute;top:50%;z-index:4;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;background:rgba(255,255,255,.78);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);box-shadow:0 0 0 .5px rgba(22,20,15,.12),0 2px 8px rgba(22,20,15,.14),0 1px 2px rgba(22,20,15,.1);opacity:0;pointer-events:none;transform:translateY(-50%);transition:opacity .3s,transform 160ms ease-out}
+.wcs .wcs-arrow{all:unset;box-sizing:border-box;position:absolute;top:50%;z-index:4;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;background:rgba(255,255,255,.78);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);box-shadow:0 0 0 .5px rgba(22,20,15,.12),0 2px 8px rgba(22,20,15,.14),0 1px 2px rgba(22,20,15,.1);opacity:0;pointer-events:none;transform:translateY(-50%);transition:opacity .3s,transform 160ms ease-out}
 .wcs .wcs-arrow svg{width:16px;height:16px}
 .wcs .wcs-arrow.l{left:12px}
 .wcs .wcs-arrow.r{right:12px}
-.wcs .wcs-arrow:active{transform:translateY(-50%) scale(.94)}
+.wcs .wcs-arrow:active{transform:translateY(-50%) scale(.96)}
 .wcs .wcs-arrow:focus-visible{outline:2px solid #16140f;outline-offset:2px;opacity:1;pointer-events:auto}
 .wcs .wcs-stage:hover .wcs-arrow{opacity:1;pointer-events:auto}
 @media (hover:none){.wcs .wcs-arrow{opacity:1;pointer-events:auto}}

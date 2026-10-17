@@ -26,7 +26,7 @@ const CSS = `
 .ab-top h2 i { font-style: normal; color: #1f1d1b; }
 .ab-x { all: unset; cursor: pointer; margin-left: auto; align-self: flex-start; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
   background: rgba(29,27,26,.06); transition: background .2s, transform .16s ease-out; }
-@media (hover: hover) and (pointer: fine) { .ab-x:hover { background: rgba(29,27,26,.12); } } .ab-x:active { transform: scale(.94); }
+@media (hover: hover) and (pointer: fine) { .ab-x:hover { background: rgba(29,27,26,.12); } } .ab-x:active { transform: scale(.96); }
 .ab-x::before { content: ""; position: absolute; inset: -8px; } .ab-x { position: relative; }
 .ab dd a, .ab dd button { position: relative; } .ab dd a::before, .ab dd button::before { content: ""; position: absolute; inset: -10px -4px; }
 .ab-x:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
