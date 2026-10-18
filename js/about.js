@@ -1,7 +1,8 @@
 // About me: the bee flies to the link, lands, and morphs into a small intro panel
 // (Dynamic Island style). Closing folds the panel back into the bee, which flies off.
 // createAbout({ bee }) -> { open(from), close() }
-import { EMAIL, SOCIALS, WHYCLUB } from './content.js';
+import { EMAIL, SOCIALS, WHYCLUB, FACTS } from './content.js';
+import { feel } from './feel.js';
 
 const AVATAR = new URL('../assets/avatar.webp', import.meta.url).href;
 const MORPH = 'cubic-bezier(.32,.72,0,1)';
@@ -9,10 +10,15 @@ const OUT = 'cubic-bezier(.23,1,.32,1)';
 
 const CSS = `
 .ab { position: fixed; z-index: 70; width: min(440px, calc(100vw - 24px)); padding: 20px 22px 18px; border-radius: 28px; color: #1f1d1b;
-  background: rgba(255,255,255,.84); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  background: rgba(255,255,255,.96);
   box-shadow: 0 0 0 1px rgba(29,27,26,.08), inset 0 1px 0 rgba(255,255,255,.9), 0 24px 50px -20px rgba(20,20,30,.4), 0 6px 18px -10px rgba(20,20,30,.25);
-  font: 400 14px/1.5 -apple-system, system-ui, sans-serif; will-change: clip-path; }
+  font: 400 14px/1.5 -apple-system, system-ui, sans-serif; }
+/* frosted glass only where there's GPU to spare; on phones the veil already does the job */
+@media (hover: hover) and (pointer: fine) { .ab { background: rgba(255,255,255,.86); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4); } }
 .ab:focus { outline: none; }
+/* while the card is open the bee sits on its corner, above the veil and the card */
+.bee.front { z-index: 72; }
+.bee.front .say { font-size: 13px; padding: 5px 10px; }
 /* soft veil over the garden so the panel reads on its own, not on top of the wordmark */
 .ab-veil { position: fixed; inset: 0; z-index: 69; background: rgba(255,255,255,.62); opacity: 0; pointer-events: none; transition: opacity .32s cubic-bezier(.23,1,.32,1); }
 .ab-veil.on { opacity: 1; pointer-events: auto; }
@@ -110,31 +116,57 @@ export function createAbout({ bee } = {}) {
     const r = opener.getBoundingClientRect();
     const lx = Math.max(p.left + 30, Math.min(p.left + p.w - 30, r.left + r.width / 2));
     const ly = p.below ? p.top + 22 : p.top + p.h - 12;
-    if (bee && !reduced) await Promise.race([bee.flyTo(lx + scrollX, ly + scrollY), new Promise(res => setTimeout(res, 1600))]);
-    el.style.visibility = '';
+    // the tap answers at once: the veil comes up while the bee zips over. it gets a moment, not a wait;
+    // if it's still on its way, the panel grows from where it was headed
     veil.classList.add('on');
+    let landed = false;
+    if (bee && !reduced) await Promise.race([bee.flyTo(lx + scrollX, ly + scrollY).then(() => { landed = true; }), new Promise(res => setTimeout(res, 380))]);
+    el.style.visibility = '';
     stop();
+    // the content is visible by default; the entrance only animates it from hidden, so nothing can leave it blank
+    kids.forEach(k => k.style.opacity = 1);
     if (reduced || !bee) {
       anim = [el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: OUT })];
-      kids.forEach(k => k.style.opacity = 1);
     } else {
-      const b = bee.rect();
+      const b = landed ? bee.rect() : { left: lx - 13, top: ly - 13, right: lx + 13, bottom: ly + 13 };
       bee.el.style.opacity = 0;
       const from = crop(p, b, 13);
       const to = `inset(0px 0px 0px 0px round 28px)`;
-      anim.push(el.animate([{ clipPath: from }, { clipPath: to }], { duration: 540, easing: MORPH }));
-      anim.push(skin.animate([{ opacity: 1 }, { opacity: .9, offset: .15 }, { opacity: 0 }], { duration: 340, easing: OUT }));
+      anim.push(el.animate([{ clipPath: from }, { clipPath: to }], { duration: 420, easing: MORPH }));
+      anim.push(skin.animate([{ opacity: 1 }, { opacity: .9, offset: .12 }, { opacity: 0 }], { duration: 260, easing: OUT }));
+      // the words ride in with the morph rather than after it
       kids.forEach((k, i) => anim.push(k.animate(
-        [{ opacity: 0, transform: 'translateY(6px)', filter: 'blur(4px)' }, { opacity: 1, transform: 'none', filter: 'none' }],
-        { duration: 360, delay: 200 + i * 50, easing: OUT, fill: 'both' })));
+        [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 260, delay: 70 + i * 30, easing: OUT, fill: 'backwards' })));
     }
     el.focus({ preventScroll: true });
     busy = false;
+    if (bee) setTimeout(() => { if (isOpen && !busy) perch(); }, reduced ? 0 : 380);
   }
+
+  // ---- the bee pops back out, sits on the card's top corner and tells you things about him -----
+  let factT = 0, factI = 0;
+  function perch() {
+    const c = el.getBoundingClientRect();
+    bee.el.style.opacity = '';
+    bee.el.classList.add('front');
+    bee.flyTo(c.right - 34 + scrollX, c.top + 1 + scrollY).then(() => { if (isOpen) fact(); });
+  }
+  function fact() {
+    clearTimeout(factT);
+    if (!isOpen || factI >= FACTS.length) return;
+    const line = FACTS[factI++];
+    bee.talk(line, 3000);
+    // read time, then the next one; tapping the bee skips ahead
+    factT = setTimeout(fact, 3400);
+  }
+  bee?.el.addEventListener('click', () => { if (isOpen && !busy) { jig(); feel.sparkle(bee.rect().left); fact(); } });
+  const jig = () => { bee.el.classList.remove('hit'); requestAnimationFrame(() => bee.el.classList.add('hit')); };
 
   async function close(next) {
     if (!isOpen || busy) return;
     busy = true;
+    clearTimeout(factT); factI = 0;
     const p = { left: el.offsetLeft, top: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight };
     veil.classList.remove('on');
     stop();
@@ -143,9 +175,9 @@ export function createAbout({ bee } = {}) {
     } else {
       const b = bee.rect();
       const fold = [
-        el.animate([{ clipPath: 'inset(0px 0px 0px 0px round 28px)' }, { clipPath: crop(p, b, 13) }], { duration: 320, easing: OUT, fill: 'forwards' }),
+        el.animate([{ clipPath: 'inset(0px 0px 0px 0px round 28px)' }, { clipPath: crop(p, b, 13) }], { duration: 280, easing: MORPH, fill: 'forwards' }),
         skin.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: OUT, fill: 'forwards' }),
-        ...kids.map(k => k.animate([{ opacity: 1 }, { opacity: 0, filter: 'blur(3px)' }], { duration: 140, easing: OUT, fill: 'forwards' })),
+        ...kids.map(k => k.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: OUT, fill: 'forwards' })),
       ];
       await fold[0].finished;
       bee.el.style.opacity = '';
@@ -153,6 +185,7 @@ export function createAbout({ bee } = {}) {
     }
     el.hidden = true;
     kids.forEach(k => k.style.opacity = '');
+    bee?.el.classList.remove('front');
     bee?.release(next === 'work' ? 'this way!' : 'bye!');
     isOpen = false; busy = false;
     if (next !== 'work') opener?.focus?.({ preventScroll: true });
@@ -164,7 +197,7 @@ export function createAbout({ bee } = {}) {
     document.getElementById('work')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
   });
   addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) close(); });
-  addEventListener('pointerdown', e => { if (isOpen && !busy && !el.contains(e.target) && !opener?.contains(e.target)) close(); }, true);
+  addEventListener('pointerdown', e => { if (isOpen && !busy && !el.contains(e.target) && !opener?.contains(e.target) && !bee?.el.contains(e.target)) close(); }, true);
   addEventListener('scroll', () => { if (isOpen && !busy && scrollY > innerHeight * .4) close(); }, { passive: true });
 
   return { open, close, get isOpen() { return isOpen; } };
