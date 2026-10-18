@@ -224,7 +224,7 @@ export function createMochi() {
 
   // ---- tapping her ---------------------------------------------------------------------------
   function poke() {
-    feel.tap();
+    feel.mew();
     const now = Date.now();
     taps = taps.filter(t => now - t < 1600); taps.push(now);
     if (open && cur?.action) { const go = cur.action; fold(); go(); return; }

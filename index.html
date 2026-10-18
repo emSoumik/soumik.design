@@ -332,8 +332,8 @@
   const snd = document.getElementById('snd');
   const paintSnd = () => { snd.setAttribute('aria-pressed', String(!feel.muted)); snd.setAttribute('aria-label', feel.muted ? 'Sound off' : 'Sound on'); };
   paintSnd(); feel.onMute(paintSnd);
-  snd.addEventListener('click', () => { feel.muted = !feel.muted; feel.tap(); });
-  document.addEventListener('click', e => { if (e.target.closest('a, button') && !e.target.closest('.mo, #snd')) feel.tap(); }, true);
+  snd.addEventListener('click', () => { feel.muted = !feel.muted; if (!feel.muted) feel.hello(); });
+  document.addEventListener('click', e => { if (e.target.closest('a, button') && !e.target.closest('.mo, #snd, #clear')) feel.tap(); }, true);
 
   // ---- garden + bee. pixel flowers by default; ?garden=ink brings back the watercolour
   const canvas = document.getElementById('garden');
@@ -357,7 +357,8 @@
           n: mob ? 7 : 12,
         }),
         onStitch: () => feel.stitch(),
-        onBloom: () => feel.plant(1),
+        onBloom: f => feel.plant(1, f.x),
+        onSparkle: (ms, x) => setTimeout(() => feel.sparkle(x), ms),
         onGrown: () => grown(),
       });
     }
@@ -411,6 +412,7 @@
     clearBtn.classList.remove('dig'); void clearBtn.offsetWidth; clearBtn.classList.add('dig');
     clearTimeout(inviteT);
     flies.scatter();
+    feel.clear();
     bee.talk(any(['all gone!', 'oh! fresh soil', 'bzz… where’d they go?', 'again? yes!']), 1800);
     await garden.clear();
     sinceClear = 0;

@@ -1,7 +1,7 @@
 // Pixel garden: cross-stitch flowers on white, stitched in one cell at a time, with a little grain.
 // Canvas 2D. Animates in stepped frames (like pixel art should), and stops entirely when idle.
 //
-//   const garden = createGarden(canvas, { initial: 'auto' | 0, field(w, h, mob), onStitch, onBloom, onChange })
+//   const garden = createGarden(canvas, { initial: 'auto' | 0, field(w, h, mob), onStitch, onBloom, onSparkle(ms, x), onChange })
 //   garden.plant(x, y)   // canvas-local CSS px; the flower's head lands there. returns { id, x, y, flowers: [{ x, y, r }] }
 //   garden.patches()     // live flowers, shaped like the watercolour garden's patches so the bee can read them
 //   garden.clear()       // every flower unstitches; resolves when the soil is bare
@@ -269,6 +269,7 @@ export function createGarden(canvas, opts = {}) {
     opts.onBloom?.(f);
     // two sparkles wink either side of it as it opens
     twinkle(f, 2, f.cells.length * f.step * .75);
+    opts.onSparkle?.(f.cells.length * f.step * .75, f.x);
     if (reduced) setTimeout(() => opts.onGrown?.());
     wake(); changed();
     return pub(f);
