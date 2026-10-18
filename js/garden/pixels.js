@@ -13,7 +13,8 @@
 
 import { FLOWERS } from './flora.js';
 
-const MAX = 64;
+// how full the garden gets before the oldest flowers start to make room
+const FULL = { phone: 18, desk: 30 };
 const STEP = 26;          // ms between stitches while a flower grows
 const SPARKS = ['#ffd23f', '#f594b8', '#4baff8', '#ff8a3d'];   // the ambient twinkles; a bloom's own sparkles take its colour
 
@@ -207,8 +208,19 @@ export function createGarden(canvas, opts = {}) {
     const f = { id: nextId++, x, y, u, gx: Math.round(x / u), gy: Math.round(y / u), ...fl, t0, step: Math.min(STEP, 900 / fl.cells.length), shown: reduced ? Infinity : 0, sway: 0 };
     f.x = f.gx * u + u / 2; f.y = f.gy * u + u / 2;
     live.push(f);
+    // the garden looks after itself: once it's full, the oldest flowers unpick, stitch by stitch in reverse,
+    // one after another and unhurried, so nobody ever has to clear it
+    const cap = cssW <= 640 ? FULL.phone : FULL.desk;
+    for (let k = 0; live.length > cap; k++) {
+      const old = live.reduce((a, b) => a.id < b.id ? a : b);
+      live.splice(live.indexOf(old), 1);
+      old.shown = old.cells.length;
+      old.dieAt = t0 + 600 + (dying.filter(d => d.dieAt > t0).length + k) * 450;
+      old.dstep = Math.min(45, 1300 / old.cells.length);
+      dying.push(old);
+    }
+    // drawn back to front, so lower plants stand in front of higher ones
     live.sort((a, b) => (a.gy + a.bottom) - (b.gy + b.bottom));
-    while (live.length > MAX) { const old = live.shift(); old.dieAt = now(); old.dstep = Math.min(STEP * .6, 700 / old.cells.length); dying.push(old); }
     if (!reduced) growing = true;
     return f;
   }

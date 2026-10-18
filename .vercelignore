@@ -1,7 +1,5 @@
-next
-prototype
-_dev
-CNAME
+_drafts
+README.md
 .DS_Store
 .env*
 .vercel

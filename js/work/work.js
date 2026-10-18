@@ -2,9 +2,9 @@
 // mountWork(section) -> { destroy() }
 // Fills <section id="work"> with an opener, WhyClub (the slideshow), Shaders (the reel) and a quiet
 // closing. Mochi (js/mochi.js) narrates from the corner; nothing here knows about her.
-import { EMAIL, SOCIALS, WHYCLUB, SHADERS } from './content.js';
+import { EMAIL, SOCIALS, WHYCLUB, SHADERS } from '../content.js';
 
-const FONT_URL = new URL('../assets/faculty-glyphic.woff2', import.meta.url).href;
+const FONT_URL = new URL('../../assets/fonts/faculty-glyphic.woff2', import.meta.url).href;
 const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap';
 const MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
 const AUTO_MS = 5000;

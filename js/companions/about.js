@@ -1,10 +1,10 @@
 // About me: the bee flies to the link, lands, and morphs into a small intro panel
 // (Dynamic Island style). Closing folds the panel back into the bee, which flies off.
 // createAbout({ bee }) -> { open(from), close() }
-import { EMAIL, SOCIALS, WHYCLUB, FACTS } from './content.js';
-import { feel } from './feel.js';
+import { EMAIL, SOCIALS, WHYCLUB, FACTS } from '../content.js';
+import { feel } from '../feel.js';
 
-const AVATAR = new URL('../assets/avatar.webp', import.meta.url).href;
+const AVATAR = new URL('../../assets/brand/avatar.webp', import.meta.url).href;
 const MORPH = 'cubic-bezier(.32,.72,0,1)';
 const OUT = 'cubic-bezier(.23,1,.32,1)';
 

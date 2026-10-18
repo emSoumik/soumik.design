@@ -1,12 +1,12 @@
 // WhyClub screen slideshow: an iOS Stories viewer married to a Safari window.
 // mountSlideshow(host, { device: 'desktop' | 'phone' | 'auto', interval, phoneManifest }) -> { setDevice(d), destroy() }
 //
-// Items (paths relative to assets/wc/, or absolute URLs):
+// Items (paths relative to assets/work/whyclub/, or absolute URLs):
 //   image: { type?: 'image', src, webp?, label, alt, tint, path? }
 //   video: { type: 'video', src (mp4), webm?, poster?, posterWebp?, duration?, label, alt, tint, path? }
-// The phone set is fetched lazily from assets/wc/phone.json (or opts.phoneManifest); SCREENS.phone is the fallback.
+// The phone set is fetched lazily from assets/work/whyclub/phone.json (or opts.phoneManifest); SCREENS.phone is the fallback.
 
-const ASSET_BASE = new URL('../assets/wc/', import.meta.url);
+const ASSET_BASE = new URL('../../assets/work/whyclub/', import.meta.url);
 const asset = n => new URL(n, ASSET_BASE).href;
 
 // tint: two colours sampled from each screenshot (hand-picked from its palette), used by the stage backdrop.

@@ -11,7 +11,7 @@
 //
 // spots() -> [{ x, y }] flower heads in host px. busy() -> [{ x, y }] places someone else (the bee) is sitting.
 import { BUTTERFLIES } from './flora.js';
-import { feel } from './feel.js';
+import { feel } from '../feel.js';
 
 export const BUTTERFLY_CSS = `
 .bfs { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }

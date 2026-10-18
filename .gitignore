@@ -1,6 +1,4 @@
-next/
-prototype/
+_drafts/
 .DS_Store
-_dev/
 .vercel
 .env*

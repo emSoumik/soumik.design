@@ -1,8 +1,22 @@
 // A little bee that drifts between flowers, perches for a few seconds, sometimes comes
 // to see what the cursor is doing, loops when you tap it, and rushes to every new patch.
 // One transformed element, so it moves on the compositor.
-import { beeSVG } from './cats.js';
-import { feel } from './feel.js';
+import { feel } from '../feel.js';
+
+// the bee, in pixels to match the garden. two wing frames swap while it flies.
+const BEE = {
+  up: ['.....ooo.ooo.', '....owwwowwwo', '.....owwwwwo.', '..K.K.oooo...'],
+  down: ['.............', '.....oo..oo..', '....owwoowwo.', '..K.Kowwwwo..'],
+  body: ['.KKKKYYKKYYK.', 'KKEKKYYKKYYKK', 'KpKKKYYKKYYKKK', '.KKKKyyKKyyK.', '..K...K..K...'],
+};
+const BEE_COL = { K: '#1d1c1b', Y: '#ffc93c', y: '#f0a51c', E: '#fff', p: '#f594b8', w: '#eef6ff', o: '#9fb6d3' };
+const beeRects = (rows, y0) => rows.flatMap((row, r) => [...row].map((k, c) => k === '.' ? '' :
+  `<rect x="${c}" y="${y0 + r}" width="1.04" height="1.04" fill="${BEE_COL[k]}"/>`)).join('');
+const beeSVG = () => `
+<svg class="bee-svg" viewBox="0 0 14 9" shape-rendering="crispEdges" aria-hidden="true">
+  <g class="wa">${beeRects(BEE.up, 0)}</g><g class="wd">${beeRects(BEE.down, 0)}</g>${beeRects(BEE.body, 4)}
+</svg>`;
+
 
 export const BEE_CSS = `
 .bee { position: absolute; left: 0; top: 0; width: 36px; height: 23px; z-index: 30; cursor: pointer;
