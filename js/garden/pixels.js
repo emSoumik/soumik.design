@@ -14,7 +14,7 @@
 import { FLOWERS } from './flora.js';
 
 // how full the garden gets before the oldest flowers start to make room
-const FULL = { phone: 18, desk: 30 };
+const FULL = { phone: 24, desk: 40 };
 const STEP = 26;          // ms between stitches while a flower grows
 const SPARKS = ['#ffd23f', '#f594b8', '#4baff8', '#ff8a3d'];   // the ambient twinkles; a bloom's own sparkles take its colour
 
@@ -208,21 +208,35 @@ export function createGarden(canvas, opts = {}) {
     const f = { id: nextId++, x, y, u, gx: Math.round(x / u), gy: Math.round(y / u), ...fl, t0, step: Math.min(STEP, 900 / fl.cells.length), shown: reduced ? Infinity : 0, sway: 0 };
     f.x = f.gx * u + u / 2; f.y = f.gy * u + u / 2;
     live.push(f);
-    // the garden looks after itself: once it's full, the oldest flowers unpick, stitch by stitch in reverse,
-    // one after another and unhurried, so nobody ever has to clear it
-    const cap = cssW <= 640 ? FULL.phone : FULL.desk;
-    for (let k = 0; live.length > cap; k++) {
-      const old = live.reduce((a, b) => a.id < b.id ? a : b);
-      live.splice(live.indexOf(old), 1);
-      old.shown = old.cells.length;
-      old.dieAt = t0 + 600 + (dying.filter(d => d.dieAt > t0).length + k) * 450;
-      old.dstep = Math.min(45, 1300 / old.cells.length);
-      dying.push(old);
-    }
+    tend();
     // drawn back to front, so lower plants stand in front of higher ones
     live.sort((a, b) => (a.gy + a.bottom) - (b.gy + b.bottom));
     if (!reduced) growing = true;
     return f;
+  }
+
+  // the garden looks after itself. once it's properly full, the oldest flower quietly unpicks, stitch by stitch
+  // in reverse over about three seconds, then a few seconds later the next oldest, until there's room again.
+  // planting doesn't knock anything out; the garden just slowly makes space on its own clock
+  let tendT = 0;
+  const cap = () => cssW <= 640 ? FULL.phone : FULL.desk;
+  function unpick(old, at = now()) {
+    live.splice(live.indexOf(old), 1);
+    old.shown = old.cells.length;
+    old.dieAt = at;
+    old.dstep = Math.min(85, 3000 / old.cells.length);
+    dying.push(old);
+  }
+  const oldest = () => live.reduce((a, b) => a.id < b.id ? a : b);
+  function tend() {
+    // someone planting very fast can't pile up forever: way past full, the oldest go straight away (still unpicking)
+    while (live.length > cap() + 14) unpick(oldest());
+    if (tendT || live.length <= cap()) return;
+    tendT = setTimeout(() => {
+      tendT = 0;
+      if (live.length > cap()) { unpick(oldest()); dirty = true; wake(); changed(); }
+      tend();
+    }, live.length > cap() + 6 ? 2200 : 4200);
   }
 
   function spark(x, y, delay = 0, life = 1, col = SPARKS[0]) {
@@ -341,6 +355,7 @@ export function createGarden(canvas, opts = {}) {
   // everything unstitches, newest stitch first, in a quick sweep across the bed; a few petals drift down
   function clear() {
     userPlanted = true;
+    clearTimeout(tendT); tendT = 0;
     timers.forEach(clearTimeout); timers = [];
     sparks.length = 0;
     const t = now(), all = live.splice(0);
@@ -500,7 +515,7 @@ export function createGarden(canvas, opts = {}) {
   requestAnimationFrame(() => canvas.classList.add('on'));
 
   function destroy() {
-    destroyed = true; cancelAnimationFrame(raf); clearTimeout(breezeT); clearTimeout(sparkT);
+    destroyed = true; cancelAnimationFrame(raf); clearTimeout(breezeT); clearTimeout(sparkT); clearTimeout(tendT);
     timers.forEach(clearTimeout); ro.disconnect(); io.disconnect();
     document.removeEventListener('visibilitychange', onVis);
   }
