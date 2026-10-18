@@ -5,7 +5,7 @@
 import { EMAIL, SOCIALS, WHYCLUB, SHADERS } from './content.js';
 
 const FONT_URL = new URL('../assets/faculty-glyphic.woff2', import.meta.url).href;
-const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap';
+const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap';
 const MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
 const AUTO_MS = 5000;
 
@@ -133,7 +133,7 @@ export function mountWork(section) {
       show = mountSlideshow(wc, { device: 'auto' });
       wc.classList.remove('is-pending');
     } catch { wc.classList.remove('is-pending'); }
-  }, { rootMargin: '100% 0px 100% 0px' });
+  }, { rootMargin: '40% 0px 40% 0px' });
 
   // ---- project 2: the reel ------------------------------------------------------------
   const rl = $('.wk-rl');
@@ -189,7 +189,7 @@ export function mountWork(section) {
     });
     sync();
   }
-  observe(rl, (on, io) => { if (on) { io?.disconnect(); mountReel(); } }, { rootMargin: '100% 0px 100% 0px' });
+  observe(rl, (on, io) => { if (on) { io?.disconnect(); mountReel(); } }, { rootMargin: '30% 0px 30% 0px' });
 
   rl.querySelector('[data-n]').addEventListener('click', () => go(1));
   rl.querySelector('[data-p]').addEventListener('click', () => go(-1));
@@ -273,6 +273,7 @@ const STYLE = `
 /* opener */
 .wk-open { display: grid; gap: clamp(18px, 2.6vw, 28px); margin-bottom: clamp(88px, 15vw, 190px); }
 .wk-label, .wk-idx { margin: 0; font: 400 11px/1 var(--wk-mono); letter-spacing: .04em; color: var(--wk-ink2); }
+.wk-label { font: 500 15px/1 var(--pixel, ${MONO}); letter-spacing: .02em; color: var(--wk-ink); }
 .wk-h2 { margin: 0; max-width: 13.5em; font: 500 clamp(34px, 5.2vw, 64px)/1.04 var(--wk-serif); letter-spacing: -.04em; text-wrap: balance; }
 .wk-h2 em, .wk-hi em { font-style: normal; color: var(--wk-ink2); }
 

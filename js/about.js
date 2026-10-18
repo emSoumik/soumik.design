@@ -3,7 +3,7 @@
 // createAbout({ bee }) -> { open(from), close() }
 import { EMAIL, SOCIALS, WHYCLUB } from './content.js';
 
-const AVATAR = new URL('../assets/avatar.png', import.meta.url).href;
+const AVATAR = new URL('../assets/avatar.webp', import.meta.url).href;
 const MORPH = 'cubic-bezier(.32,.72,0,1)';
 const OUT = 'cubic-bezier(.23,1,.32,1)';
 
@@ -21,6 +21,7 @@ const CSS = `
   background: radial-gradient(120% 140% at 50% 100%, #f6d777, #f3c64b 55%, #eab53a); }
 .ab-in > * { opacity: 0; }
 .ab-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.ab-top picture { display: contents; }
 .ab-top img { width: 52px; height: 52px; object-fit: contain; mix-blend-mode: multiply; margin: -4px -2px -4px -6px; }
 .ab-top h2 { font: 500 24px/1.1 "Instrument Sans", -apple-system, system-ui, sans-serif; letter-spacing: -.03em; color: rgba(31,29,27,.5); }
 .ab-top h2 i { font-style: normal; color: #1f1d1b; }
@@ -59,7 +60,7 @@ export function createAbout({ bee } = {}) {
   el.setAttribute('aria-labelledby', 'ab-title');
   el.innerHTML = `<div class="ab-skin" aria-hidden="true"></div>
     <div class="ab-in">
-      <div class="ab-top"><img src="${AVATAR}" alt="" onerror="this.onerror=null;this.src=this.src.replace('avatar.png','avatar-src.jpg')">
+      <div class="ab-top"><picture><source srcset="${AVATAR.replace('.webp', '.avif')}" type="image/avif"><img src="${AVATAR}" alt=""></picture>
         <h2 id="ab-title">hi, i'm <i>soumik</i>.</h2>
         <button class="ab-x" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3L3 9"/></svg></button></div>
       <p>i design websites and apps, and then i write the code that builds them. usually that's two different jobs done by two people, and the small details, like how a button feels when you tap it, get lost in between. i like doing both so they don't.</p>

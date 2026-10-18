@@ -72,9 +72,12 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="modulepreload" href="js/pixels.js">
+<link rel="modulepreload" href="js/flora.js">
+<link rel="modulepreload" href="js/feel.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wdth,wght@75..100,400..700&family=Pixelify+Sans:wght@500..600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Pixelify+Sans:wght@500..600&display=swap" rel="stylesheet">
 <style>
   @font-face { font-family: "Faculty Glyphic"; src: url(assets/faculty-glyphic.woff2) format("woff2"); font-display: swap; }
   :root {
@@ -112,6 +115,7 @@
   .me:active { transform: scale(.96); }
   .me small { display: grid; } .me small > span { grid-area: 1 / 1; transition: opacity .2s var(--ease), translate .25s var(--ease); }
   .me .me-a { opacity: 0; translate: 0 4px; color: var(--ink); }
+  .me picture, .nav .ic picture { display: contents; }
   .me img { width: 40px; height: 40px; object-fit: contain; mix-blend-mode: multiply; transition: transform .5s var(--spring); }
   .me small { color: var(--ink-2); font-size: 11px; }
   .icons { display: flex; gap: 4px; }
@@ -151,7 +155,7 @@
   .nav .ic { width: 26px; height: 26px; display: grid; place-items: center; }
   .nav .ic img { width: 26px; height: 26px; object-fit: contain; mix-blend-mode: multiply; }
   .nav .ic svg { width: 30px; height: auto; overflow: visible; }
-  .nav .ic .px-cat { width: 22px; height: 18px; image-rendering: pixelated; mix-blend-mode: normal; }
+  .nav .ic .px-cat { width: 27px; height: 23px; mix-blend-mode: normal; }
 
   .hint { position: absolute; left: 50%; top: calc(76svh + 64px); translate: -50% 0; font: 400 12px/1 var(--mono); color: var(--ink-2); white-space: nowrap;
     padding: 8px 12px; border-radius: 99px; transition: color .2s, transform .16s var(--ease); }
@@ -225,6 +229,29 @@
     @media (max-width: 640px) { .clear, .clear.on { translate: -50% 0; } }
     .load .wm-l path, .load .wm-f rect { animation: none; }
   }
+
+  /* ---- from the garden to the work: scrubbed by the scroll itself, off the main thread. no js, nothing to load */
+  .seam { --c: 7px; height: calc(var(--c) * 3); margin: calc(var(--c) * -1.5) var(--gut) 0; position: relative; z-index: 2;
+    background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 3' shape-rendering='crispEdges'><rect x='1' y='0' width='1' height='1' fill='%23e8412f'/><rect x='0' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='2' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='2' width='1' height='1' fill='%23e8412f'/><rect x='4' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='7' y='0' width='1' height='1' fill='%232447d8'/><rect x='6' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='8' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='2' width='1' height='1' fill='%232447d8'/><rect x='10' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='13' y='0' width='1' height='1' fill='%23f594b8'/><rect x='12' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='1' width='1' height='1' fill='%23e3a21a'/><rect x='14' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='2' width='1' height='1' fill='%23f594b8'/><rect x='16' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='19' y='0' width='1' height='1' fill='%23ffc93c'/><rect x='18' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='1' width='1' height='1' fill='%23e2562b'/><rect x='20' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='2' width='1' height='1' fill='%23ffc93c'/><rect x='22' y='1' width='1' height='1' fill='%231f8a3a'/></svg>") 0 0 / calc(var(--c) * 24) 100% repeat-x; image-rendering: pixelated; }
+  @media (max-width: 640px) { .seam { --c: 5px; } }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      /* the playground eases back as you leave it */
+      /* the hero clips its overflow, which makes it its own scroller; its children read the page's scroll through a named timeline */
+      .hero { view-timeline: --hero block; }
+      .hero > .ui { animation: hero-out linear both; animation-timeline: --hero; animation-range: exit 0% exit 75%; }
+      #garden { animation: garden-out linear both; animation-timeline: --hero; animation-range: exit 0% exit 100%; }
+      /* the border stitches itself in, a cell at a time, as you cross the seam */
+      .seam { animation: seam-in steps(48, end) both; animation-timeline: view(); animation-range: entry 10% cover 45%; }
+      @keyframes hero-out { to { opacity: 0; translate: 0 -6vh; scale: .97; } }
+      @keyframes garden-out { to { translate: 0 14vh; opacity: .35; } }
+      @keyframes seam-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+      @media (max-width: 640px) {
+        @keyframes hero-out { to { opacity: 0; } }
+        @keyframes garden-out { to { opacity: .4; } }
+      }
+    }
+  }
 </style>
 </head>
 <body>
@@ -234,7 +261,7 @@
     <div class="ui">
       <div class="top in" style="--d:.1s">
         <a class="me" href="#about" data-about aria-label="Soumik, design engineer. About me">
-          <img src="assets/avatar.png" alt="" width="40" height="40" onerror="this.onerror=null;this.src='assets/avatar-src.jpg'">
+          <picture><source srcset="assets/avatar.avif" type="image/avif"><img src="assets/avatar.webp" alt="" width="40" height="40"></picture>
           <span>soumik<small><span class="me-r">design engineer</span><span class="me-a" aria-hidden="true">about me →</span></small></span>
         </a>
         <div class="tr-r"><nav class="icons" aria-label="Elsewhere" id="icons"></nav>
@@ -248,14 +275,15 @@
       </div>
 
       <nav class="nav in" style="--d:.9s" aria-label="Main">
-        <button data-about><span class="ic"><img src="assets/avatar.png" alt="" onerror="this.onerror=null;this.src='assets/avatar-src.jpg'"></span><span class="arr r">→</span> About me</button>
-        <button data-work>My work <span class="arr d">↓</span><span class="ic"><img class="px-cat" src="assets/mochi/icon.png" alt="" width="22" height="18"></span></button>
+        <button data-about><span class="ic"><picture><source srcset="assets/avatar.avif" type="image/avif"><img src="assets/avatar.webp" alt="" width="26" height="26"></picture></span><span class="arr r">→</span> About me</button>
+        <button data-work>My work <span class="arr d">↓</span><span class="ic"><picture><source srcset="assets/mochi/icon.avif" type="image/avif"><img class="px-cat" src="assets/mochi/icon.webp" alt="" width="27" height="23"></picture></span></button>
       </nav>
 
       <button class="hint in" style="--d:1.6s" id="hint"><span class="swap"><span class="v">click</span> anywhere to grow a <span class="fl"><span style="--i:0">f</span><span style="--i:1">l</span><span style="--i:2">o</span><span style="--i:3">w</span><span style="--i:4">e</span><span style="--i:5">r</span></span></span></button>
       <button class="clear" id="clear" type="button" aria-label="Clear the garden" tabindex="-1"><svg viewBox="0 0 5 12" aria-hidden="true"><path fill="#6e3f12" d="M1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM1 1h1v1h-1zM3 1h1v1h-1z"/><path fill="#b8742a" d="M2 2h1v1h-1zM2 3h1v1h-1zM2 4h1v1h-1zM2 5h1v1h-1z"/><path fill="#3d4249" d="M1 6h1v1h-1zM3 6h1v1h-1zM0 7h1v1h-1zM4 7h1v1h-1zM0 8h1v1h-1zM4 8h1v1h-1zM0 9h1v1h-1zM4 9h1v1h-1zM1 10h1v1h-1zM3 10h1v1h-1zM2 11h1v1h-1z"/><path fill="#6b7280" d="M2 6h1v1h-1z"/><path fill="#e3e8ef" d="M1 7h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM1 8h1v1h-1zM1 9h1v1h-1z"/><path fill="#a7b0bd" d="M2 8h1v1h-1zM3 8h1v1h-1zM2 9h1v1h-1zM3 9h1v1h-1zM2 10h1v1h-1z"/></svg>clear garden</button>
     </div>
   </section>
+  <div class="seam" aria-hidden="true"></div>
 
   <section id="work" aria-label="My work"><noscript>
     <h2>Soumik Halder, design engineer</h2>
@@ -271,7 +299,7 @@
 <footer class="foot">
   <span>© 2026 Soumik Halder</span>
   <nav aria-label="Socials" id="socials"></nav>
-  <span>flowers painted in webgl</span>
+  <span>flowers stitched in pixels</span>
 </footer>
 
 <script type="module">
@@ -280,6 +308,7 @@
   import { createBee, BEE_CSS } from './js/bee.js';
   import { createButterflies, BUTTERFLY_CSS } from './js/butterflies.js';
   import { createMochi } from './js/mochi.js';
+  import { createGarden as pixelGarden } from './js/pixels.js';
   import { createAbout } from './js/about.js';
   import { feel } from './js/feel.js';
 
@@ -319,14 +348,13 @@
       garden = createGarden(canvas, { initial: 'auto',
         bed: (w, h, mob) => mob ? { cx: w / 2, cy: h * .52, bw: Math.min(250, w - 120), bh: 160 } : { cx: w / 2, cy: h * .6, bw: Math.min(620, w - 80), bh: 150 } });
     } else {
-      const { createGarden } = await import('./js/pixels.js');
-      garden = createGarden(canvas, {
+      garden = pixelGarden(canvas, {
         initial: 'auto',
         // scattered around the name like a sampler, kept off the type and the links
         field: (w, h, mob) => ({
           rect: mob ? [20, h * .12, w - 20, h * .66] : [40, h * .1, w - 40, h * .72],
           avoid: rectsOf(KEEP, mob ? 8 : 16),
-          n: mob ? 11 : 18,
+          n: mob ? 7 : 12,
         }),
         onStitch: () => feel.stitch(),
         onBloom: () => feel.plant(1),
@@ -338,13 +366,15 @@
   const spots = () => garden.patches().flatMap(p => p.flowers);
   const bee = createBee({ spots, start: 2.4 });
   // butterflies keep off wherever the bee is sitting (read only when one picks a flower)
-  const flies = createButterflies({ host: document.querySelector('.hero'), spots, count: innerWidth <= 640 ? 2 : 3,
+  // up to five on a desktop; a phone has room for two, with the bee already doing the rounds
+  const FLY_MAX = innerWidth <= 640 ? 2 : 5;
+  const flies = createButterflies({ host: document.querySelector('.hero'), spots, count: FLY_MAX,
     busy: () => { const r = bee.rect(); return [{ x: r.left + r.width / 2 + scrollX, y: r.top + r.height * .82 + scrollY }]; } });
   const about = createAbout({ bee });
   const mochi = createMochi();
 
   const hint = document.getElementById('hint'), swap = hint.querySelector('.swap');
-  const AFTER = ['lovely. the bee noticed.', 'keep going, it suits you.', 'a little garden of your own.', 'the bee is very busy now.'];
+  const AFTER = ['your first. it suits you.', 'the bee wants a word with you.', 'three. now it’s a garden.', 'the bee is fully booked.', 'the butterflies heard about this.', 'ok, this is a meadow now.'];
   let planted = 0, sinceClear = 0, hintT, keep = null;
   function nudgeHint() {
     if (planted > AFTER.length + 2) return;
@@ -363,7 +393,7 @@
 
   // ---- butterflies: one turns up once the garden has grown, more join as it fills in
   let inviteT;
-  const want = () => garden.patches().length < 3 ? 0 : 1 + (sinceClear >= 2) + (sinceClear >= 5);
+  const want = () => garden.patches().length < 3 ? 0 : Math.min(FLY_MAX, 1 + Math.floor(garden.patches().length / 5));
   function invite(ms) { clearTimeout(inviteT); inviteT = setTimeout(() => { if (flies.count < want()) flies.add(); }, reduced ? 0 : ms); }
   function grown() { showClear(); invite(1500); }
 
@@ -432,7 +462,11 @@
       mochi.watch(document.querySelector('.wk-end'), 'say hi. he reads every email.', { threshold: .6 });
     } catch (e) { console.warn('work unavailable', e); }
   };
-  new IntersectionObserver((es, io) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); mountWork(); } }, { rootMargin: '100% 0px' }).observe(work);
+  // nothing below the fold is fetched up front: the work mounts when you head towards it, or once the garden
+  // has grown and the phone has a quiet moment. its videos and webgl wait until they're nearly on screen
+  new IntersectionObserver((es, io) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); mountWork(); } }, { rootMargin: '0px' }).observe(work);
+  const whenIdle = f => 'requestIdleCallback' in window ? requestIdleCallback(f, { timeout: 3000 }) : setTimeout(f, 600);
+  addEventListener('load', () => setTimeout(() => whenIdle(mountWork), 5200), { once: true });
 
   // ---- about: the bee flies over and becomes the panel; mochi steps aside
   document.querySelectorAll('[data-about]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); if (about.isOpen) about.close(); else { mochi.hush(); about.open(b); } }));
