@@ -4,9 +4,14 @@
 //   const garden = createGarden(canvas, { initial: 'auto' | 0, field(w, h, mob), onStitch, onBloom, onChange })
 //   garden.plant(x, y)   // canvas-local CSS px; the flower's head lands there. returns { id, x, y, flowers: [{ x, y, r }] }
 //   garden.patches()     // live flowers, shaped like the watercolour garden's patches so the bee can read them
+//   garden.clear()       // every flower unstitches; resolves when the soil is bare
 //   garden.destroy()
 //
+// opts.onGrown() fires each time everything has finished stitching in.
+//
 // field(w, h, mob) -> { rect: [x0, y0, x1, y1], avoid: [[x0, y0, x1, y1], ...], n } places the opening field.
+
+import { FLOWERS } from './flora.js';
 
 const MAX = 64;
 const STEP = 26;          // ms between stitches while a flower grows
@@ -18,7 +23,7 @@ const HEADS = {
   cup: ['.P.P.', 'PPpPP', 'PCcCP', 'pPCPp', '.pPp.'],
   clover: ['.PP.PP.', 'PPPpPPP', 'PPpCpPP', '.pCcCp.', 'PPpCpPP', 'PPPpPPP', '.PP.PP.'],
   sun: ['...P.P...', '..PPPPP..', '.PPCcCPP.', 'PPCcCcCPP', '.PcCcCcP.', 'PPCcCcCPP', '.PPCcCPP.', '..PPPPP..', '...P.P...'],
-  daisy: ['.P.', 'PCP', '.P.'],
+  daisy3: ['.P.', 'PCP', '.P.'],
   bell: ['.PP.', 'PpPP', 'PPpP', 'p..p'],
   star: ['..P..', 'P.p.P', '.pCp.', 'P.p.P', '..P..'],
 };
@@ -31,6 +36,12 @@ const PALETTES = [
   { w: 12, P: '#f594b8', p: '#e0628f', C: '#ffd04a', c: '#f0a51c' },   // pink
 ];
 const STEM = { G: '#1f8a3a', g: '#16702d', L: '#35a64b' };
+// what grows: moodboard sprites carry ~60% of the weight, the stitched kinds the rest
+const KINDS = [
+  { k: 'lily', w: 9 }, { k: 'bluelily', w: 9 }, { k: 'daisy', w: 9 }, { k: 'bud', w: 8 }, { k: 'lavender', w: 9 },
+  { k: 'forget', w: 6 }, { k: 'forgetpale', w: 4 }, { k: 'forgetbright', w: 6 },
+  { k: 'tulip', w: 7 }, { k: 'cup', w: 8 }, { k: 'clover', w: 6 }, { k: 'sun', w: 4 }, { k: 'daisy3', w: 5 }, { k: 'bell', w: 5 }, { k: 'star', w: 5 },
+];
 // sparkles twinkle through these frames
 const SPARK = [['X'], ['.X.', 'XXX', '.X.'], ['..X..', '..X..', 'XX.XX', '..X..', '..X..'], ['.X.', 'XXX', '.X.'], ['X']];
 
@@ -44,19 +55,56 @@ function mulberry(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+const hue = hex => { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  if (mx - mn < 24) return -1;
+  const h = mx === r ? (g - b) / (mx - mn) : mx === g ? 2 + (b - r) / (mx - mn) : 4 + (r - g) / (mx - mn);
+  return (h * 60 + 360) % 360; };
 const pickW = (rnd, list) => { let s = list.reduce((a, b) => a + b.w, 0) * rnd(); for (const it of list) if ((s -= it.w) < 0) return it; return list[0]; };
+
+// a moodboard sprite, whole plant and all: leaves stitch up from the ground, then the bloom opens from its centre.
+// worked out once per sprite and facing; every planting shares the cells
+const SPRITES = {};
+function buildSprite(kind, flip) {
+  const key = kind + (flip ? '<' : '>');
+  if (SPRITES[key]) return SPRITES[key];
+  const s = FLOWERS[kind], W = s.rows[0].length, [hx, hy] = s.head;
+  const at = (x, y) => { const ch = s.rows[y]?.[x]; return ch && ch !== '.' ? parseInt(ch, 16) : -1; };
+  // the outline is the colour that hugs the silhouette most; it joins whichever part it outlines
+  const edge = s.pal.map(() => 0);
+  s.rows.forEach((row, y) => [...row].forEach((ch, x) => { const i = at(x, y); if (i >= 0 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => at(x + a, y + b) < 0)) edge[i]++; }));
+  const ol = edge.indexOf(Math.max(...edge));
+  const leafy = s.pal.map(c => { const h = hue(c); return h > 68 && h < 170; });
+  const cells = [];
+  s.rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    const i = at(x, y);
+    if (i < 0) return;
+    let leaf = leafy[i];
+    if (i === ol) {
+      let g = 0, b = 0;
+      for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) { const j = at(x + a, y + c); if (j >= 0 && j !== ol) leafy[j] ? g++ : b++; }
+      leaf = g > b || (g === b && y > hy + 3);
+    }
+    const cx = (flip ? W - 1 - x : x) - (flip ? W - 1 - hx : hx), cy = y - hy;
+    cells.push(leaf ? { x: cx, y: cy, col: s.pal[i], o: 0, d: -cy + Math.abs(cx) * .3 } : { x: cx, y: cy, col: s.pal[i], o: 2, d: Math.hypot(cx, cy * 1.1) });
+  }));
+  cells.sort((a, b) => a.o - b.o || a.d - b.d);
+  const bloom = cells.filter(c => c.o === 2);
+  return (SPRITES[key] = { kind, cells, sprite: true, r: Math.min(4, Math.max(2, ...bloom.map(c => Math.hypot(c.x, c.y))) * .7),
+    bottom: Math.max(...cells.map(c => c.y)), top: Math.min(...cells.map(c => c.y)),
+    box: [Math.min(...cells.map(c => c.x)), Math.min(...cells.map(c => c.y)), Math.max(...cells.map(c => c.x)), Math.max(...cells.map(c => c.y))] });
+}
 
 // build one flower: every cell in grid units relative to the head's centre, sorted in stitch order
 function buildFlower(rnd, kind) {
-  const names = Object.keys(HEADS);
-  kind = kind || pickW(rnd, [{ k: 'tulip', w: 20 }, { k: 'cup', w: 20 }, { k: 'clover', w: 12 }, { k: 'sun', w: 6 }, { k: 'daisy', w: 14 }, { k: 'bell', w: 12 }, { k: 'star', w: 10 }].map(o => ({ ...o }))).k;
-  if (!names.includes(kind)) kind = 'tulip';
+  kind = kind || pickW(rnd, KINDS).k;
+  if (FLOWERS[kind]) return buildSprite(kind, rnd() < .5);
+  if (!HEADS[kind]) kind = 'tulip';
   const head = HEADS[kind], pal = pickW(rnd, PALETTES);
   const hw = head[0].length, hh = head.length, ox = Math.floor(hw / 2), oy = Math.floor(hh / 2);
   const cells = [];
   head.forEach((row, r) => [...row].forEach((k, c) => { if (k !== '.') cells.push({ x: c - ox, y: r - oy, col: pal[k], o: 2, d: Math.hypot(c - ox, (r - oy) * 1.1) }); }));
   // stars and daisies sometimes float on their own, like stitches on a sampler
-  const stemless = (kind === 'star' || kind === 'daisy') && rnd() < .45;
+  const stemless = (kind === 'star' || kind === 'daisy3') && rnd() < .45;
   if (!stemless) {
     const len = kind === 'sun' || kind === 'clover' ? 4 + Math.floor(rnd() * 6) : 3 + Math.floor(rnd() * 6);
     const top = hh - oy;
@@ -71,10 +119,17 @@ function buildFlower(rnd, kind) {
         side = -side;
       }
     }
+    // now and then a little tuft of grass where the stem meets the ground
+    if (rnd() < .45) {
+      const y = top + len - 1;
+      [[-1, 'L'], [1, 'G'], [-2, 'g'], [2, 'L']].forEach(([x, k], j) => { if (j < 2 || rnd() < .6) cells.push({ x, y, col: STEM[k], o: 0, d: -y - .5 + j * .1 }); });
+      cells.push({ x: rnd() < .5 ? -1 : 1, y: y - 1, col: STEM.L, o: 0, d: -y + .7 });
+    }
   }
-  cells.sort((a, b) => a.o - b.o || (a.o === 2 ? a.d - b.d : a.d - b.d));
+  cells.sort((a, b) => a.o - b.o || a.d - b.d);
   const bottom = Math.max(...cells.map(c => c.y));
-  return { kind, cells, r: Math.max(hw, hh) / 2, bottom, top: -oy };
+  const xs = cells.map(c => c.x);
+  return { kind, cells, r: Math.max(hw, hh) / 2, bottom, top: -oy, box: [Math.min(...xs), -oy, Math.max(...xs), bottom] };
 }
 
 function noiseTile(size) {
@@ -93,11 +148,11 @@ function noiseTile(size) {
 export function createGarden(canvas, opts = {}) {
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const ctx = canvas.getContext('2d');
-  const live = [], dying = [], sparks = [];
+  const live = [], dying = [], sparks = [], petals = [];
   let nextId = 1, userPlanted = false, fieldPlanted = false, fieldW = 0, fieldH = 0, timers = [];
   let cssW = 0, cssH = 0, dpr = 1, cell = 6, grain = null, grainPat = null;
-  let raf = 0, visible = true, destroyed = false, breeze = null, breezeT = 0, sparkT = 0, dirty = true;
-  const api = { onChange: opts.onChange, plant, patches: () => live.map(pub), destroy, _stats: { frames: 0 } };
+  let raf = 0, visible = true, destroyed = false, breeze = null, breezeT = 0, sparkT = 0, dirty = true, growing = false;
+  const api = { onChange: opts.onChange, plant, patches: () => live.map(pub), clear, destroy, _stats: { frames: 0 } };
   const pub = f => ({ id: f.id, x: f.x, y: f.y, flowers: [{ x: f.x, y: f.y, r: f.r * cell + 2 }] });
   const changed = () => api.onChange?.(api.patches());
   const now = () => performance.now();
@@ -116,12 +171,14 @@ export function createGarden(canvas, opts = {}) {
   }
 
   function add(x, y, rnd, t0, kind) {
-    const fl = buildFlower(rnd, kind);
-    const f = { id: nextId++, x, y, gx: Math.round(x / cell), gy: Math.round(y / cell), ...fl, t0, shown: reduced ? Infinity : 0, sway: 0 };
+    const fl = typeof kind === 'object' ? kind : buildFlower(rnd, kind);
+    // big sprites stitch several cells a step, so nothing takes much longer than a second and a half to grow
+    const f = { id: nextId++, x, y, gx: Math.round(x / cell), gy: Math.round(y / cell), ...fl, t0, step: Math.min(STEP, 1500 / fl.cells.length), shown: reduced ? Infinity : 0, sway: 0 };
     f.x = f.gx * cell + cell / 2; f.y = f.gy * cell + cell / 2;
     live.push(f);
     live.sort((a, b) => (a.gy + a.bottom) - (b.gy + b.bottom));
-    while (live.length > MAX) { const old = live.shift(); old.dieAt = now(); dying.push(old); }
+    while (live.length > MAX) { const old = live.shift(); old.dieAt = now(); old.dstep = Math.min(STEP * .6, 700 / old.cells.length); dying.push(old); }
+    if (!reduced) growing = true;
     return f;
   }
 
@@ -134,14 +191,15 @@ export function createGarden(canvas, opts = {}) {
     userPlanted = true;
     timers.forEach(clearTimeout); timers = [];
     // a tap deserves one of the showier ones
-    const kind = pickW(Math.random, [{ k: 'tulip', w: 22 }, { k: 'cup', w: 22 }, { k: 'clover', w: 20 }, { k: 'sun', w: 14 }, { k: 'bell', w: 12 }, { k: 'star', w: 10 }]).k;
+    const kind = pickW(Math.random, KINDS.filter(o => o.k !== 'daisy3')).k;
     const f = add(x, y, Math.random, now(), kind);
     opts.onBloom?.(f);
     // a couple of sparkles fly off as it lands
     for (let i = 0; i < 2 + (Math.random() < .5); i++) {
       const a = Math.random() * Math.PI * 2, d = (f.r + 3 + Math.random() * 5) * cell;
-      spark(x + Math.cos(a) * d, y + Math.sin(a) * d * .8, f.cells.length * STEP * .6 + i * 120, 1);
+      spark(x + Math.cos(a) * d, y + Math.sin(a) * d * .8, f.cells.length * f.step * .6 + i * 120, 1);
     }
+    if (reduced) setTimeout(() => opts.onGrown?.());
     wake(); changed();
     return pub(f);
   }
@@ -154,27 +212,72 @@ export function createGarden(canvas, opts = {}) {
     const [x0, y0, x1, y1] = o.rect || [24, cssH * .5, cssW - 24, cssH * .9];
     const avoid = o.avoid || [];
     const n = o.n ?? (mob ? 14 : 22);
-    const rnd = mulberry(mob ? 7 : 11);
+    const rnd = mulberry(mob ? 7 : 11), frnd = mulberry(3);
     const pts = [];
     const minD = Math.sqrt(((x1 - x0) * (y1 - y0)) / n) * .62;
-    for (let tries = 0; pts.length < n && tries < n * 60; tries++) {
+    // dealt from a shuffled deck, so the bed stays varied: every moodboard flower turns up before any repeats much
+    const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(frnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const hand = [...shuffle(Object.keys(FLOWERS)), ...shuffle(KINDS.flatMap(o => Array(Math.max(1, Math.round(o.w / 3))).fill(o.k)))];
+    let fl = null, miss = 0, dealt = 0;
+    const boxes = [];
+    for (let tries = 0; pts.length < n && tries < n * 80; tries++) {
+      // a plant that won't fit anywhere makes way for the next card
+      if (!fl || ++miss > 50) { fl = buildFlower(frnd, hand[dealt++ % hand.length]); miss = 0; }
       const x = x0 + rnd() * (x1 - x0), y = y0 + rnd() * (y1 - y0);
-      if (avoid.some(([a, b, c, d]) => x > a - 18 && x < c + 18 && y > b - 26 && y < d + 70)) continue;
-      if (pts.some(p => Math.hypot(p.x - x, (p.y - y) * 1.3) < minD)) continue;
-      pts.push({ x, y });
+      // the whole plant keeps off the type, not just its head
+      const [bx0, by0, bx1, by1] = fl.box, a0 = x + bx0 * cell - 6, b0 = y + by0 * cell - 6, a1 = x + (bx1 + 1) * cell + 6, b1 = y + (by1 + 1) * cell;
+      if (a0 < 4 || a1 > cssW - 4 || b1 > cssH - 4) continue;
+      if (avoid.some(([a, b, c, d]) => a1 > a && a0 < c && b1 > b && b0 < d)) continue;
+      if (pts.some(p => Math.hypot(p.x - x, (p.y - y) * 1.3) < (p.fl.kind === fl.kind ? minD * 2.4 : minD))) continue;
+      // plants may brush leaves, but never stand in front of each other
+      const area = (a1 - a0) * (b1 - b0);
+      if (boxes.some(([c0, d0, c1, d1]) => Math.max(0, Math.min(a1, c1) - Math.max(a0, c0)) * Math.max(0, Math.min(b1, d1) - Math.max(b0, d0)) > .12 * Math.min(area, (c1 - c0) * (d1 - d0)))) continue;
+      boxes.push([a0, b0, a1, b1]);
+      pts.push({ x, y, fl }); fl = null; miss = 0;
     }
     const start = now();
     // grow from the middle outwards, a few at a time
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
     pts.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
-    const frnd = mulberry(3);
-    pts.forEach((p, i) => add(p.x, p.y, frnd, start + (reduced ? 0 : 300 + i * 170)));
+    pts.forEach((p, i) => add(p.x, p.y, frnd, start + (reduced ? 0 : 300 + i * 170), p.fl));
     const srnd = mulberry(5);
     for (let i = 0; i < (mob ? 6 : 10); i++) {
       const x = x0 + srnd() * (x1 - x0), y = y0 - 40 + srnd() * (y1 - y0 + 40);
       if (!avoid.some(([a, b, c, d]) => x > a && x < c && y > b && y < d)) spark(x, y, 900 + srnd() * 3000, 0);
     }
+    if (reduced) setTimeout(() => opts.onGrown?.());
     changed();
+  }
+
+  // everything unstitches, newest stitch first, in a quick sweep across the bed; a few petals drift down
+  function clear() {
+    userPlanted = true;
+    timers.forEach(clearTimeout); timers = [];
+    sparks.length = 0;
+    const t = now(), all = live.splice(0);
+    if (reduced || !all.length) {
+      dying.length = 0; petals.length = 0; dirty = true; wake(); changed();
+      return Promise.resolve();
+    }
+    let end = t;
+    for (const f of all) {
+      f.shown = f.cells.length;
+      f.dieAt = t + (f.x / (cssW || 1)) * 260 + Math.random() * 90;
+      f.dstep = 420 / f.cells.length;
+      end = Math.max(end, f.dieAt + 420);
+      dying.push(f);
+      // petals: a couple of bloom cells come loose as they unpick
+      const bloom = f.cells.filter(c => c.o === 2);
+      for (let i = 0; i < 1 + (Math.random() < .5); i++) {
+        const k = Math.floor(Math.random() * bloom.length), c = bloom[k];
+        if (!c) break;
+        const idx = f.cells.indexOf(c);
+        petals.push({ gx: f.gx + c.x, gy: f.gy + c.y, col: c.col, t0: f.dieAt + (f.cells.length - idx) * f.dstep, life: 520 + Math.random() * 380, side: Math.random() < .5 ? -1 : 1 });
+      }
+    }
+    end = Math.max(end, ...petals.map(p => p.t0 + p.life));
+    dirty = true; wake(); changed();
+    return new Promise(res => setTimeout(res, end - t + 30));
   }
 
   // ---- drawing -------------------------------------------------------------------------
@@ -189,22 +292,32 @@ export function createGarden(canvas, opts = {}) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let busy = false;
     const paint = (f, k) => {
-      const n = Math.min(f.cells.length, k);
+      const n = Math.min(f.cells.length, k), fresh = Math.max(2, Math.round(24 / (f.step || STEP)));
       for (let i = 0; i < n; i++) {
         const c = f.cells[i];
         const dx = c.o === 2 || (c.o === 0 && c.y <= f.top + 1) ? f.sway : 0;
         // the newest stitch flashes paler for a step
-        rect(f.gx + c.x + dx, f.gy + c.y, i >= n - 2 && n < f.cells.length ? '#fff3c2' : c.col);
+        rect(f.gx + c.x + dx, f.gy + c.y, i >= n - fresh && n < f.cells.length ? '#fff3c2' : c.col);
       }
     };
+    const ds = f => f.dstep || STEP * .6;
     for (const f of dying) {
-      const k = f.cells.length - Math.floor((t - f.dieAt) / (STEP * .6));
+      const k = f.cells.length - Math.max(0, Math.floor((t - f.dieAt) / ds(f)));
       if (k > 0) { paint(f, k); busy = true; }
     }
-    for (let i = dying.length - 1; i >= 0; i--) if ((t - dying[i].dieAt) / (STEP * .6) > dying[i].cells.length) dying.splice(i, 1);
+    for (let i = dying.length - 1; i >= 0; i--) if ((t - dying[i].dieAt) / ds(dying[i]) > dying[i].cells.length) dying.splice(i, 1);
+    // loose petals fall a stitch at a time, swaying side to side
+    for (let i = petals.length - 1; i >= 0; i--) {
+      const p = petals[i], e = t - p.t0;
+      if (e < 0) { busy = true; continue; }
+      if (e > p.life) { petals.splice(i, 1); continue; }
+      const fall = Math.floor(e / 62);
+      rect(p.gx + (Math.floor(fall / 3) % 2 ? p.side : 0), p.gy + fall, p.col);
+      busy = true;
+    }
     for (const f of live) {
       if (t < f.t0) { busy = true; continue; }
-      const k = reduced ? f.cells.length : Math.floor((t - f.t0) / STEP) + 1;
+      const k = reduced ? f.cells.length : Math.floor((t - f.t0) / f.step) + 1;
       if (k > f.shown && f.shown < f.cells.length) { opts.onStitch?.(f); f.shown = k; }
       if (k < f.cells.length) busy = true;
       paint(f, k);
@@ -256,14 +369,17 @@ export function createGarden(canvas, opts = {}) {
     raf = 0;
     if (destroyed || !visible || document.hidden) return;
     const b = stepBreeze(t);
-    const due = sparks.some(s => t >= s.t0) || live.some(f => f.shown < f.cells.length) || dying.length;
+    const due = sparks.some(s => t >= s.t0) || live.some(f => f.shown < f.cells.length) || dying.length || petals.length;
     if (dirty || due || b) {
       // stitches land at the step rate; nothing needs 60fps here
       if (t - lastStep >= 24 || dirty) { lastStep = t; dirty = false; draw(t); }
     }
     const next = sparks.reduce((m, s) => Math.min(m, s.t0), Infinity);
-    const growing = live.some(f => f.shown < f.cells.length) || dying.length || b || sparks.some(s => t >= s.t0);
-    if (growing) raf = requestAnimationFrame(loop);
+    const sprouting = live.some(f => f.shown < f.cells.length);
+    if (growing && !sprouting && live.length) opts.onGrown?.();
+    growing = sprouting;
+    const busy = sprouting || dying.length || petals.length || b || sparks.some(s => t >= s.t0);
+    if (busy) raf = requestAnimationFrame(loop);
     else {
       draw(t);
       if (next < Infinity) { clearTimeout(sparkT); sparkT = setTimeout(wake, Math.max(16, next - now())); }

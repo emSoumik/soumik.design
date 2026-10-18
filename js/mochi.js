@@ -1,15 +1,16 @@
-// Mochi: a real kitten (cut out of the "go study" meme) who sits on the bottom edge of the page,
-// bottom-right, and rides along. She peeks up once, blinks, breathes, and changes mood with what's
-// happening: planting, poking the bee, flicking through the shaders, scrolling fast, going idle.
+// Mochi: a pixel-art snow-leopard kitten at a little laptop, sitting on the bottom edge of the page,
+// bottom-right, riding along. She peeks up once, blinks, types in little bursts, and changes mood with
+// what's happening: planting, poking the bee, flicking through the shaders, scrolling fast, going idle.
 // When she has something to say, a grey message bubble pops out beside her, shows typing dots,
-// then the line. One rig, no frames: the photo plus two eyelids, a blush and a prop, all moved
-// with transform and opacity. No rAF; just timers and CSS.
+// then the line. The art is one sprite sheet (assets/mochi/sheet.webp, 14 frames of 52×44) drawn
+// at a whole-number scale; frames step like real pixel art. One timeout steps frames, and only while
+// an animated mood is playing; at rest the only timer is the blink/typing-burst one. No rAF.
 //
 //   const mochi = createMochi()
 //   mochi.say(text, { action, hold, mood })   // action(): what tapping her or the bubble does
 //   mochi.watch(el, text | () => text, { action, threshold, wait, mood })   // say it once when el scrolls into view
 //   mochi.hush()                               // fold the bubble now (e.g. when another panel opens)
-//   mochi.mood(name, ms)                       // rest | curious | happy | point | surprised | smug | excited | typing | sleepy | sleep
+//   mochi.mood(name, ms)                       // rest | curious | happy | point | wave | surprised | smug | excited | typing | sleepy | sleep
 import { feel } from './feel.js';
 
 const ART = new URL('../assets/mochi/', import.meta.url).href;
@@ -19,6 +20,20 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const delay = (ch, next) => /[.?!]/.test(ch) && next === ' ' ? 220 : /[,;:]/.test(ch) ? 110 : 16 + Math.random() * 8;
 const pick = list => list[Math.floor(Math.random() * list.length)];
 
+// the sheet: one row of frames, each FW×FH art pixels
+const FW = 52, FH = 44;
+const FRAMES = ['type_a', 'type_b', 'blink', 'talk', 'excited_a', 'excited_b', 'happy', 'surprised',
+  'sleepy', 'sleep', 'wave_a', 'wave_b', 'point', 'curious'];
+const F = Object.fromEntries(FRAMES.map((n, i) => [n, i]));
+// which frames each mood plays, and how fast (frames per second) when it has more than one
+const MOODS = {
+  rest: ['type_a'], talk: ['talk', 'type_a'], typing: ['type_a', 'type_b'], curious: ['curious'],
+  point: ['point'], wave: ['wave_a', 'wave_b'], happy: ['happy'], smug: ['sleepy'], surprised: ['surprised'],
+  excited: ['excited_a', 'excited_b'], sleepy: ['sleepy'], sleep: ['sleep'],
+};
+const FPS = { talk: 6, typing: 8, wave: 4, excited: 9 };
+const BLINKS = new Set(['rest', 'typing']);   // moods drawn with the plain open-eyed face
+
 const TAP = [
   "hi, i'm mochi. i live down here.",
   'go study. or scroll, that works too.',
@@ -27,74 +42,52 @@ const TAP = [
   "i'm not lazy, i'm saving energy.",
   'the shaders are down there. go look.',
 ];
-const TAP_MOODS = ['happy', 'point', 'smug', 'excited', 'curious', 'typing'];
+const TAP_MOODS = ['wave', 'point', 'happy', 'curious', 'smug', 'excited'];
 const PLANT = ['ooh, a flower.', "it's getting pretty out here.", "ok you're a gardener now."];
 // which mood fits a watched spot, when the caller doesn't say
-const SPOTS = [['#work-whyclub', 'excited'], ['#work-shaders', 'typing'], ['.wk-end', 'point']];
-// a lid's closed amount per mood (0 open, 1 shut)
-const LIDS = { rest: 0, curious: 0, point: .12, surprised: 0, smug: .42, happy: 1, excited: 1, typing: .3, sleepy: .62, sleep: 1, talk: 0 };
-const PROPS = { point: '🫵', surprised: '❗', sleep: '💤', typing: '💻', happy: '✨' };
+const SPOTS = [['#work-whyclub', 'excited'], ['#work-shaders', 'typing'], ['.wk-end', 'wave']];
 
 const CSS = `
-.mo { --h: 84px; position: fixed; z-index: 60; right: max(10px, env(safe-area-inset-right)); bottom: env(safe-area-inset-bottom, 0px);
-  display: flex; align-items: flex-end; gap: 2px; pointer-events: none; --lid: 0; }
-@media (min-width: 641px) { .mo { --h: 100px; right: max(22px, env(safe-area-inset-right)); } }
+.mo { --u: 2px; position: fixed; z-index: 60; right: max(8px, env(safe-area-inset-right)); bottom: env(safe-area-inset-bottom, 0px);
+  display: flex; align-items: flex-end; gap: 2px; pointer-events: none; --f: 0; }
+@media (min-width: 641px) { .mo { --u: 3px; right: max(18px, env(safe-area-inset-right)); } }
 
 /* the cat: sits on the bottom edge, peeks up once */
-.mo-cat { all: unset; box-sizing: border-box; position: relative; flex: none; width: calc(var(--h) * .9167); height: var(--h); pointer-events: auto; cursor: pointer;
-  -webkit-tap-highlight-color: transparent; touch-action: manipulation; transform: translateY(104%); opacity: 0;
-  transition: transform .75s ${SPRING}, opacity .3s ${OUT}; }
+.mo-cat { all: unset; box-sizing: border-box; position: relative; flex: none; width: calc(var(--u) * ${FW}); height: calc(var(--u) * ${FH});
+  pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transform: translateY(104%); opacity: 0; transition: transform .75s ${SPRING}, opacity .3s ${OUT}; }
 .mo.in .mo-cat { transform: none; opacity: 1; }
-.mo-cat::before { content: ""; position: absolute; inset: -8px -6px 0; }
-.mo-cat:focus-visible { outline: 1.5px solid #1d1c1b; outline-offset: 2px; border-radius: 14px; }
-.mo-body { position: absolute; inset: 0; transform-origin: 50% 100%; transition: transform .45s ${SPRING}; }
-.mo-cat:active .mo-body { transform: scale(.95, .9); transition-duration: .14s; transition-timing-function: ${OUT}; }
-.mo-art { position: absolute; inset: 0; transform-origin: 50% 100%; animation: mo-breathe 3.4s ease-in-out infinite; }
-.mo-art img { position: absolute; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; }
-.mo-img { inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 4px 6px rgba(20,20,30,.16)); }
-.mo-lid { width: 16.92%; height: 11.08%; transform-origin: 50% 0; transform: scaleY(var(--lid)); transition: transform .2s ${OUT}; }
-.mo-lid.l { left: 17.52%; top: 45.15%; } .mo-lid.r { left: 50.76%; top: 45.71%; }
-.mo.blink .mo-lid { transform: scaleY(1); transition-duration: .07s; }
-.mo-blush { position: absolute; width: 15%; height: 7%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,110,140,.5), rgba(255,110,140,0));
-  opacity: 0; transition: opacity .3s ${OUT}; }
-.mo-blush.l { left: 12%; top: 58%; } .mo-blush.r { left: 62%; top: 59%; }
-.mo-prop { position: absolute; font: calc(var(--h) * .3)/1 "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; opacity: 0; pointer-events: none;
-  transform: translate(6px, 6px) scale(.7); transition: opacity .2s ${OUT}, transform .35s ${SPRING}; }
-.mo-prop.on { opacity: 1; transform: none; }
-.mo-prop[data-p="🫵"] { left: -16%; bottom: 8%; font-size: calc(var(--h) * .36); }
-.mo-prop[data-p="❗"] { right: -8%; top: -4%; }
-.mo-prop[data-p="💤"] { right: -14%; top: -2%; }
-.mo-prop[data-p="💻"] { left: 24%; bottom: -7%; font-size: calc(var(--h) * .34); }
-.mo-prop[data-p="✨"] { left: -12%; top: 6%; }
-.mo-zz.on { animation: mo-float 2.4s ease-in-out infinite; }
-.mo-wig { position: absolute; inset: 22% -11% auto; height: 34%; display: flex; justify-content: space-between; opacity: 0; transition: opacity .2s ${OUT}; pointer-events: none; }
-.mo-wig svg { width: 16%; height: 100%; fill: none; stroke: #2a2420; stroke-width: 2.2; stroke-linecap: round; }
-.mo-wig svg:last-child { transform: scaleX(-1); }
+.mo-cat::before { content: ""; position: absolute; inset: -6px -4px 0; }
+.mo-cat:focus-visible { outline: 1.5px solid #1d1c1b; outline-offset: 2px; border-radius: 6px; }
+.mo-body { position: absolute; inset: 0; }
+.mo-cat:active .mo-body { transform: translateY(var(--u)); }
+.mo-spr { position: absolute; inset: 0; image-rendering: pixelated;
+  background: url("${ART}sheet.png") no-repeat;
+  background-image: image-set(url("${ART}sheet.webp") type("image/webp"), url("${ART}sheet.png") type("image/png"));
+  background-size: calc(var(--u) * ${FW * FRAMES.length}) calc(var(--u) * ${FH});
+  background-position: calc(var(--u) * ${-FW} * var(--f)) 0; }
 
-/* moods */
-.mo[data-mood="curious"] .mo-body { transform: rotate(-9deg) translateY(-2px); }
-.mo[data-mood="point"] .mo-body { transform: translateY(-3px) scale(1.07); }
-.mo[data-mood="smug"] .mo-body { transform: rotate(6deg); }
-.mo[data-mood="talk"] .mo-art { animation: mo-nod .32s ease-in-out infinite alternate; }
-.mo[data-mood="happy"] .mo-art { animation: mo-hop .52s ${OUT} 2; }
-.mo[data-mood="surprised"] .mo-art { animation: mo-jolt .5s ${OUT}; }
-.mo[data-mood="excited"] .mo-art { animation: mo-wiggle .13s ease-in-out 8 alternate; }
-.mo[data-mood="typing"] .mo-art { animation: mo-nod .2s ease-in-out infinite alternate; }
-.mo[data-mood="sleep"] .mo-body { transform: translateY(4%) scale(1.02, .95); }
-.mo[data-mood="sleepy"] .mo-art, .mo[data-mood="sleep"] .mo-art { animation-duration: 5s; }
-.mo[data-mood="happy"] .mo-blush, .mo[data-mood="excited"] .mo-blush, .mo[data-mood="smug"] .mo-blush { opacity: 1; }
-.mo[data-mood="excited"] .mo-wig { opacity: 1; }
-@keyframes mo-breathe { 50% { transform: scale(1.012, 1.03); } }
-@keyframes mo-nod { to { transform: translateY(1.5%) rotate(-1.5deg); } }
-@keyframes mo-hop { 0%, 100% { transform: none; } 18% { transform: scale(1.05, .92); } 50% { transform: translateY(-14%) scale(.97, 1.04); } 82% { transform: scale(1.04, .95); } }
-@keyframes mo-jolt { 0% { transform: none; } 30% { transform: translateY(-12%) scale(1.06); } 60% { transform: scale(1.03, .96); } 100% { transform: none; } }
-@keyframes mo-wiggle { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
-@keyframes mo-float { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(3px, -6px); } }
+/* little stepped hops, in whole art pixels */
+.mo[data-mood="happy"] .mo-body { animation: mo-hop .56s steps(1, end) 2; }
+.mo[data-mood="surprised"] .mo-body { animation: mo-jolt .5s steps(1, end); }
+@keyframes mo-hop { 0% { transform: none; } 20% { transform: translateY(calc(var(--u) * -2)); } 40% { transform: translateY(calc(var(--u) * -3)); }
+  60% { transform: translateY(calc(var(--u) * -2)); } 80%, 100% { transform: none; } }
+@keyframes mo-jolt { 0% { transform: none; } 15% { transform: translateY(calc(var(--u) * -3)); } 45% { transform: translateY(calc(var(--u) * -1)); } 70%, 100% { transform: none; } }
+
+/* z's while she naps: pixel letters drifting up off her head */
+.mo-z { position: absolute; left: 71%; top: -14%; width: 30%; height: 36%; pointer-events: none; opacity: 0; transition: opacity .3s ${OUT};
+  font: 600 calc(var(--u) * 6)/1 var(--pixel, ui-monospace, monospace); color: #2e2a27; }
+.mo[data-mood="sleep"] .mo-z { opacity: 1; }
+.mo-z i { position: absolute; left: 0; bottom: 0; font-style: normal; opacity: 0; }
+.mo[data-mood="sleep"] .mo-z i { animation: mo-z 3s steps(6, end) infinite; }
+.mo-z i:nth-child(2) { animation-delay: 1s !important; font-size: .8em; } .mo-z i:nth-child(3) { animation-delay: 2s !important; font-size: .65em; }
+@keyframes mo-z { 0% { opacity: 0; transform: none; } 15% { opacity: 1; } 75% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(var(--u) * 6), calc(var(--u) * -12)); } }
 
 /* the message bubble: iMessage grey, tail pointing at her */
-.mo-say { all: unset; box-sizing: border-box; position: relative; pointer-events: auto; cursor: pointer; margin-bottom: calc(var(--h) * .5);
-  max-width: min(280px, calc(100vw - var(--h) - 40px)); padding: 8px 13px 9px; border-radius: 18px; background: #e9e9eb; color: #111;
-  font: 400 15px/1.3 -apple-system, system-ui, sans-serif; text-wrap: pretty; -webkit-tap-highlight-color: transparent;
+.mo-say { all: unset; box-sizing: border-box; position: relative; pointer-events: auto; cursor: pointer; margin-bottom: calc(var(--u) * 24);
+  max-width: min(280px, calc(100vw - var(--u) * ${FW} - 30px)); padding: 8px 13px 9px; border-radius: 18px; background: #e9e9eb; color: #111;
+  font: 500 15px/1.3 var(--pixel, -apple-system, system-ui, sans-serif); letter-spacing: .01em; text-wrap: pretty; -webkit-tap-highlight-color: transparent;
   transform-origin: 100% 100%; opacity: 0; transform: translate(8px, 6px) scale(.85); visibility: hidden;
   transition: opacity .18s ${OUT}, transform .18s ${OUT}, visibility 0s .18s; }
 .mo.open .mo-say { opacity: 1; transform: none; visibility: visible; transition: opacity .2s ${OUT}, transform .42s ${SPRING}, visibility 0s; }
@@ -107,22 +100,19 @@ const CSS = `
 .mo-dots i:nth-child(2) { animation-delay: .15s; } .mo-dots i:nth-child(3) { animation-delay: .3s; }
 .mo.thinking .mo-dots { display: flex; } .mo.thinking .mo-text { display: none; }
 @keyframes mo-dot { 0%, 100% { opacity: .4; transform: none; } 50% { opacity: 1; transform: translateY(-2px); } }
-@media (min-width: 641px) { .mo-say { max-width: 320px; } }
+@media (min-width: 641px) { .mo-say { max-width: 320px; font-size: 16px; } }
 @media (hover: hover) and (pointer: fine) { .mo-say:hover { background: #e2e2e5; } }
 .mo-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 /* reduced motion: she still changes face and talks, she just doesn't move */
 @media (prefers-reduced-motion: reduce) {
   .mo-cat { transform: none; transition: opacity .3s ease; }
-  .mo-art, .mo[data-mood] .mo-art, .mo-dots i, .mo-zz.on { animation: none !important; }
-  .mo[data-mood] .mo-body, .mo-cat:active .mo-body { transform: none; }
-  .mo-body, .mo-lid, .mo-prop { transition: opacity .2s ease; }
-  .mo-prop { transform: none; }
+  .mo[data-mood] .mo-body, .mo-dots i, .mo[data-mood] .mo-z i { animation: none !important; }
+  .mo-cat:active .mo-body { transform: none; }
+  .mo[data-mood="sleep"] .mo-z i:first-child { opacity: 1; }
   .mo-say, .mo.open .mo-say { transform: none; transition: opacity .2s ease, visibility 0s; }
 }
 `;
-
-const WIG = '<svg viewBox="0 0 16 34" aria-hidden="true"><path d="M12 4c-6 5-6 21 0 26M6 9c-3 4-3 12 0 16"/></svg>';
 
 export function createMochi() {
   if (!document.getElementById('mo-style')) document.head.insertAdjacentHTML('beforeend', `<style id="mo-style">${CSS}</style>`);
@@ -135,45 +125,70 @@ export function createMochi() {
       <span class="mo-text" aria-hidden="true"><span class="a"></span><span class="b"></span></span>
       <span class="mo-dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
     <button class="mo-cat" type="button" aria-label="mochi the cat. tap her for a line">
-      <span class="mo-body"><span class="mo-art">
-        <img class="mo-img" src="${ART}mochi.webp" alt="" width="220" height="240" decoding="async">
-        <img class="mo-lid l" src="${ART}lid-l.webp" alt="" decoding="async"><img class="mo-lid r" src="${ART}lid-r.webp" alt="" decoding="async">
-        <i class="mo-blush l"></i><i class="mo-blush r"></i>
-        <span class="mo-wig">${WIG}${WIG}</span>
-      </span><span class="mo-prop" aria-hidden="true"></span></span>
+      <span class="mo-body"><span class="mo-spr"></span></span>
+      <span class="mo-z" aria-hidden="true"><i>z</i><i>z</i><i>z</i></span>
     </button><span class="mo-live" role="status"></span>`;
   document.body.appendChild(el);
-  const bubble = el.querySelector('.mo-say'), cat = el.querySelector('.mo-cat'), prop = el.querySelector('.mo-prop'), live = el.querySelector('.mo-live');
+  const bubble = el.querySelector('.mo-say'), cat = el.querySelector('.mo-cat'), live = el.querySelector('.mo-live');
   const [a, b] = el.querySelectorAll('.mo-text span');
 
-  let open = false, run = 0, cur = null, last = null, foldT = 0, shown = false, lastSaid = 0;
-  let base = 'rest', moodT = 0, blinkT = 0, idleT = 0, nap = 0, taps = [], tapIdx = 0;
+  // whole device pixels per art pixel, so every art pixel is the same size on any screen
+  const wide = matchMedia('(min-width: 641px)');
+  function fit() {
+    const dpr = devicePixelRatio || 1;
+    el.style.setProperty('--u', `${Math.max(1, Math.round((wide.matches ? 3 : 2) * dpr)) / dpr}px`);
+  }
+  fit();
+  wide.addEventListener('change', fit);
+  addEventListener('resize', fit, { passive: true });
+
+  let open = false, speaking = false, run = 0, cur = null, last = null, foldT = 0, shown = false, lastSaid = 0;
+  let base = 'rest', moodT = 0, ambT = 0, idleT = 0, nap = 0, taps = [], tapIdx = 0;
+
+  // ---- frames ----------------------------------------------------------------------------
+  // one timeout steps the current loop; it stops on its own when the loop has a step budget
+  let loop = MOODS.rest, li = 0, animT = 0, playing = false;
+  const show = i => el.style.setProperty('--f', i);
+  function play(list, fps, steps = Infinity) {
+    clearTimeout(animT);
+    loop = list; li = 0; playing = false;
+    show(F[list[0]]);
+    if (reduced || list.length < 2 || !fps) return;
+    playing = true;
+    const step = () => {
+      if (document.hidden || steps-- <= 0) { playing = false; show(F[loop[0]]); return; }
+      li = (li + 1) % loop.length; show(F[loop[li]]);
+      animT = setTimeout(step, 1000 / fps);
+    };
+    animT = setTimeout(step, 1000 / fps);
+  }
 
   // ---- face ------------------------------------------------------------------------------
   function face(m) {
     el.dataset.mood = m;
-    el.style.setProperty('--lid', LIDS[m] ?? 0);
-    const p = PROPS[m] || '';
-    if (p) { prop.textContent = p; prop.dataset.p = p; prop.classList.toggle('mo-zz', p === '💤'); requestAnimationFrame(() => prop.classList.add('on')); }
-    else prop.classList.remove('on');
+    play(MOODS[m] || MOODS.rest, FPS[m]);
   }
   /** Show a mood for a while, then fall back to the resting one. */
   function mood(m, ms = 1800) {
     clearTimeout(moodT);
     if (m === 'sleepy' || m === 'sleep' || m === 'rest') { base = m; face(m); return; }
     face(m);
-    if (ms !== Infinity) moodT = setTimeout(() => face(open ? 'talk' : base), ms);
+    if (ms !== Infinity) moodT = setTimeout(() => face(speaking ? 'talk' : open ? 'rest' : base), ms);
   }
-  // blinks every few seconds, only while she's awake and looking normal
-  function blink() {
-    clearTimeout(blinkT);
-    blinkT = setTimeout(() => {
-      if (!reduced && !document.hidden && LIDS[el.dataset.mood] < .5) {
-        el.classList.add('blink');
-        setTimeout(() => el.classList.remove('blink'), 110);
-        if (Math.random() < .25) setTimeout(() => { el.classList.add('blink'); setTimeout(() => el.classList.remove('blink'), 110); }, 260);
+  // every few seconds while she's awake: a blink, or a little burst of typing at rest
+  function ambient() {
+    clearTimeout(ambT);
+    ambT = setTimeout(() => {
+      const m = el.dataset.mood;
+      if (!reduced && !document.hidden && !playing && BLINKS.has(m)) {
+        if (m === 'rest' && Math.random() < .45) play(MOODS.typing, FPS.typing, 10 + Math.floor(Math.random() * 14));
+        else {
+          const wink = () => { show(F.blink); setTimeout(() => { if (!playing && el.dataset.mood === m) show(F[loop[li]]); }, 110); };
+          wink();
+          if (Math.random() < .25) setTimeout(wink, 260);
+        }
       }
-      blink();
+      ambient();
     }, 2600 + Math.random() * 3600);
   }
 
@@ -181,7 +196,7 @@ export function createMochi() {
   function arrive() {
     if (shown) return; shown = true;
     el.classList.add('in');
-    blink(); idle();
+    ambient(); idle();
     setTimeout(() => { if (!open) mood('curious', 1200); }, reduced ? 0 : 800);
   }
 
@@ -205,17 +220,19 @@ export function createMochi() {
     if (id !== run) return;
     el.classList.remove('thinking');
     live.textContent = line;
+    speaking = true;
     if (reduced) { a.textContent = line; b.textContent = ''; }
     else {
       for (let i = 1; i <= line.length; i++) {
-        if (id !== run) return;
+        if (id !== run) { speaking = false; return; }
         a.textContent = line.slice(0, i); b.textContent = line.slice(i);
         await sleep(delay(line[i - 1], line[i]));
       }
     }
+    speaking = false;
     // the face holds a beat after the line lands, then settles while the bubble stays up
     clearTimeout(moodT);
-    moodT = setTimeout(() => { if (open && id === run) face(m === 'talk' ? 'rest' : m); }, 900);
+    moodT = setTimeout(() => { if (open && id === run) face(m === 'talk' || m === 'excited' || m === 'typing' ? 'rest' : m); }, 900);
     foldT = setTimeout(() => fold(), o.hold ?? Math.max(4200, line.length * 75));
   }
 
@@ -223,7 +240,7 @@ export function createMochi() {
     if (!open) return;
     ++run;
     clearTimeout(foldT); clearTimeout(moodT);
-    open = false; cur = null;
+    open = false; speaking = false; cur = null;
     el.classList.remove('open', 'thinking');
     bubble.tabIndex = -1;
     feel.close();
@@ -250,6 +267,7 @@ export function createMochi() {
   bubble.addEventListener('pointerenter', () => clearTimeout(foldT));
   bubble.addEventListener('pointerleave', () => { if (open) foldT = setTimeout(fold, 2400); });
   if (fine) {
+    // hovering her: she tilts her head up at you
     cat.addEventListener('pointerenter', () => { wake(); if (!open && el.dataset.mood === base) mood('curious', Infinity); });
     cat.addEventListener('pointerleave', () => { if (!open && el.dataset.mood === 'curious') mood(base); });
   }
@@ -300,7 +318,7 @@ export function createMochi() {
     if (t.closest('#garden, #hint')) {
       planted++;
       const line = { 1: PLANT[0], 4: PLANT[1], 9: PLANT[2] }[planted];
-      if (line) chime(line, { mood: 'happy' }); else if (!open) mood(pick(['happy', 'excited', 'curious']), 1400);
+      if (line) chime(line, { mood: planted === 9 ? 'excited' : 'happy' }); else if (!open) mood(pick(['happy', 'excited', 'curious']), 1400);
     } else if (t.closest('.bee')) {
       if (!beeTold) { beeTold = true; chime("hey, don't poke the bee.", { mood: 'surprised' }); } else if (!open) mood('surprised', 700);
     } else if (t.closest('.wk-screen, .wk-btns')) {
@@ -308,11 +326,12 @@ export function createMochi() {
     }
   });
 
-  // coming back to the tab after a while
+  // coming back to the tab after a while; frame loops pause while the tab is hidden
   let away = 0, toldBack = false;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { away = Date.now(); clearTimeout(idleT); return; }
-    if (shown && !toldBack && Date.now() - away > 30000) { toldBack = true; base = 'rest'; setTimeout(() => chime("oh, you're back.", { mood: 'happy' }), 600); }
+    if (FPS[el.dataset.mood]) face(el.dataset.mood);
+    if (shown && !toldBack && Date.now() - away > 30000) { toldBack = true; base = 'rest'; setTimeout(() => chime("oh, you're back.", { mood: 'wave' }), 600); }
     if (shown) idle();
   });
 
