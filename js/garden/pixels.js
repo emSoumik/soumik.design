@@ -36,12 +36,19 @@ const PALETTES = [
   { w: 16, P: '#2447d8', p: '#172f9e', C: '#ffd04a', c: '#f0a51c' },   // cobalt
   { w: 12, P: '#f594b8', p: '#e0628f', C: '#ffd04a', c: '#f0a51c' },   // pink
 ];
-const STEM = { G: '#1f8a3a', g: '#16702d', L: '#35a64b' };
-// what grows: mostly the stitched kinds; a moodboard flower turns up about one time in five, as a little treat
+// every plant gets one set of greens: G stem, g stem shade, L leaf
+const GREENS = [
+  { G: '#1f8a3a', g: '#16702d', L: '#35a64b' },
+  { G: '#3c8f2a', g: '#2b6e1e', L: '#6dbb45' },   // spring
+  { G: '#1d7d5c', g: '#145e45', L: '#3aa57c' },   // sage
+];
+// leaf shapes, as cells out from the stem on one side: a bar, reaching up, broad and sweeping, drooping, a blade hugging the stem
+const LEAVES = [[[1, 0], [2, 0]], [[1, 0], [2, -1]], [[1, 0], [2, 0], [2, -1], [3, -1]], [[1, 0], [2, 1]], [[1, 0], [1, -1], [2, -2]]];
+// what grows: the recoloured kinds, and the ones from flora.js that keep their own colours
 const KINDS = [
-  { k: 'lily', w: 1.5 }, { k: 'bluelily', w: 1.5 }, { k: 'daisy', w: 1.5 }, { k: 'bud', w: 1.2 }, { k: 'lavender', w: 1.5 },
-  { k: 'forget', w: 1 }, { k: 'forgetpale', w: .6 }, { k: 'forgetbright', w: 1 },
   { k: 'tulip', w: 7 }, { k: 'cup', w: 8 }, { k: 'clover', w: 6 }, { k: 'sun', w: 4 }, { k: 'daisy3', w: 5 }, { k: 'bell', w: 5 }, { k: 'star', w: 5 },
+  { k: 'lily', w: 3 }, { k: 'iris', w: 3 }, { k: 'daisy', w: 4 }, { k: 'rose', w: 3 }, { k: 'rosebud', w: 3 }, { k: 'lavender', w: 3 },
+  { k: 'forget', w: 3 }, { k: 'poppy', w: 4 }, { k: 'daffodil', w: 3 }, { k: 'pansy', w: 3 }, { k: 'bluebell', w: 3 }, { k: 'cosmos', w: 4 },
 ];
 // sparkles twinkle through these frames
 const SPARK = [['X'], ['.X.', 'XXX', '.X.'], ['..X..', '..X..', 'XX.XX', '..X..', '..X..'], ['.X.', 'XXX', '.X.'], ['X']];
@@ -73,39 +80,6 @@ function accent(cells) {
 }
 const pickW = (rnd, list) => { let s = list.reduce((a, b) => a + b.w, 0) * rnd(); for (const it of list) if ((s -= it.w) < 0) return it; return list[0]; };
 
-// a moodboard sprite, whole plant and all: leaves stitch up from the ground, then the bloom opens from its centre.
-// worked out once per sprite and facing; every planting shares the cells
-const SPRITES = {};
-function buildSprite(kind, flip) {
-  const key = kind + (flip ? '<' : '>');
-  if (SPRITES[key]) return SPRITES[key];
-  const s = FLOWERS[kind], W = s.rows[0].length, [hx, hy] = s.head;
-  const at = (x, y) => { const ch = s.rows[y]?.[x]; return ch && ch !== '.' ? parseInt(ch, 16) : -1; };
-  // the outline is the colour that hugs the silhouette most; it joins whichever part it outlines
-  const edge = s.pal.map(() => 0);
-  s.rows.forEach((row, y) => [...row].forEach((ch, x) => { const i = at(x, y); if (i >= 0 && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => at(x + a, y + b) < 0)) edge[i]++; }));
-  const ol = edge.indexOf(Math.max(...edge));
-  const leafy = s.pal.map(c => { const h = hue(c); return h > 68 && h < 170; });
-  const cells = [];
-  s.rows.forEach((row, y) => [...row].forEach((ch, x) => {
-    const i = at(x, y);
-    if (i < 0) return;
-    let leaf = leafy[i];
-    if (i === ol) {
-      let g = 0, b = 0;
-      for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) { const j = at(x + a, y + c); if (j >= 0 && j !== ol) leafy[j] ? g++ : b++; }
-      leaf = g > b || (g === b && y > hy + 3);
-    }
-    const cx = (flip ? W - 1 - x : x) - (flip ? W - 1 - hx : hx), cy = y - hy;
-    cells.push(leaf ? { x: cx, y: cy, col: s.pal[i], o: 0, d: -cy + Math.abs(cx) * .3 } : { x: cx, y: cy, col: s.pal[i], o: 2, d: Math.hypot(cx, cy * 1.1) });
-  }));
-  cells.sort((a, b) => a.o - b.o || a.d - b.d);
-  const bloom = cells.filter(c => c.o === 2);
-  return (SPRITES[key] = { kind, cells, sprite: true, tint: accent(cells), r: Math.min(4, Math.max(2, ...bloom.map(c => Math.hypot(c.x, c.y))) * .7),
-    bottom: Math.max(...cells.map(c => c.y)), top: Math.min(...cells.map(c => c.y)),
-    box: [Math.min(...cells.map(c => c.x)), Math.min(...cells.map(c => c.y)), Math.max(...cells.map(c => c.x)), Math.max(...cells.map(c => c.y))] });
-}
-
 // a palette that stands apart from its neighbours: far round the colour wheel from them, never the one just used
 let lastPal = null;
 const hueGap = (a, b) => a < 0 || b < 0 ? 90 : Math.min(Math.abs(a - b), 360 - Math.abs(a - b));
@@ -115,8 +89,10 @@ function choosePal(rnd, tints = []) {
   const pal = PALETTES.filter(o => o !== lastPal).sort((a, b) => score(b) - score(a))[0];
   return (lastPal = pal);
 }
-// recolour a stitched flower in place: its head cells remember which part of the palette they are
+// recolour a stitched flower in place: its head cells remember which part of the palette they are.
+// flora's flowers keep their own colours
 function recolour(fl, pal) {
+  if (fl.own) return fl;
   for (const c of fl.cells) if (c.k) c.col = pal[c.k];
   fl.tint = accent(fl.cells);
   return fl;
@@ -124,40 +100,58 @@ function recolour(fl, pal) {
 // build one flower: every cell in grid units relative to the head's centre, sorted in stitch order
 function buildFlower(rnd, kind) {
   kind = kind || pickW(rnd, KINDS).k;
-  if (FLOWERS[kind]) return buildSprite(kind, rnd() < .5);
-  if (!HEADS[kind]) kind = 'tulip';
+  if (!HEADS[kind] && !FLOWERS[kind]) kind = 'tulip';
   // a fresh colour each time: never the same palette twice in a row
-  const head = HEADS[kind], pal = choosePal(rnd);
+  const own = FLOWERS[kind], head = own ? own.head : HEADS[kind], pal = own ? own.pal : choosePal(rnd);
+  const green = GREENS[Math.floor(rnd() * GREENS.length)];
   const hw = head[0].length, hh = head.length, ox = Math.floor(hw / 2), oy = Math.floor(hh / 2);
   const cells = [];
-  head.forEach((row, r) => [...row].forEach((k, c) => { if (k !== '.') cells.push({ x: c - ox, y: r - oy, k, col: pal[k], o: 2, d: Math.hypot(c - ox, (r - oy) * 1.1) }); }));
+  // green worked into a head stitches with the leaves, but still sways with the bloom
+  head.forEach((row, r) => [...row].forEach((k, c) => {
+    if (k === '.') return;
+    const d = Math.hypot(c - ox, (r - oy) * 1.1);
+    cells.push(green[k] ? { x: c - ox, y: r - oy, col: green[k], o: 1, d: oy - r, hd: 1 } : { x: c - ox, y: r - oy, k, col: pal[k], o: 2, d, hd: 1 });
+  }));
   // stars and daisies sometimes float on their own, like stitches on a sampler
   const stemless = (kind === 'star' || kind === 'daisy3') && rnd() < .45;
   if (!stemless) {
     const len = kind === 'sun' || kind === 'clover' ? 4 + Math.floor(rnd() * 6) : 3 + Math.floor(rnd() * 6);
     const top = hh - oy;
-    let side = rnd() < .5 ? -1 : 1;
+    const stem = (x, y, col, d = -y) => cells.push({ x, y, col, o: 0, d });
+    const leaf = (x, y, col, d) => cells.push({ x, y, col, o: 1, d });
+    // most stems lean a step somewhere on the way down, so no two stand quite alike
+    const kink = len > 3 && rnd() < .6 ? 1 + Math.floor(rnd() * (len - 2)) : -1, lean = rnd() < .5 ? -1 : 1;
+    let side = rnd() < .5 ? -1 : 1, x = 0, bud = len > 4 && rnd() < .3;
     for (let i = 0; i < len; i++) {
       const y = top + i;
-      cells.push({ x: 0, y, col: i % 3 === 2 ? STEM.g : STEM.G, o: 0, d: -y });
-      // leaves: a short bar off the stem, alternating sides, never at the very top
-      if (i >= 1 && i < len - 1 && rnd() < .38) {
-        const n = 1 + (rnd() < .55 ? 1 : 0);
-        for (let j = 1; j <= n; j++) cells.push({ x: side * j, y, col: STEM.L, o: 1, d: -y + j * .1 });
-        side = -side;
+      if (i === kink) { stem(x, y, green.G, -y + .5); x += lean; }
+      stem(x, y, i % 3 === 2 ? green.g : green.G);
+      if (i < 1 || i >= len - 1 || rnd() > .42) continue;
+      // now and then a side shoot carries a little bud in the flower's own colour
+      if (bud && i >= 3) {
+        leaf(x + side, y, green.L, -y + .1); leaf(x + side * 2, y - 1, green.L, -y + .2);
+        cells.push({ x: x + side * 2, y: y - 2, k: 'P', col: pal.P, o: 1, d: -y + .3 }, { x: x + side * 2, y: y - 3, k: 'P', col: pal.P, o: 1, d: -y + .4 });
+        bud = false;
+      } else {
+        const shape = LEAVES[Math.floor(rnd() * LEAVES.length)];
+        // the tip of a longer leaf is a shade deeper
+        shape.forEach(([lx, ly], j) => leaf(x + side * lx, y + ly, j === shape.length - 1 && shape.length > 2 ? green.G : green.L, -y + j * .1));
       }
+      side = -side;
     }
-    // now and then a little tuft of grass where the stem meets the ground
-    if (rnd() < .45) {
-      const y = top + len - 1;
-      [[-1, 'L'], [1, 'G'], [-2, 'g'], [2, 'L']].forEach(([x, k], j) => { if (j < 2 || rnd() < .6) cells.push({ x, y, col: STEM[k], o: 0, d: -y - .5 + j * .1 }); });
-      cells.push({ x: rnd() < .5 ? -1 : 1, y: y - 1, col: STEM.L, o: 0, d: -y + .7 });
+    // where the stem meets the ground: a tuft of grass, tall blades either side, or nothing at all
+    const y = top + len - 1, base = rnd();
+    if (base < .3) {
+      [[-1, 'L'], [1, 'G'], [-2, 'g'], [2, 'L']].forEach(([dx, k], j) => { if (j < 2 || rnd() < .6) stem(x + dx, y, green[k], -y - .5 + j * .1); });
+      stem(x + (rnd() < .5 ? -1 : 1), y - 1, green.L, -y + .7);
+    } else if (base < .55) {
+      for (const s of [-1, 1]) if (s === side || rnd() < .5) [[1, 0], [1, -1], [2, -2], [2, -3]].forEach(([dx, dy], j) => stem(x + s * dx, y + dy, j % 2 ? green.L : green.G, -y - .5 + j * .1));
     }
   }
   cells.sort((a, b) => a.o - b.o || a.d - b.d);
   const bottom = Math.max(...cells.map(c => c.y));
   const xs = cells.map(c => c.x);
-  return { kind, cells, tint: accent(cells), r: Math.max(hw, hh) / 2, bottom, top: -oy, box: [Math.min(...xs), -oy, Math.max(...xs), bottom] };
+  return { kind, own: !!own, cells, tint: accent(cells), r: Math.max(hw, hh) / 2, bottom, top: -oy, box: [Math.min(...xs), -oy, Math.max(...xs), bottom] };
 }
 
 function noiseTile(size) {
@@ -178,12 +172,11 @@ export function createGarden(canvas, opts = {}) {
   const ctx = canvas.getContext('2d');
   const live = [], dying = [], sparks = [], petals = [], recent = [];
   let nextId = 1, userPlanted = false, fieldPlanted = false, fieldW = 0, fieldH = 0, timers = [];
-  let cssW = 0, cssH = 0, dpr = 1, cell = 6, su = 3, grain = null, grainPat = null;
+  let cssW = 0, cssH = 0, dpr = 1, cell = 6, grain = null, grainPat = null;
   let raf = 0, visible = true, destroyed = false, breeze = null, breezeT = 0, sparkT = 0, dirty = true, growing = false;
   const api = { onChange: opts.onChange, plant, patches: () => live.map(pub), clear, destroy, _stats: { frames: 0 } };
   const pub = f => ({ id: f.id, x: f.x, y: f.y, flowers: [{ x: f.x, y: f.y, r: f.r * f.u + 2 }] });
-  // moodboard sprites carry far more detail, so they're stitched on a finer grid and stay flower-sized
-  const unit = fl => fl.sprite ? su : cell;
+  const unit = () => cell;
   const changed = () => api.onChange?.(api.patches());
   const now = () => performance.now();
 
@@ -192,7 +185,6 @@ export function createGarden(canvas, opts = {}) {
     cssW = b.width; cssH = b.height;
     dpr = Math.min(devicePixelRatio || 1, 2);
     cell = cssW <= 640 ? 5 : 7;
-    su = cssW <= 640 ? 2 : 3;
     canvas.width = Math.round(cssW * dpr); canvas.height = Math.round(cssH * dpr);
     if (!grain) grain = noiseTile(128);
     grainPat = ctx.createPattern(grain, 'repeat');
@@ -203,7 +195,6 @@ export function createGarden(canvas, opts = {}) {
 
   function add(x, y, rnd, t0, kind) {
     const fl = typeof kind === 'object' ? kind : buildFlower(rnd, kind);
-    // big sprites stitch several cells a step, so nothing takes much longer than a second and a half to grow
     const u = unit(fl);
     const f = { id: nextId++, x, y, u, gx: Math.round(x / u), gy: Math.round(y / u), ...fl, t0, step: Math.min(STEP, 900 / fl.cells.length), shown: reduced ? Infinity : 0, sway: 0 };
     f.x = f.gx * u + u / 2; f.y = f.gy * u + u / 2;
@@ -276,7 +267,7 @@ export function createGarden(canvas, opts = {}) {
     for (const k of order) {
       const fl = buildFlower(Math.random, k);
       const at = nudges.map(([dx, dy]) => [x + dx, y + dy]).find(p => room(fl, p));
-      if (at) return { fl: fl.sprite ? fl : recolour(fl, choosePal(Math.random, tints)), x: at[0], y: at[1] };
+      if (at) return { fl: recolour(fl, choosePal(Math.random, tints)), x: at[0], y: at[1] };
     }
     for (const k of ['daisy3', 'star', 'bell']) {
       const fl = buildFlower(Math.random, k), at = nudges.map(([dx, dy]) => [x + dx, y + dy]).find(p => room(fl, p));
@@ -312,10 +303,9 @@ export function createGarden(canvas, opts = {}) {
     const rnd = mulberry(mob ? 7 : 11), frnd = mulberry(3);
     const pts = [];
     const minD = Math.sqrt(((x1 - x0) * (y1 - y0)) / n) * .62;
-    // dealt from a shuffled deck so the bed stays varied: stitched flowers, with two or three moodboard ones tucked in
+    // dealt from a shuffled deck so the bed stays varied
     const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(frnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-    const treats = shuffle(Object.keys(FLOWERS)).slice(0, mob ? 2 : 3);
-    const hand = shuffle([...treats, ...KINDS.filter(o => !FLOWERS[o.k]).flatMap(o => Array(Math.max(1, Math.round(o.w / 3))).fill(o.k))]);
+    const hand = shuffle(KINDS.flatMap(o => Array(Math.max(1, Math.round(o.w / 3))).fill(o.k)));
     let fl = null, miss = 0, dealt = 0;
     const boxes = [];
     for (let tries = 0; pts.length < n && tries < n * 80; tries++) {
@@ -332,7 +322,7 @@ export function createGarden(canvas, opts = {}) {
       if (boxes.some(([c0, d0, c1, d1]) => Math.max(0, Math.min(a1, c1) - Math.max(a0, c0)) * Math.max(0, Math.min(b1, d1) - Math.max(b0, d0)) > .12 * Math.min(area, (c1 - c0) * (d1 - d0)))) continue;
       boxes.push([a0, b0, a1, b1]);
       // its colour answers the neighbours'
-      if (!fl.sprite) recolour(fl, choosePal(frnd, pts.filter(p => Math.hypot(p.x - x, p.y - y) < minD * 1.8).map(p => p.fl.tint)));
+      recolour(fl, choosePal(frnd, pts.filter(p => Math.hypot(p.x - x, p.y - y) < minD * 1.8).map(p => p.fl.tint)));
       pts.push({ x, y, fl }); fl = null; miss = 0;
     }
     const start = now();
@@ -399,7 +389,7 @@ export function createGarden(canvas, opts = {}) {
       const n = Math.min(f.cells.length, k), fresh = Math.max(2, Math.round(24 / (f.step || STEP)));
       for (let i = 0; i < n; i++) {
         const c = f.cells[i];
-        const dx = c.o === 2 || (c.o === 0 && c.y <= f.top + 1) ? f.sway : 0;
+        const dx = c.hd || (c.o === 0 && c.y <= f.top + 1) ? f.sway : 0;
         // the newest stitch flashes paler for a step
         rect(f.gx + c.x + dx, f.gy + c.y, i >= n - fresh && n < f.cells.length ? '#fff3c2' : c.col, f.u);
       }

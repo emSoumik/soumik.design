@@ -69,6 +69,7 @@
   ]
 }
 </script>
+<link rel="icon" type="image/svg+xml" href="assets/brand/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png">
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
@@ -160,9 +161,9 @@
   .hint { position: absolute; left: 50%; top: calc(76svh + 64px); translate: -50% 0; font: 400 12px/1 var(--mono); color: var(--ink-2); white-space: nowrap;
     padding: 8px 12px; border-radius: 99px; transition: color .2s, transform .16s var(--ease); }
   .hint:active { transform: scale(.97); }
-  .hint .fl span { display: inline-block; animation: bob 2.8s var(--ease) infinite; animation-delay: calc(var(--i) * .09s); }
-  .hint .fl span:nth-child(1) { color: #3e4f9c; } .hint .fl span:nth-child(2) { color: #c25a7c; } .hint .fl span:nth-child(3) { color: #4b8bbf; }
-  .hint .fl span:nth-child(4) { color: #3e4f9c; } .hint .fl span:nth-child(5) { color: #c25a7c; } .hint .fl span:nth-child(6) { color: #4b8bbf; }
+  /* the whole line bobs letter by letter in the garden's colours, like a breeze running along it */
+  .hint .fl span { display: inline-block; animation: bob 2.8s var(--ease) infinite; animation-delay: calc(var(--i) * .05s); }
+  .hint .fl span:nth-child(3n+1) { color: #3e4f9c; } .hint .fl span:nth-child(3n+2) { color: #c25a7c; } .hint .fl span:nth-child(3n) { color: #4b8bbf; }
   @keyframes bob { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-3px); } }
   .hint .swap { display: inline-block; transition: opacity .3s, filter .3s; }
   .hint .swap.out { opacity: 0; filter: blur(4px); }
@@ -231,7 +232,8 @@
   }
 
   /* ---- from the garden to the work: scrubbed by the scroll itself, off the main thread. no js, nothing to load */
-  .seam { --c: 7px; height: calc(var(--c) * 3); margin: calc(var(--c) * -1.5) var(--gut) 0; position: relative; z-index: 2;
+  /* sits wholly below the hero, so at any screen size it stays out of the garden until you scroll */
+  .seam { --c: 7px; height: calc(var(--c) * 3); margin: 0 var(--gut); position: relative; z-index: 2;
     background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 3' shape-rendering='crispEdges'><rect x='1' y='0' width='1' height='1' fill='%23e8412f'/><rect x='0' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='2' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='2' width='1' height='1' fill='%23e8412f'/><rect x='4' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='7' y='0' width='1' height='1' fill='%232447d8'/><rect x='6' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='8' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='2' width='1' height='1' fill='%232447d8'/><rect x='10' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='13' y='0' width='1' height='1' fill='%23f594b8'/><rect x='12' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='1' width='1' height='1' fill='%23e3a21a'/><rect x='14' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='2' width='1' height='1' fill='%23f594b8'/><rect x='16' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='19' y='0' width='1' height='1' fill='%23ffc93c'/><rect x='18' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='1' width='1' height='1' fill='%23e2562b'/><rect x='20' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='2' width='1' height='1' fill='%23ffc93c'/><rect x='22' y='1' width='1' height='1' fill='%231f8a3a'/></svg>") 0 0 / calc(var(--c) * 24) 100% repeat-x; image-rendering: pixelated; }
   @media (max-width: 640px) { .seam { --c: 5px; } }
   @supports (animation-timeline: view()) {
@@ -279,7 +281,7 @@
         <button data-work>My work <span class="arr d">↓</span><span class="ic"><picture><source srcset="assets/mochi/icon.avif" type="image/avif"><img class="px-cat" src="assets/mochi/icon.webp" alt="" width="27" height="23"></picture></span></button>
       </nav>
 
-      <button class="hint in" style="--d:1.6s" id="hint"><span class="swap"><span class="v">click</span> anywhere to grow a <span class="fl"><span style="--i:0">f</span><span style="--i:1">l</span><span style="--i:2">o</span><span style="--i:3">w</span><span style="--i:4">e</span><span style="--i:5">r</span></span></span></button>
+      <button class="hint in" style="--d:1.6s" id="hint"><span class="swap"><span class="fl">click anywhere to grow a flower</span></span></button>
       <button class="clear" id="clear" type="button" aria-label="Clear the garden" tabindex="-1"><svg viewBox="0 0 5 12" aria-hidden="true"><path fill="#6e3f12" d="M1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM1 1h1v1h-1zM3 1h1v1h-1z"/><path fill="#b8742a" d="M2 2h1v1h-1zM2 3h1v1h-1zM2 4h1v1h-1zM2 5h1v1h-1z"/><path fill="#3d4249" d="M1 6h1v1h-1zM3 6h1v1h-1zM0 7h1v1h-1zM4 7h1v1h-1zM0 8h1v1h-1zM4 8h1v1h-1zM0 9h1v1h-1zM4 9h1v1h-1zM1 10h1v1h-1zM3 10h1v1h-1zM2 11h1v1h-1z"/><path fill="#6b7280" d="M2 6h1v1h-1z"/><path fill="#e3e8ef" d="M1 7h1v1h-1zM2 7h1v1h-1zM3 7h1v1h-1zM1 8h1v1h-1zM1 9h1v1h-1z"/><path fill="#a7b0bd" d="M2 8h1v1h-1zM3 8h1v1h-1zM2 9h1v1h-1zM3 9h1v1h-1zM2 10h1v1h-1z"/></svg>clear garden</button>
     </div>
   </section>

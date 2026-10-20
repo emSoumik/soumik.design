@@ -24,7 +24,7 @@ js/
   feel.js             sound design and haptics
   garden/
     pixels.js         the pixel garden: planting, growing, the self-clearing loop
-    flora.js          flower and butterfly sprites from the moodboard, as pixel data
+    flora.js          the flowers that keep their own colours, and the butterfly sprites
     bee.js            the bee
     butterflies.js    the butterflies
     watercolour.js    the old watercolour garden, still there behind ?garden=ink

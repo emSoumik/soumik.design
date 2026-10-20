@@ -12,7 +12,9 @@ const MOCHI = false;
 css(BEE_CSS + BUTTERFLY_CSS);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const touch = matchMedia('(hover: none)').matches;
-if (touch) document.querySelectorAll('.v').forEach(v => v.textContent = 'tap');
+// the hint is split into letters so the whole line can bob
+const hintFl = document.querySelector('.hint .fl');
+hintFl.innerHTML = [...hintFl.textContent.replace('click', touch ? 'tap' : 'click')].map((ch, i) => ch === ' ' ? ' ' : `<span style="--i:${i}">${ch}</span>`).join('');
 
 const ICON = {
   LinkedIn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.6h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.76v5.59h-4v-4.96c0-1.18-.02-2.7-1.7-2.7-1.7 0-1.95 1.28-1.95 2.61v5.05h-4v-11Z"/></svg>',
