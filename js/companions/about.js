@@ -32,26 +32,36 @@ const CSS = `
 .ab-top h2 { font: 500 24px/1.1 "Instrument Sans", -apple-system, system-ui, sans-serif; letter-spacing: -.03em; color: rgba(31,29,27,.5); }
 .ab-top h2 i { font-style: normal; color: #1f1d1b; }
 .ab-x { all: unset; cursor: pointer; margin-left: auto; align-self: flex-start; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
-  background: rgba(29,27,26,.06); transition: background .2s, transform .16s ease-out; }
+  background: rgba(29,27,26,.06); touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: background .2s, transform .16s ease-out; }
 @media (hover: hover) and (pointer: fine) { .ab-x:hover { background: rgba(29,27,26,.12); } } .ab-x:active { transform: scale(.96); }
-.ab-x::before { content: ""; position: absolute; inset: -8px; } .ab-x { position: relative; }
-.ab dd a, .ab dd button { position: relative; } .ab dd a::before, .ab dd button::before { content: ""; position: absolute; inset: -10px -4px; }
+.ab-x::before { content: ""; position: absolute; inset: -8px; }
+.ab-x { position: relative; z-index: 1; }
 .ab-x:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
 .ab-x svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
-.ab p { color: rgba(31,29,27,.74); margin: 0 0 10px; text-wrap: pretty; } .ab p:last-of-type { margin-bottom: 16px; }
-.ab p a { color: #1f1d1b; text-decoration: underline; text-decoration-color: rgba(31,29,27,.25); text-underline-offset: 3px; text-decoration-thickness: 1px; transition: text-decoration-color .2s; border-radius: 3px; }
+.ab p { color: rgba(31,29,27,.74); margin: 0 0 10px; text-wrap: pretty; } .ab p:last-of-type { margin-bottom: 10px; }
+.ab p a { position: relative; color: #1f1d1b; text-decoration: underline; text-decoration-color: rgba(31,29,27,.25); text-underline-offset: 3px; text-decoration-thickness: 1px; touch-action: manipulation; transition: text-decoration-color .2s; border-radius: 3px; }
 .ab p a:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) { .ab p a:hover { text-decoration-color: currentColor; } }
-.ab dl { display: grid; grid-template-columns: 74px 1fr; gap: 9px 12px; margin: 0; padding-top: 14px; border-top: 1px solid rgba(31,29,27,.1);
+.ab dl { display: grid; grid-template-columns: 74px minmax(0, 1fr); align-items: center; column-gap: 12px; margin: 0; padding-top: 8px; border-top: 1px solid rgba(31,29,27,.1);
   font: 400 12px/1.3 ui-monospace, "SF Mono", Menlo, monospace; }
-.ab dt { color: rgba(31,29,27,.5); } .ab dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.ab dd a, .ab dd button { all: unset; cursor: pointer; border-radius: 4px; transition: color .2s; }
+.ab dt { color: rgba(31,29,27,.5); } .ab dd { margin: 0; min-width: 0; min-height: 44px; display: flex; align-items: center; }
+/* position has to follow all:unset. unset clears it, and then a stretched hit area anchors to the card. the last link, x, caught every click */
+.ab dd a, .ab dd button { all: unset; box-sizing: border-box; cursor: pointer; position: relative; display: flex; align-items: center; flex: 1; min-width: 0; min-height: 44px;
+  padding: 12px 2px; border-radius: 4px; overflow-wrap: anywhere; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+  transform-origin: left center; transition: color .2s, transform .16s ease-out; }
+.ab dd.ab-else { flex-wrap: wrap; }
+.ab dd.ab-else a { flex: none; gap: 4px; justify-content: center; min-width: 44px; padding-inline: 10px; white-space: nowrap; }
 .ab dd a:focus-visible, .ab dd button:focus-visible { outline: 1.5px solid currentColor; outline-offset: 2px; }
-.ab dd .sep { color: rgba(31,29,27,.3); margin: 0 6px; }
+.ab dd a:active, .ab dd button:active { transform: scale(.96); }
+.ab dd .sep { pointer-events: none; color: rgba(31,29,27,.3); padding: 0 2px; }
 @media (hover: hover) and (pointer: fine) {
   .ab dd a:hover, .ab dd button:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 }
 @media (max-width: 640px) { .ab { padding: 18px 18px 16px; } .ab-top h2 { font-size: 22px; } }
+/* a landscape phone is shorter than the card. scroll inside it instead of losing the links off the bottom */
+@media (max-height: 480px) {
+  .ab { max-height: calc(100svh - 24px); overflow: auto; overscroll-behavior: contain; }
+}
 `;
 
 export function createAbout({ bee } = {}) {
@@ -63,18 +73,20 @@ export function createAbout({ bee } = {}) {
   el.hidden = true;
   el.tabIndex = -1;
   el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
   el.setAttribute('aria-labelledby', 'ab-title');
+  const newTab = '<span class="sr"> (opens in a new tab)</span>';
   el.innerHTML = `<div class="ab-skin" aria-hidden="true"></div>
     <div class="ab-in">
       <div class="ab-top"><picture><source srcset="${AVATAR.replace('.webp', '.avif')}" type="image/avif"><img src="${AVATAR}" alt=""></picture>
-        <h2 id="ab-title">hi, i'm <i>soumik</i>.</h2>
+        <h2 id="ab-title">hi, i’m <i>soumik</i>.</h2>
         <button class="ab-x" type="button" aria-label="Close"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3L3 9"/></svg></button></div>
-      <p>i design websites and apps, and then i write the code that builds them. usually that's two different jobs done by two people, and the small details, like how a button feels when you tap it, get lost in between. i like doing both so they don't.</p>
-      <p>the biggest thing i've made is <a href="${WHYCLUB.href}" target="_blank" rel="noopener">whyclub</a>, a streetwear brand i built on my own, from how it looks to the website to the system behind every order.</p>
+      <p>i design websites and apps, and then i write the code that builds them. usually that’s two different jobs done by two people, and the small details, like how a button feels when you tap it, get lost in between. i like doing both so they don’t.</p>
+      <p>the biggest thing i’ve made is <a href="${WHYCLUB.href}" target="_blank" rel="noopener">whyclub${newTab}</a>, a streetwear brand i built on my own, from how it looks to the website to the system behind every order.</p>
       <dl>
-        <dt>work</dt><dd><button type="button" data-work>see what i've made ↓</button></dd>
+        <dt>work</dt><dd><button type="button" data-work>see what i’ve made ↓</button></dd>
         <dt>say hi</dt><dd><a href="mailto:${EMAIL}">${EMAIL}</a></dd>
-        <dt>elsewhere</dt><dd>${SOCIALS.filter(s => s.label !== 'Email').map(s => `<a href="${s.href}"${ext(s)}>${s.label} ↗</a>`).join('<span class="sep">·</span>')}</dd>
+        <dt>elsewhere</dt><dd class="ab-else">${SOCIALS.filter(s => s.label !== 'Email').map(s => `<a href="${s.href}"${ext(s)}>${s.label} <span aria-hidden="true">↗</span>${newTab}</a>`).join('<span class="sep" aria-hidden="true">·</span>')}</dd>
       </dl>
     </div>`;
   const veil = document.createElement('div');
@@ -89,9 +101,9 @@ export function createAbout({ bee } = {}) {
   // Sits above its trigger, centred on it, kept inside the viewport.
   function place(from) {
     const r = from.getBoundingClientRect();
+    const measure = el.hidden;
     el.hidden = false;
-    el.style.visibility = 'hidden';
-    el.style.left = el.style.top = '0px';
+    if (measure) { el.style.visibility = 'hidden'; el.style.left = el.style.top = '0px'; }
     const w = el.offsetWidth, h = el.offsetHeight;
     const left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2));
     const above = r.top - h - 16;
@@ -146,11 +158,11 @@ export function createAbout({ bee } = {}) {
 
   // ---- the bee pops back out, sits on the card's top corner and tells you things about him -----
   let factT = 0, factI = 0;
-  function perch() {
+  function perch(tell = true) {
     const c = el.getBoundingClientRect();
     bee.el.style.opacity = '';
     bee.el.classList.add('front');
-    bee.flyTo(c.right - 34 + scrollX, c.top + 1 + scrollY).then(() => { if (isOpen) fact(); });
+    bee.flyTo(c.right - 34 + scrollX, c.top + 1 + scrollY).then(() => { if (isOpen && tell) fact(); });
   }
   function fact() {
     clearTimeout(factT);
@@ -196,8 +208,22 @@ export function createAbout({ bee } = {}) {
     await close('work');
     document.getElementById('work')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
   });
+  // keep tab inside the card. the bee sits outside it on purpose, so it stays a pointer-only extra
+  el.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || !isOpen) return;
+    const items = [...el.querySelectorAll('a[href], button:not([disabled])')];
+    if (!items.length) return;
+    const first = items[0], last = items.at(-1), here = document.activeElement;
+    if (e.shiftKey && (here === first || here === el)) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && here === last) { e.preventDefault(); first.focus(); }
+  });
   addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) close(); });
   addEventListener('pointerdown', e => { if (isOpen && !busy && !el.contains(e.target) && !opener?.contains(e.target) && !bee?.el.contains(e.target)) close(); }, true);
+  addEventListener('resize', () => {
+    if (!isOpen || busy || !opener) return;
+    place(opener);
+    if (bee?.el.classList.contains('front')) perch(false);
+  });
   addEventListener('scroll', () => { if (isOpen && !busy && scrollY > innerHeight * .4) close(); }, { passive: true });
 
   return { open, close, get isOpen() { return isOpen; } };

@@ -350,10 +350,11 @@ const STYLE = `
   .wk-rt { font-size: clamp(28px, 8.6vw, 38px); }
   .wk-cap { left: 16px; right: 16px; bottom: 14px; gap: 5px; }
   .wk-btns button { width: 44px; height: 44px; }
-  /* small text links get a 44px tall hit area without moving their underline */
-  .wk-soc a, .wk-top, .wk-mail { position: relative; }
-  .wk-soc a::before, .wk-top::before, .wk-mail::before { content: ""; position: absolute; inset: -14px -10px; }
-  .wk-top::before { inset: -17px -8px; }
+  /* insets stay inside the gap between these links, so the later one can't take the email's clicks */
+  .wk-mail, .wk-soc a, .wk-top { position: relative; }
+  .wk-mail::before { content: ""; position: absolute; inset: -8px -4px; }
+  .wk-soc a::before { content: ""; position: absolute; inset: -4px -8px; }
+  .wk-top::before { content: ""; position: absolute; inset: -12px -8px; }
   .wk-end { margin-top: 120px; }
 }
 @media (prefers-reduced-motion: reduce) {

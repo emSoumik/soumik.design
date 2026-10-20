@@ -150,7 +150,8 @@ hint.addEventListener('click', plantSomewhere);
 // ---- work: one scroll below; mounted when it gets close
 const work = document.getElementById('work');
 const toWork = () => work.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
-document.querySelectorAll('[data-work]').forEach(b => b.addEventListener('click', toWork));
+// the about card's work link closes the card first, then scrolls. binding it here too would scroll under the open card
+document.querySelectorAll('[data-work]').forEach(b => { if (!b.closest('.ab')) b.addEventListener('click', toWork); });
 let mounted = false;
 const mountWork = async () => {
   if (mounted) return; mounted = true;
