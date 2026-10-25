@@ -6,7 +6,7 @@
 //   video: { type: 'video', src (mp4), webm?, poster?, posterWebp?, duration?, label, alt, tint, path? }
 // The phone set is fetched lazily from assets/work/whyclub/phone.json (or opts.phoneManifest); SCREENS.phone is the fallback.
 
-const ASSET_BASE = new URL('../../assets/work/whyclub/', import.meta.url);
+const ASSET_BASE = new URL('/assets/work/whyclub/', location.origin);
 const asset = n => new URL(n, ASSET_BASE).href;
 
 // tint: two colours sampled from each screenshot (hand-picked from its palette), used by the stage backdrop.

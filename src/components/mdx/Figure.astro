@@ -1,0 +1,29 @@
+---
+// <Figure src={shot} alt="…" caption="…" wide />: an image from the entry's folder, served as avif with a webp fallback
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  caption?: string;
+  wide?: boolean;
+  /** a phone screenshot: kept narrow and centred */
+  phone?: boolean;
+}
+const { src, alt, caption, wide = false, phone = false } = Astro.props;
+const sizes = wide ? '(min-width: 1140px) 1080px, calc(100vw - 32px)' : phone ? '320px' : '(min-width: 720px) 680px, calc(100vw - 32px)';
+const widths = [...new Set([Math.round(src.width / 2), src.width])];
+---
+<figure class:list={['fig', { wide, phone }]}>
+  <Picture src={src} alt={alt} widths={widths} sizes={sizes} formats={['avif']} fallbackFormat="webp" />
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .fig :global(img) { width: 100%; border-radius: clamp(12px, 1.6vw, 18px); background: var(--wash); box-shadow: 0 0 0 .5px var(--line); }
+  .phone { max-width: 320px; margin-left: auto; margin-right: auto; }
+  .phone :global(img) { border-radius: 28px; }
+  figcaption { font: 400 13px/1.5 var(--mono); color: var(--ink-2); margin-top: 12px; text-wrap: pretty; }
+  .phone figcaption { text-align: center; }
+</style>

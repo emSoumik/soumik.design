@@ -4,7 +4,7 @@
 import { EMAIL, SOCIALS, WHYCLUB, FACTS } from '../content.js';
 import { feel } from '../feel.js';
 
-const AVATAR = new URL('../../assets/brand/avatar.webp', import.meta.url).href;
+const AVATAR = '/assets/brand/avatar.webp';
 const MORPH = 'cubic-bezier(.32,.72,0,1)';
 const OUT = 'cubic-bezier(.23,1,.32,1)';
 

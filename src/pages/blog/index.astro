@@ -1,0 +1,28 @@
+---
+import Base from '../../layouts/Base.astro';
+import { published, day, iso } from '../../lib/content';
+
+const posts = await published('blog');
+---
+<Base title="Blog" description="Notes from Soumik Halder, a design engineer, on designing things and then building them.">
+  <div class="col">
+    <header class="index-head">
+      <p class="eyebrow">notes</p>
+      <h1>Blog</h1>
+      <p>Notes on designing things, then building them.</p>
+    </header>
+    {posts.length ? (
+      <ul class="posts">
+        {posts.map(({ id, data }) => (
+          <li>
+            <a class="post" href={`/blog/${id}/`}>
+              <time datetime={iso(data.date)}>{day(data.date)}</time>
+              <h2>{data.title}{data.draft && <span class="draft">draft</span>}</h2>
+              <p>{data.description}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : <p class="empty">Nothing here yet. Soon.</p>}
+  </div>
+</Base>

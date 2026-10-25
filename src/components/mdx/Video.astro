@@ -1,0 +1,44 @@
+---
+// <Video src="/assets/…/clip.mp4" webm="…" poster="…" caption="…" phone />: a screen recording that plays while it's on screen.
+// muted and looping, so it reads like a moving screenshot; with reduced motion it waits for a press of play
+interface Props {
+  src: string;
+  webm?: string;
+  poster?: string;
+  alt: string;
+  caption?: string;
+  wide?: boolean;
+  /** a phone recording: kept narrow and centred */
+  phone?: boolean;
+}
+const { src, webm, poster, alt, caption, wide = false, phone = false } = Astro.props;
+---
+<figure class:list={['vid', { wide, phone }]}>
+  <video muted loop playsinline preload="none" poster={poster} aria-label={alt}>
+    {webm && <source src={webm} type="video/webm">}
+    <source src={src} type="video/mp4">
+  </video>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  video { width: 100%; border-radius: clamp(12px, 1.6vw, 18px); background: var(--wash); box-shadow: 0 0 0 .5px var(--line); }
+  .phone { max-width: 320px; margin-left: auto; margin-right: auto; }
+  .phone video { border-radius: 28px; aspect-ratio: 392 / 848; object-fit: cover; }
+  figcaption { font: 400 13px/1.5 var(--mono); color: var(--ink-2); margin-top: 12px; text-wrap: pretty; }
+  .phone figcaption { text-align: center; }
+</style>
+
+<script>
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const io = new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      const v = target as HTMLVideoElement;
+      if (isIntersecting) v.play().catch(() => { v.controls = true; });
+      else v.pause();
+    }
+  }, { threshold: 0.4 });
+  for (const v of document.querySelectorAll<HTMLVideoElement>('.vid video')) {
+    if (reduced) { v.controls = true; v.preload = 'metadata'; } else io.observe(v);
+  }
+</script>
