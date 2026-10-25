@@ -8,12 +8,16 @@ interface Props {
   title: string;
   description: string;
   type?: 'website' | 'article';
-  image?: string;
+  /** the link preview: a png or jpg, 1200 wide. defaults to the site's card */
+  image?: { src: string; width: number; height: number; alt: string };
   published?: Date;
+  /** keep a page out of search, like a list with nothing in it yet */
+  noindex?: boolean;
 }
-const { title, description, type = 'website', image, published } = Astro.props;
+const { title, description, type = 'website', image, published, noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-const og = new URL(image ?? '/assets/brand/og-card.png', Astro.site);
+const card = image ?? { src: '/assets/brand/og-card.png', width: 1200, height: 630, alt: 'The name Soumik in black script with a pixel sunflower for the i, in a little pixel garden.' };
+const og = new URL(card.src, Astro.site);
 const ext = (href: string) => (href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {});
 const here = Astro.url.pathname;
 ---
@@ -25,6 +29,7 @@ const here = Astro.url.pathname;
 <title>{title} · Soumik Halder</title>
 <meta name="description" content={description}>
 <meta name="author" content="Soumik Halder">
+{noindex && <meta name="robots" content="noindex">}
 <link rel="canonical" href={canonical}>
 <meta name="theme-color" content="#ffffff">
 <meta property="og:type" content={type}>
@@ -33,6 +38,9 @@ const here = Astro.url.pathname;
 <meta property="og:title" content={title}>
 <meta property="og:description" content={description}>
 <meta property="og:image" content={og}>
+<meta property="og:image:width" content={card.width}>
+<meta property="og:image:height" content={card.height}>
+<meta property="og:image:alt" content={card.alt}>
 {published && <meta property="article:published_time" content={published.toISOString()}>}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@soumikkhalder">

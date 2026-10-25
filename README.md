@@ -80,7 +80,7 @@ Anything only for your own machine (like the Agentation toolbar) should load beh
 1. Make a folder: `src/content/work/<slug>/` for a case study, `src/content/blog/<slug>/` for a post. The slug becomes the URL (`/work/<slug>/`, `/blog/<slug>/`).
 2. Put an `index.mdx` in it, and its images next to it. Start from `src/content/work/whyclub/index.mdx` or `src/content/blog/a-garden-that-tends-itself/index.mdx`.
 3. Fill in the frontmatter. `src/content.config.ts` lists the fields, and the build stops with a clear message if one is missing or wrong.
-4. Keep `draft: true` while you write. Drafts show in `npm run dev` and on Vercel preview deploys (every branch and PR gets one), but not on soumik.design. Set it to `false` to publish.
+4. Keep `draft: true` while you write. Drafts show in `npm run dev` and on Vercel preview deploys (every branch and PR gets one), and nowhere else, so a production build can never publish one by accident. To see them in a local build, run `DRAFTS=1 npm run build`. Set it to `false` to publish.
 
 Markdown images (`![alt](./shot.png)`) are optimised automatically. For more, these work in any post without importing:
 

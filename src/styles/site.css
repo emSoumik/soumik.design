@@ -103,10 +103,11 @@ img, video { display: block; max-width: 100%; height: auto; }
 .prose pre { font: 13.5px/1.6 var(--mono); padding: 18px 20px; border-radius: 14px; overflow-x: auto; background: var(--wash) !important; box-shadow: inset 0 0 0 .5px var(--line); }
 .prose pre code { background: none; padding: 0; font: inherit; }
 .prose hr { border: 0; height: 15px; margin: 2.6em auto; width: 120px; background: var(--seam) 0 0 / 120px 100% repeat-x; image-rendering: pixelated; }
-.prose img { border-radius: 12px; }
+/* only what the post itself puts down: components like the slideshow bring their own figures and images */
+.prose > p > img, .prose > img { border-radius: 12px; }
 /* anything marked wide runs past the measure, up to the cover's width */
-.prose .wide { width: min(var(--wide), 100vw - var(--gut) * 2); margin-left: 50%; translate: -50% 0; }
-.prose .wide, .prose figure { margin-top: 2em; margin-bottom: 2em; }
+.prose > .wide { width: min(var(--wide), 100vw - var(--gut) * 2); margin-left: 50%; translate: -50% 0; }
+.prose > .wide, .prose > figure { margin-top: 2em; margin-bottom: 2em; }
 
 /* ---- under every page: the stitched border, then the footer */
 .seam { --c: 7px; height: calc(var(--c) * 3); margin: 0 var(--gut); background: var(--seam) 0 0 / calc(var(--c) * 24) 100% repeat-x; image-rendering: pixelated; }

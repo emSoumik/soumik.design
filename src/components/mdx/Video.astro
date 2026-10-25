@@ -1,6 +1,6 @@
 ---
 // <Video src="/assets/…/clip.mp4" webm="…" poster="…" caption="…" phone />: a screen recording that plays while it's on screen.
-// muted and looping, so it reads like a moving screenshot; with reduced motion it waits for a press of play
+// muted and looping, so it reads like a moving screenshot, with a small button to pause it. with reduced motion it waits for play
 interface Props {
   src: string;
   webm?: string;
@@ -14,31 +14,57 @@ interface Props {
 const { src, webm, poster, alt, caption, wide = false, phone = false } = Astro.props;
 ---
 <figure class:list={['vid', { wide, phone }]}>
-  <video muted loop playsinline preload="none" poster={poster} aria-label={alt}>
-    {webm && <source src={webm} type="video/webm">}
-    <source src={src} type="video/mp4">
-  </video>
+  <div class="frame">
+    <video muted loop playsinline preload="none" poster={poster} aria-label={alt}>
+      {webm && <source src={webm} type="video/webm">}
+      <source src={src} type="video/mp4">
+    </video>
+    <button class="pp" type="button" aria-label="Pause" hidden>
+      <svg class="pause" viewBox="0 0 8 8" aria-hidden="true"><path d="M1 1h2v6H1zM5 1h2v6H5z"/></svg>
+      <svg class="play" viewBox="0 0 8 8" aria-hidden="true"><path d="M2 1h1v6H2zM3 2h1v4H3zM4 3h1v2H4zM5 3.5h1v1H5z"/></svg>
+    </button>
+  </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
 
 <style>
+  .frame { position: relative; }
   video { width: 100%; border-radius: clamp(12px, 1.6vw, 18px); background: var(--wash); box-shadow: 0 0 0 .5px var(--line); }
   .phone { max-width: 320px; margin-left: auto; margin-right: auto; }
   .phone video { border-radius: 28px; aspect-ratio: 392 / 848; object-fit: cover; }
+  /* a quiet pixel button in the corner; 44px to hit, 28px to see */
+  .pp { position: absolute; right: 6px; bottom: 6px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; cursor: pointer; }
+  .pp::before { content: ""; position: absolute; inset: 8px; border-radius: 99px; background: rgba(255, 255, 255, .86); box-shadow: 0 0 0 .5px var(--line), 0 1px 3px rgba(31, 29, 27, .12); transition: transform .16s var(--ease); }
+  .pp[hidden] { display: none; }
+  .pp:active::before { transform: scale(.92); }
+  .pp svg { position: relative; width: 10px; height: 10px; fill: var(--ink); shape-rendering: crispEdges; }
+  .pp .play, .pp[data-paused] .pause { display: none; }
+  .pp[data-paused] .play { display: block; }
   figcaption { font: 400 13px/1.5 var(--mono); color: var(--ink-2); margin-top: 12px; text-wrap: pretty; }
   .phone figcaption { text-align: center; }
 </style>
 
 <script>
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // paused by hand stays paused; scrolling away and back doesn't restart it
+  const held = new WeakSet<HTMLVideoElement>();
   const io = new IntersectionObserver((entries) => {
     for (const { target, isIntersecting } of entries) {
       const v = target as HTMLVideoElement;
-      if (isIntersecting) v.play().catch(() => { v.controls = true; });
+      if (isIntersecting && !held.has(v)) v.play().catch(() => { v.controls = true; });
       else v.pause();
     }
   }, { threshold: 0.4 });
-  for (const v of document.querySelectorAll<HTMLVideoElement>('.vid video')) {
-    if (reduced) { v.controls = true; v.preload = 'metadata'; } else io.observe(v);
+  for (const fig of document.querySelectorAll('.vid')) {
+    const v = fig.querySelector('video')!, pp = fig.querySelector<HTMLButtonElement>('.pp')!;
+    if (reduced) { v.controls = true; v.preload = 'metadata'; continue; }
+    pp.hidden = false;
+    pp.addEventListener('click', () => {
+      const pause = !held.has(v);
+      if (pause) { held.add(v); v.pause(); } else { held.delete(v); v.play().catch(() => {}); }
+      pp.toggleAttribute('data-paused', pause);
+      pp.setAttribute('aria-label', pause ? 'Play' : 'Pause');
+    });
+    io.observe(v);
   }
 </script>

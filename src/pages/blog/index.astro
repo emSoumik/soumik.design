@@ -4,7 +4,7 @@ import { published, day, iso } from '../../lib/content';
 
 const posts = await published('blog');
 ---
-<Base title="Blog" description="Notes from Soumik Halder, a design engineer, on designing things and then building them.">
+<Base noindex={!posts.length} title="Blog" description="Notes from Soumik Halder, a design engineer, on designing things and then building them.">
   <div class="col">
     <header class="index-head">
       <p class="eyebrow">notes</p>

@@ -1,7 +1,8 @@
 import { getCollection } from 'astro:content';
 
-// drafts stay off soumik.design only. dev, local builds and vercel preview deploys show them, so a case study can be read on the PR first
-export const showDrafts = process.env.VERCEL_ENV !== 'production';
+// drafts show in dev and on vercel preview deploys, so a case study can be read on the PR first. everywhere else they're left out,
+// so a production build can never publish one by accident. DRAFTS=1 npm run build shows them in a local build too
+export const showDrafts = import.meta.env.DEV || process.env.VERCEL_ENV === 'preview' || process.env.DRAFTS === '1';
 
 export async function published<C extends 'work' | 'blog'>(collection: C) {
   const entries = await getCollection(collection, (e) => showDrafts || !e.data.draft);

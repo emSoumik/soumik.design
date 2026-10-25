@@ -13,9 +13,10 @@ const { device = 'phone', caption } = Astro.props;
 </figure>
 
 <style>
-  .screens { max-width: 820px; }
-  /* holds the slideshow's room until it mounts, so nothing jumps */
-  .host:empty { aspect-ratio: 1 / .9; border-radius: 28px; background: var(--wash); }
+  .screens { max-width: 820px; container-type: inline-size; }
+  /* holds the slideshow's room until it mounts, so nothing jumps (measured: its header plus the stage) */
+  .host:empty { aspect-ratio: 1 / .925; border-radius: 28px; background: var(--wash); }
+  @container (max-width: 520px) { .host:empty { aspect-ratio: 1 / 1.25; } }
   figcaption { font: 400 13px/1.5 var(--mono); color: var(--ink-2); margin-top: 12px; text-align: center; }
 </style>
 

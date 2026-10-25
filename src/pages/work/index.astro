@@ -5,7 +5,7 @@ import { published } from '../../lib/content';
 
 const work = await published('work');
 ---
-<Base title="Work" description="Case studies by Soumik Halder, a design engineer: what I designed and built, end to end, and how.">
+<Base noindex={!work.length} title="Work" description="Case studies by Soumik Halder, a design engineer: what I designed and built, end to end, and how.">
   <div class="wide-col">
     <header class="index-head">
       <p class="eyebrow">case studies</p>
@@ -17,7 +17,7 @@ const work = await published('work');
         {work.map(({ id, data }, i) => (
           <li>
             <a class="card" href={`/work/${id}/`}>
-              <div class="shot"><Image src={data.cover} alt={data.coverAlt} widths={[640, data.cover.width]} sizes="(min-width: 960px) 520px, calc(100vw - 32px)" loading={i < 2 ? 'eager' : 'lazy'} /></div>
+              <div class="shot"><Image src={data.cover} alt="" widths={[640, data.cover.width]} sizes="(min-width: 960px) 520px, calc(100vw - 32px)" loading={i < 2 ? 'eager' : 'lazy'} /></div>
               <p class="eyebrow">{data.date.getUTCFullYear()} · {data.role}{data.draft && <span class="draft">draft</span>}</p>
               <h2>{data.title} <span class="arr" aria-hidden="true">→</span></h2>
               <p>{data.summary}</p>

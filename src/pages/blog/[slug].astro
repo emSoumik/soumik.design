@@ -1,5 +1,5 @@
 ---
-import { Picture } from 'astro:assets';
+import { Picture, getImage } from 'astro:assets';
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import { components } from '../../components/mdx';
@@ -11,8 +11,11 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { data } = entry;
 const { Content } = await render(entry);
+// link previews want a png: some scrapers won't show webp or avif
+const cover = data.cover && await getImage({ src: data.cover, format: 'png', width: 1200 });
+const card = cover && { src: cover.src, width: cover.attributes.width as number, height: cover.attributes.height as number, alt: data.coverAlt ?? '' };
 ---
-<Base title={data.title} description={data.description} type="article" published={data.date} image={data.cover?.src}>
+<Base title={data.title} description={data.description} type="article" published={data.date} image={card || undefined}>
   <article>
     <header class="article-head">
       <p class="eyebrow"><a href="/blog/">blog</a><span aria-hidden="true">·</span><time datetime={iso(data.date)}>{day(data.date)}</time>{data.draft && <span class="draft">draft</span>}</p>
