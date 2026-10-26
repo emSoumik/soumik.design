@@ -61,6 +61,8 @@ export function mountWork(section) {
         n: '01', id: 'work-whyclub', title: 'WhyClub',
         line: 'A streetwear label I built alone, end to end: the brand, the product design, the storefront, and the backend that runs every order.',
         tags: 'brand · product design · frontend · backend', href: WHYCLUB.href, domain: WHYCLUB.domain,
+        // the page lists its published case studies in data-cases; a draft gets no link
+        more: section.dataset.cases?.split(' ').includes('whyclub') ? '<a href="/work/whyclub/">read the case study <span aria-hidden="true">→</span></a>' : '',
         stage: '<div class="wk-stage wk-wc is-pending" data-wk-r></div>',
       })}
 
