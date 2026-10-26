@@ -6,7 +6,7 @@ Live at **[soumik.design](https://soumik.design)**.
 
 ## How it's built
 
-Plain HTML, CSS and JavaScript modules. No framework, no build step, no dependencies. What's in the folder is what gets served.
+[Astro](https://astro.build) builds it into a plain static site. The home page is still hand-written HTML and CSS with vanilla JavaScript modules, no UI framework; Astro just bundles the scripts and adds the case studies and the blog, written in MDX.
 
 - The garden is a `<canvas>` drawn in stepped frames, like real pixel art. It stops drawing completely when nothing is moving.
 - All sound is synthesized live with the Web Audio API, so there are no audio files.
@@ -17,8 +17,21 @@ Plain HTML, CSS and JavaScript modules. No framework, no build step, no dependen
 ## Folder map
 
 ```
-index.html            the page: markup, all the CSS, SEO and social tags
-js/
+src/
+  pages/
+    index.astro       the home page: markup, all its CSS, SEO and social tags
+    work/, blog/      the index pages and the page every case study or post renders into
+    sitemap.xml.ts    /sitemap.xml, built from every published page
+  content/
+    work/<slug>/      a case study: index.mdx plus its images
+    blog/<slug>/      a post: index.mdx plus its images
+  content.config.ts   what a case study's and a post's frontmatter must have
+  components/
+    Wordmark.astro    the Soumik wordmark with the pixel sunflower
+    mdx/              Figure, Video and Screens, usable in any post without importing
+  layouts/Base.astro  the head, masthead and footer of every page but home
+  styles/site.css     the reading pages' styles
+js/                   the home page's scripts, bundled by Astro as they are
   main.js             wires the page together (start here)
   content.js          copy and links: email, socials, project links, the bee's facts
   feel.js             sound design and haptics
@@ -35,28 +48,51 @@ js/
     work.js           the work section
     slideshow.js      the WhyClub screens, as stories in a browser window
     reel.js           the live WebGL shader reel
-assets/
-  brand/              favicons, avatar, the link preview card
-  fonts/              Faculty Glyphic (the reel titles)
-  mochi/              mochi's art
-  work/whyclub/       WhyClub screenshots and screen recordings, plus phone.json
-robots.txt, sitemap.xml
+public/               served as is, at the same URLs as always
+  assets/
+    brand/            favicons, avatar, the link preview card
+    fonts/            Faculty Glyphic (the reel titles)
+    mochi/            mochi's art
+    work/whyclub/     WhyClub screenshots and screen recordings, plus phone.json
+  robots.txt
+vercel.json           tells Vercel to build with Astro and serve dist/
 _drafts/              old prototypes and experiments (git-ignored, never deployed)
 ```
 
 ## Run it locally
 
-Any static server works. From this folder:
+Needs Node 22.23 or newer. From this folder:
 
 ```bash
-python3 -m http.server 5191
+npm install
 ```
 
-Then open http://localhost:5191. It has to be served, not opened as a file, because the scripts are ES modules.
+```bash
+npm run dev
+```
+
+Then open http://localhost:4321. Edits to the scripts, pages and posts reload the page. `npm run build` makes the real site in `dist/`, and `npm run preview` serves that.
+
+Anything only for your own machine (like the Agentation toolbar) should load behind `import.meta.env.DEV`, so it never reaches the live site. A dynamic `import()` of a file that isn't committed breaks the build on Vercel, so load those with `import.meta.glob`, which quietly finds nothing when the file isn't there.
+
+## Write a case study or a post
+
+1. Make a folder: `src/content/work/<slug>/` for a case study, `src/content/blog/<slug>/` for a post. The slug becomes the URL (`/work/<slug>/`, `/blog/<slug>/`).
+2. Put an `index.mdx` in it, and its images next to it. Start from `src/content/work/whyclub/index.mdx` or `src/content/blog/a-garden-that-tends-itself/index.mdx`.
+3. Fill in the frontmatter. `src/content.config.ts` lists the fields, and the build stops with a clear message if one is missing or wrong.
+4. Keep `draft: true` while you write. Drafts show in `npm run dev` and on Vercel preview deploys (every branch and PR gets one), and nowhere else, so a production build can never publish one by accident. To see them in a local build, run `DRAFTS=1 npm run build`. Set it to `false` to publish.
+
+Markdown images (`![alt](./shot.png)`) are optimised automatically. For more, these work in any post without importing:
+
+- `<Figure src={shot} alt="…" caption="…" wide />`: an image from the folder, served as AVIF with a WebP fallback. Import it first: `import shot from './shot.png'`. `phone` keeps a phone screenshot narrow.
+- `<Video src="/assets/…/clip.mp4" webm="…" poster="…" alt="…" caption="…" phone />`: a screen recording that plays, muted and looping, while it's on screen. With reduced motion, it waits for play.
+- `<Screens device="phone" caption="…" />`: the WhyClub screens slideshow from the home page.
+
+`wide` lets a figure run wider than the text, up to the cover's width.
 
 ## Deploy
 
-The site is on Vercel, connected to this GitHub repo. Every push to `main` deploys to soumik.design within a minute or so. `.vercelignore` keeps the README and drafts out of the deploy.
+The site is on Vercel, connected to this GitHub repo. Every push to `main` builds and deploys to soumik.design within a minute or so. Other branches and PRs get preview deploys. `vercel.json` sets the build (`npm run build`, output `dist/`), so it doesn't depend on the dashboard settings. `.vercelignore` keeps the README and drafts out of the upload.
 
 ## Common edits
 
@@ -67,7 +103,7 @@ The site is on Vercel, connected to this GitHub repo. Every push to `main` deplo
 - **How full the garden gets before old flowers make room:** `FULL` in `js/garden/pixels.js`
 - **How many butterflies:** `FLY_MAX` in `js/main.js`
 - **Bring mochi back:** set `MOCHI = true` in `js/main.js`
-- **The link preview:** the `og:` and `twitter:` tags in `index.html`, and `assets/brand/og-card.png` (1200×630)
+- **The link preview:** the `og:` and `twitter:` tags in `src/pages/index.astro`, and `public/assets/brand/og-card.png` (1200×630)
 
 ## Sound
 

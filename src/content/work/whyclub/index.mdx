@@ -1,0 +1,67 @@
+---
+title: WhyClub
+summary: A streetwear label I built alone, end to end. The brand, the product design, the storefront, and the backend that runs every order.
+date: 2026-10-01
+role: Everything, solo
+tags: [brand, product design, frontend, backend, webgl]
+cover: ./home.webp
+coverAlt: The WhyClub home page, with a full-bleed campaign hero for the new drop.
+link: https://whyclub.in
+draft: true
+---
+
+import shop from './shop.webp';
+import product from './product.webp';
+import notFound from './not-found.webp';
+
+Most shops are built by a lot of people. One person does the brand. Another designs the store. Someone else builds it, and someone else again wires up the orders. Every handover loses a little. A font gets swapped, an animation gets cut, a button stops feeling right.
+
+I did all of it myself, so nothing got lost in between. WhyClub is a streetwear label, and I made every part of it: how it looks, how the store feels in your hand, and the system that takes an order from "paid" to "it's home".
+
+## A store that feels like the brand
+
+The brand is loud, so the store gets out of its way. Each drop gets a campaign image that fills the screen. Shopping happens on quiet neutrals, so the clothes do the talking.
+
+<Screens device="phone" caption="The screens from my home page. Tap through them, or switch to desktop." />
+
+The shop is a plain grid of tees with prices. No badges fighting for attention, no carousel inside a carousel. You see the clothes, you see what they cost, you pick one.
+
+<Figure src={shop} alt="The WhyClub shop page, a clean grid of tees with prices." caption="The shop: a grid of tees and their prices, and nothing else." wide />
+
+## Phone first
+
+Clothes get bought on phones, so the phone came first and the desktop store grew out of it.
+
+Navigation lives in a dock at the bottom of the screen, where your thumb already is. Tap **Shop** and the dock morphs into a sheet with Women, Men, Sale and your collection.
+
+<Video src="/assets/work/whyclub/p-nav.mp4" webm="/assets/work/whyclub/p-nav.webm" poster="/assets/work/whyclub/p-nav.webp" alt="Tapping Shop in the mobile dock morphs it into a sheet with Women, Men, Sale and My collection." caption="Shop opens out of the dock instead of jumping to a new page." phone />
+
+Adding to the bag shouldn't need a whole page. Quick add on a product card opens a small size sheet. Pick a size and it's in.
+
+<Video src="/assets/work/whyclub/p-quickadd.mp4" webm="/assets/work/whyclub/p-quickadd.webm" poster="/assets/work/whyclub/p-quickadd.webp" alt="Tapping quick add on a product card opens a size sheet; choosing a size adds it to the bag." caption="Quick add: card, size, done." phone />
+
+On the product page, the details rise over the photo as a sheet, so the tee never leaves the screen. Details, Size & fit and Delivery sit in that one sheet as tabs.
+
+<Figure src={product} alt="The WhyClub product page for the Please, I'm a Star tee." caption="The product page on desktop, for the Please, I'm a Star tee." wide />
+
+## After you order
+
+Ordering is usually where a store goes quiet: a confirmation email and a tracking link. I wanted it to be the best part.
+
+Every order gets a pass. It prints in, then changes as the order moves: *You're in*, *All packed*, *On its way*, *It's home*. Each stage has its own shader, written by hand in WebGL, so the pass is a small piece of live light rather than a status label.
+
+<Video src="/assets/work/whyclub/p-pass.mp4" webm="/assets/work/whyclub/p-pass.webm" poster="/assets/work/whyclub/p-pass.webp" alt="The Drop order pass prints in, then moves through confirmed, packed, shipped and delivered, each with its own shader." caption="The order pass, from confirmed to delivered." phone />
+
+The same hand-written shaders turn up around the store: riso-style badges for the beta pass, a dithered asterisk, and a 404 page where a prism splits the light.
+
+<Figure src={notFound} alt="The WhyClub 404 page: a prism splitting light through a 4, a triangle and a 4." caption="The 404, made of light." wide />
+
+You can [try the drop pass](https://prototype.whyclub.in/) yourself, or read [how the shaders were built](https://prototype.whyclub.in/case-study/).
+
+## Behind the counter
+
+The part you don't see is the part that runs every order. I built the backend too: it takes the order, keeps the pass in step with the parcel, and gives me the tools I need to put out each release.
+
+Doing both halves means the details survive. The sheet that rises over the photo, the dock that opens into a menu, the pass that changes when your parcel ships: none of it had to be explained to anyone. I just built it.
+
+[Visit WhyClub](https://whyclub.in)

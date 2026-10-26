@@ -12,7 +12,7 @@
 //   mochi.mood(name, ms)                       // rest | curious | happy | point | wave | surprised | smug | excited | typing | sleepy | sleep
 import { feel } from '../feel.js';
 
-const ART = new URL('../../assets/mochi/', import.meta.url).href;
+const ART = new URL('/assets/mochi/', location.origin).href;
 const OUT = 'cubic-bezier(.23,1,.32,1)';
 const SPRING = 'cubic-bezier(.34,1.56,.64,1)';
 const sleep = ms => new Promise(r => setTimeout(r, ms));

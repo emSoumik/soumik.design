@@ -1,0 +1,30 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import { published } from '../../lib/content';
+
+const work = await published('work');
+---
+<Base noindex={!work.length} title="Work" description="Case studies by Soumik Halder, a design engineer: what I designed and built, end to end, and how.">
+  <div class="wide-col">
+    <header class="index-head">
+      <p class="eyebrow">case studies</p>
+      <h1>Work</h1>
+      <p>Things I designed and built, end to end, and the thinking behind them.</p>
+    </header>
+    {work.length ? (
+      <ul class="cards">
+        {work.map(({ id, data }, i) => (
+          <li>
+            <a class="card" href={`/work/${id}/`}>
+              <div class="shot"><Image src={data.cover} alt="" widths={[640, data.cover.width]} sizes="(min-width: 960px) 520px, calc(100vw - 32px)" loading={i < 2 ? 'eager' : 'lazy'} /></div>
+              <p class="eyebrow">{data.date.getUTCFullYear()} · {data.role}{data.draft && <span class="draft">draft</span>}</p>
+              <h2>{data.title} <span class="arr" aria-hidden="true">→</span></h2>
+              <p>{data.summary}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : <p class="empty">The first one is on its way.</p>}
+  </div>
+</Base>

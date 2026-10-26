@@ -1,0 +1,82 @@
+---
+// Every page but the home page: the head, the little masthead back to the garden, the footer.
+// The home page keeps its own hand-written head and css in pages/index.astro.
+import { SOCIALS } from '../../js/content.js';
+import '../styles/site.css';
+
+interface Props {
+  title: string;
+  description: string;
+  type?: 'website' | 'article';
+  /** the link preview: a png or jpg, 1200 wide. defaults to the site's card */
+  image?: { src: string; width: number; height: number; alt: string };
+  published?: Date;
+  /** keep a page out of search, like a list with nothing in it yet */
+  noindex?: boolean;
+}
+const { title, description, type = 'website', image, published, noindex = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const card = image ?? { src: '/assets/brand/og-card.png', width: 1200, height: 630, alt: 'The name Soumik in black script with a pixel sunflower for the i, in a little pixel garden.' };
+const og = new URL(card.src, Astro.site);
+const ext = (href: string) => (href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {});
+const here = Astro.url.pathname;
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{title} · Soumik Halder</title>
+<meta name="description" content={description}>
+<meta name="author" content="Soumik Halder">
+{noindex && <meta name="robots" content="noindex">}
+<link rel="canonical" href={canonical}>
+<meta name="theme-color" content="#ffffff">
+<meta property="og:type" content={type}>
+<meta property="og:site_name" content="Soumik Halder">
+<meta property="og:url" content={canonical}>
+<meta property="og:title" content={title}>
+<meta property="og:description" content={description}>
+<meta property="og:image" content={og}>
+<meta property="og:image:width" content={card.width}>
+<meta property="og:image:height" content={card.height}>
+<meta property="og:image:alt" content={card.alt}>
+{published && <meta property="article:published_time" content={published.toISOString()}>}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@soumikkhalder">
+<meta name="twitter:creator" content="@soumikkhalder">
+<meta name="twitter:title" content={title}>
+<meta name="twitter:description" content={description}>
+<meta name="twitter:image" content={og}>
+<link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/brand/favicon-16.png">
+<link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Pixelify+Sans:wght@500..600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="mast">
+  <a class="me" href="/" aria-label="Soumik, back to the garden">
+    <picture><source srcset="/assets/brand/avatar.avif" type="image/avif"><img src="/assets/brand/avatar.webp" alt="" width="36" height="36"></picture>
+    <span>soumik<small>back to the garden</small></span>
+  </a>
+  <nav class="sections" aria-label="Sections">
+    <a href="/work/" aria-current={here.startsWith('/work') ? 'page' : undefined}>work</a>
+    <a href="/blog/" aria-current={here.startsWith('/blog') ? 'page' : undefined}>blog</a>
+  </nav>
+</header>
+<main class="page">
+  <slot />
+</main>
+<div class="seam" aria-hidden="true"></div>
+<footer class="foot">
+  <span>© 2026 Soumik Halder</span>
+  <nav aria-label="Socials">
+    {SOCIALS.map((s) => <a href={s.href} {...ext(s.href)}>{s.label === 'X' ? 'x.com' : s.label.toLowerCase()}</a>)}
+  </nav>
+  <span>flowers stitched in pixels</span>
+</footer>
+</body>
+</html>

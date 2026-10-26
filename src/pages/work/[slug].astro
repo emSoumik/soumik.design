@@ -1,0 +1,36 @@
+---
+import { Picture, getImage } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { components } from '../../components/mdx';
+import { published } from '../../lib/content';
+
+export async function getStaticPaths() {
+  return (await published('work')).map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+// link previews want a png: some scrapers won't show webp or avif
+const cover = data.cover && await getImage({ src: data.cover, format: 'png', width: 1200 });
+const card = cover && { src: cover.src, width: cover.attributes.width as number, height: cover.attributes.height as number, alt: data.coverAlt };
+const domain = data.link && new URL(data.link).hostname;
+---
+<Base title={data.title} description={data.summary} type="article" published={data.date} image={card}>
+  <article>
+    <header class="article-head">
+      <p class="eyebrow"><a href="/work/">case study</a><span aria-hidden="true">·</span>{data.date.getUTCFullYear()}{data.draft && <span class="draft">draft</span>}</p>
+      <h1>{data.title}</h1>
+      <p class="lede">{data.summary}</p>
+      <dl class="facts">
+        <div><dt>Role</dt><dd>{data.role}</dd></div>
+        {data.tags.length > 0 && <div><dt>Work</dt><dd>{data.tags.join(', ')}</dd></div>}
+        {data.link && <div><dt>Live</dt><dd><a href={data.link} target="_blank" rel="noopener">{domain} <span aria-hidden="true">↗</span></a></dd></div>}
+      </dl>
+    </header>
+    <div class="cover"><Picture src={data.cover} alt={data.coverAlt} widths={[720, data.cover.width]} sizes="(min-width: 1140px) 1080px, calc(100vw - 32px)" formats={['avif']} fallbackFormat="webp" loading="eager" fetchpriority="high" /></div>
+    <div class="prose">
+      <Content components={components} />
+    </div>
+  </article>
+</Base>

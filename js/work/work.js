@@ -4,7 +4,7 @@
 // closing. Mochi (js/mochi.js) narrates from the corner; nothing here knows about her.
 import { EMAIL, SOCIALS, WHYCLUB, SHADERS } from '../content.js';
 
-const FONT_URL = new URL('../../assets/fonts/faculty-glyphic.woff2', import.meta.url).href;
+const FONT_URL = '/assets/fonts/faculty-glyphic.woff2';
 const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap';
 const MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
 const AUTO_MS = 5000;
@@ -61,6 +61,8 @@ export function mountWork(section) {
         n: '01', id: 'work-whyclub', title: 'WhyClub',
         line: 'A streetwear label I built alone, end to end: the brand, the product design, the storefront, and the backend that runs every order.',
         tags: 'brand · product design · frontend · backend', href: WHYCLUB.href, domain: WHYCLUB.domain,
+        // the page lists its published case studies in data-cases; a draft gets no link
+        more: section.dataset.cases?.split(' ').includes('whyclub') ? '<a href="/work/whyclub/">read the case study <span aria-hidden="true">→</span></a>' : '',
         stage: '<div class="wk-stage wk-wc is-pending" data-wk-r></div>',
       })}
 
