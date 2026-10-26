@@ -107,7 +107,9 @@ const cases = (await published('work')).map((e) => e.id);
 
   /* ---- hero: one screen, the garden, the name, two links */
   .hero { position: relative; height: 100svh; min-height: 560px; overflow: hidden; }
-  #garden { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: manipulation; }
+  /* js swaps in pixel cursors for a mouse (a hand over a flower, a needle over soil) */
+  #garden { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; touch-action: manipulation;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   /* the UI floats over the garden; only real controls take the pointer, so every empty spot plants */
   .ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
   .ui a, .ui button { pointer-events: auto; }

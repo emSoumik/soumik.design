@@ -1,56 +1,186 @@
-// Flora: the flowers that keep their own colours, drawn in the same chunky stitch as the rest of the garden,
-// plus the butterfly sprites. a flower's head is one letter per cell, coloured from its own palette
-// (G g L are the garden's greens, worked into the head); each gets the usual stem underneath.
+// Flora: the garden's flowers and the butterfly sprites.
+// each flower is a family of forms, picked by hand. a form's head is one letter per cell, in flat colour like a
+// cross-stitch: P petal, p the crease where petals meet, H a lighter petal, F f a second petal colour, C c the centre,
+// any other letter its own colour from the palette; G g L l are the garden's greens, worked into the head.
+// every form has a few colourways (pals) and the garden picks whichever stands apart from its neighbours.
+// foot is the column the stem grows from, when it isn't the middle.
+// a family that grows lists its forms smallest first: a new one starts small and fills out, and its stages share
+// their colourways in the same order, so a plant keeps its colour as it grows.
 
 export const FLOWERS = {
-  // a stargazer: six pointed petals, a dark stripe down each, stamens at the heart
-  lily: {
-    pal: { P: '#f7a3c0', p: '#d9467a', A: '#7a2a14', c: '#d8e07a' },
-    head: ['.....P.....', '....PpP....', 'PP..PpP..PP', '.PPP.p.PPP.', '..PpPAPpP..', '...PAcAP...', '..PpPAPpP..', '.PPP.p.PPP.', 'PP..PpP..PP', '....PpP....', '.....P.....'],
-  },
-  iris: {
-    pal: { P: '#8a70f0', p: '#5a3fc0', q: '#3a2890', C: '#ffd04a', c: '#f0a51c' },
-    head: ['....P....', '...PpP...', '...PpP...', '.P.PpP.P.', 'PPPpCpPPP', 'PpPCcCPpP', 'qpP.p.Ppq', 'qq..p..qq', '....L....'],
+  tulip: {
+    forms: [
+      { id: 'E',
+        pals: [{ H: '#ff7a6b', P: '#e8412f', p: '#b8261d', q: '#7f1712' }, { H: '#ffc6da', P: '#f585ad', p: '#d9548a', q: '#a3325f' }, { H: '#fff3a0', P: '#ffd23a', p: '#eda516', q: '#b8740c' }, { H: '#ffb07a', P: '#f56f2a', p: '#c9481a', q: '#8f2e10' }, { H: '#c9a8ff', P: '#8f62e0', p: '#6440b8', q: '#432a80' }],
+        head: ['.P.P.P.', '.PpppP.', 'PpPPpPP', 'PpPPpPP', '.pPPpP.', '..PPP..'] },
+    ],
   },
   daisy: {
-    pal: { P: '#f6f3fb', p: '#b9b0d0', C: '#ffc21a', c: '#d98a10' },
-    head: ['...p.p.p...', '.p.pPpPp.p.', '..pPP.PPp..', 'ppP.CCC.Ppp', '.PP.CcC.PP.', 'pPPCcccCPPp', '.PP.CcC.PP.', 'ppP.CCC.Ppp', '..pPP.PPp..', '.p.pPpPp.p.', '...p.p.p...'],
+    forms: [
+      { id: 'D',
+        pals: [{ H: '#ffffff', P: '#fbfaff', p: '#e6dcfb', q: '#c9b6f2', t: '#dccaff', T: '#a582f0', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['.....TTT.....', '.TT..ttt..TT.', '.TTt.pPq.tTT.', '..tPp.p.HPt..', '...ppmmkpp...', 'TtHpmCCCkHHtT', 'TtPpmCCckHPtT', 'TtqpkCcckpqtT', '...HpkkkHp...', '..tPq.p.pPt..', '.TTt.HPp.tTT.', '.TT..ttt..TT.', '.....TTT.....'] },
+      { id: 'B',
+        pals: [{ H: '#ffffff', P: '#ffffff', p: '#e4dff0', q: '#b8b0cc', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['.....HHp.....', '.Hp..HPp..Hp.', '.qPp.pPq.HPq.', '..qPp.p.HPq..', '...ppmmkpp...', 'HHHpmCCCkHHHp', 'HPPpmCCckHPPp', 'qqqpkCcckpqqq', '...HpkkkHp...', '..HPq.p.pPp..', '.HPq.HPp.qPp.', '.qq..HPp..qq.', '.....qqq.....'] },
+      { id: 'A',
+        pals: [{ H: '#ffffff', P: '#fbfaff', p: '#fbd2e2', q: '#f4a6c6', t: '#fbc4da', T: '#f080ac', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['.....TTT.....', '.TT..ttt..TT.', '.TTt.pPq.tTT.', '..tPp.p.HPt..', '...ppmmkpp...', 'TtHpmCCCkHHtT', 'TtPpmCCckHPtT', 'TtqpkCcckpqtT', '...HpkkkHp...', '..tPq.p.pPt..', '.TTt.HPp.tTT.', '.TT..ttt..TT.', '.....TTT.....'] },
+    ],
   },
-  rose: {
-    pal: { P: '#f2607e', p: '#c93a5a', q: '#9c2240' },
-    head: ['..qPPPq..', '.qPpppPq.', 'qPpPPPpPq', 'PpPpqpPpP', 'PpPqPpPpP', 'qPpPppPPq', '.qPPPPPq.', 'L.qqqqq.L', '.LL.G.LL.', '....G....'],
-  },
-  rosebud: {
-    pal: { P: '#f2607e', p: '#c93a5a', q: '#9c2240' },
-    head: ['...PPP...', '..PpqpP..', '.PpPPPpP.', '.PPpqpPP.', '.qPPpPPq.', '..qPPPq..', '.L.qqq.L.', '..LLGLL..', '....G....'],
-  },
-  lavender: {
-    pal: { P: '#b98af5', p: '#8656cc' },
-    head: ['....P....', '.P..p..P.', '.p.PpP.p.', 'PpP.p.PpP', '.p.PpP.p.', 'PpP.p.PpP', '.p.PpP.p.', '.L..p..L.', '..L.L.L..', '...LLL...', '....L....'],
-  },
-  forget: {
-    pal: { P: '#5aa9f0', C: '#ffd04a' },
-    head: ['.P.....P.', 'PCP...PCP', '.P..P..P.', '..LPCP.L.', '...LPL.L.', '.P..L.L..', 'PCP.LL...', '.PLLL....', '....L....'],
-  },
-  poppy: {
-    pal: { P: '#e8412f', p: '#b8261d', K: '#2a1a1a', k: '#6a4a2a' },
-    head: ['..PP.PP..', '.PPpPpPP.', 'PPpPKPpPP', 'PpPKkKPpP', 'PPpPKPpPP', '.PPpPpPP.', '..pPPPp..', '...ppp...'],
-  },
-  daffodil: {
-    pal: { P: '#ffe066', p: '#f0c020', C: '#ff9a1a', c: '#e06a10' },
-    head: ['..P......', '.PPP.....', 'PPpPCC...', '.PpCcCC..', 'PPpPCcCC.', '.PpCcCC..', 'PPpPCC...', '.PPPG....', '..P.G....'],
-  },
-  pansy: {
-    pal: { Q: '#7a4cd0', q: '#4a2a90', P: '#ffd84a', p: '#f0b020', K: '#4a2a90', C: '#ffffff', c: '#ff9a1a' },
-    head: ['.qq...qq.', 'qQQq.qQQq', 'qQQQqQQQq', 'PPqQQQqPP', 'PpPKCKPpP', 'PPKPcPKPP', '.PPpKpPP.', '..PPPPP..'],
-  },
-  bluebell: {
-    pal: { P: '#6b8cf0', p: '#3d5cc8' },
-    head: ['..GGGGG..', '.G..G..G.', '.p..G..p.', 'pPp.G.pPp', 'PpP.G.PpP', 'PPP.G.PPP', 'P.P.G.P.P'],
+  sunflower: {
+    forms: [
+      { id: 'B',
+        pals: [{ P: '#ffd23a', p: '#f0a01a', m: '#a8743e', C: '#8a5a2c', c: '#6e4220' }],
+        head: ['.....P.P.....', '...P.PPP.P...', '..PPPpppPPP..', '.PPPpCCcpPPP.', '..PpCCCCcpP..', '.PpCCmCCCcpP.', 'PPpCCCCmCcpPP', '.PpcCmCCCcpP.', '..PpcCCCmpP..', '.PPPpcccpPPP.', '..PPPpppPPP..', '...P.PPP.P...', '.....P.P.....'] },
+      { id: 'C',
+        pals: [{ P: '#ffd23a', p: '#f0a01a', m: '#a8743e', C: '#8a5a2c', c: '#6e4220' }],
+        head: ['....P.P....', '..P.PPP.P..', '..PPpppPP..', '.PPpCCcpPP.', 'PPpCmCCcpPP', '.PpCCCmcpP.', 'PPpcCCCcpPP', '.PPpcccpPP.', '..PPpppPP..', '..P.PPP.P..', '....P.P....'] },
+    ],
   },
   cosmos: {
-    pal: { P: '#f7a3c8', p: '#e06a9c', C: '#ffd04a', c: '#e3a21a' },
-    head: ['...PPP...', '.PP.P.PP.', 'PPpP.PpPP', 'P.pPCPp.P', '.PPCcCPP.', 'P.pPCPp.P', 'PPpP.PpPP', '.PP.P.PP.', '...PPP...'],
+    forms: [
+      { id: 'D',
+        pals: [{ H: '#c0405a', P: '#9a2440', p: '#6e1830', C: '#ffd23a', c: '#f0a21a' }, { H: '#d86a8a', P: '#b84068', p: '#8a2448', C: '#ffd23a', c: '#f0a21a' }],
+        head: ['....P.P....', '.HH.PPP.HH.', '.HHppPpHHH.', '..pHpppHp..', '.PppCCcpPP.', 'PPPpCCcpPPP', '.PppcccppP.', '..HHpppHH..', '.HHpPPpHHH.', '.HH.PPP.HH.', '....P.P....'] },
+      { id: 'B',
+        pals: [{ H: '#ffb0d0', P: '#f585ad', p: '#d9548a', C: '#ffd23a', c: '#f0a21a' }, { H: '#f590cc', P: '#e86ab8', p: '#c23f92', C: '#ffd23a', c: '#f0a21a' }],
+        head: ['...PPP...', '.HH.P.HH.', '.HHpppHH.', 'P.pCCcp.P', 'PPpCCcpPP', 'P.pcccp.P', '.HHpppHH.', '.HH.P.HH.', '...PPP...'] },
+    ],
+  },
+  blossom: {
+    forms: [
+      { id: 'B+D',
+        pals: [{ P: '#ffb0c8', p: '#f07aa0', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { P: '#c9a8ff', p: '#9a72e8', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { P: '#ffc89a', p: '#f09a5a', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { P: '#a8d0ff', p: '#6aa0f0', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['....P.P....', '...PPPPP...', '.PppPPPpPP.', 'P.PppppPP.P', 'PPPpCCcpPPP', 'PPPpCCcpPPP', '.pppcccppp.', '.PPPpppPPP.', '.PPPpPPPPP.', '..P.pPP.P..', '...P...P...'] },
+      { id: 'B+E',
+        pals: [{ H: '#ff8a7a', P: '#e8412f', p: '#b8261d', q: '#7f1712', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { H: '#b598ff', P: '#8f62e0', p: '#6440b8', q: '#432a80', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { H: '#ffa070', P: '#f56f2a', p: '#c9481a', q: '#8f2e10', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { H: '#ffb8d0', P: '#f585ad', p: '#d9548a', q: '#a3325f', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['....H.H....', '...HHHHH...', '.HHHPPPHHH.', 'H.HppppPH.H', 'HHPpCCcpPHH', 'HHPpCCcpPHH', '.HppcccppH.', '.HHPpppPHH.', '.HHHpPPHHH.', '..H.HHH.H..', '...H...H...'] },
+    ],
+  },
+  poppy: {
+    forms: [
+      { id: 'B',
+        pals: [{ H: '#ff7a6b', P: '#e8412f', p: '#b8261d', q: '#7f1712', k: '#6a1c1c', m: '#c8d86a', C: '#a8b84a' }, { H: '#ffb07a', P: '#f56f2a', p: '#c9481a', q: '#8f2e10', k: '#7a2a12', m: '#c8d86a', C: '#a8b84a' }],
+        head: ['.PP...PP.', 'PPPP.PPPP', 'PPPpppPPP', 'PPpPPpPPP', '.PpPPpPP.', '..pPPpP..', '...PPP...'] },
+      { id: 'A',
+        pals: [{ H: '#ff7a6b', P: '#e8412f', p: '#b8261d', q: '#7f1712', k: '#6a1c1c', m: '#c8d86a', C: '#a8b84a' }, { H: '#ffb07a', P: '#f56f2a', p: '#c9481a', q: '#8f2e10', k: '#7a2a12', m: '#c8d86a', C: '#a8b84a' }],
+        head: ['...PPPPP...', '.PppPPPpPP.', '.PPpPPpPPP.', 'PPPPkmkPPPP', 'PPPmmCmmPPP', 'PPPPkmkPPPP', '.PPpPPppPP.', '..pPPPPpP..', '...PPPPP...'] },
+    ],
+  },
+  iris: {
+    forms: [
+      { id: 'B',
+        pals: [{ P: '#b49af7', p: '#8a6ae0', F: '#ffd23a', f: '#e89a1a', C: '#f56f2a' }],
+        head: ['....PPP....', '...pPPPp...', '...pPPpP...', '..PpPPpPP..', '.fpppPpppF.', 'FFFfFCfFFFF', 'FFFfFCfFFFF', 'FFF.FCF.FFF', '.F..FFF..F.', '....FFF....'] },
+      { id: 'A',
+        pals: [{ P: '#b49af7', p: '#8a6ae0', F: '#7a4cd8', f: '#5430a8', C: '#ffd23a' }],
+        head: ['....PPP....', '...pPPPp...', '...pPPpP...', '..PpPPpPP..', '.fpppPpppF.', 'FFFfFCfFFFF', 'FFFfFCfFFFF', 'FFF.FCF.FFF', '.F..FFF..F.', '....FFF....'] },
+      { id: 'D',
+        pals: [{ P: '#ece4ff', p: '#c4b4f0', F: '#7a4cd8', f: '#5430a8', C: '#ffd23a' }],
+        head: ['....PPP....', '...pPPPp...', '...pPPpP...', '..PpPPpPP..', '.fpppPpppF.', 'FFFfFCfFFFF', 'FFFfFCfFFFF', 'FFF.FCF.FFF', '.F..FFF..F.', '....FFF....'] },
+    ],
+  },
+  pansy: {
+    forms: [
+      { id: 'E',
+        pals: [{ P: '#ffd23a', p: '#eda516', F: '#7a4cd0', f: '#5a32a8', k: '#4a2490', C: '#ffe680', c: '#f56f2a' }],
+        head: ['.FFF.FFF.', 'ffffFFfff', 'PPpfFfPPP', 'PPPkkkPPP', 'PPkkCkkPP', '.PpPkppP.', '..PPPPP..'] },
+      { id: 'D',
+        pals: [{ P: '#f4f0ff', p: '#d4caf0', F: '#5a7ce8', f: '#3a56c0', k: '#3a56c0', C: '#ffd23a', c: '#f0a21a' }],
+        head: ['.FFFF.FFFF.', 'FFFFfFFFFFF', 'fffFfFFFfff', 'PPpffFFfPPP', 'PPPPkkkPPPP', 'PPPkkCkkPPP', 'PPpPkckpPPP', 'PPpPPkPpPPP', '.PpPPPPppP.', '..PPPPPPP..'] },
+      { id: 'A',
+        pals: [{ P: '#ffd23a', p: '#eda516', F: '#7a4cd0', f: '#5a32a8', k: '#4a2490', C: '#ffe680', c: '#f56f2a' }],
+        head: ['.FFFF.FFFF.', 'FFFFfFFFFFF', 'fffFfFFFfff', 'PPpffFFfPPP', 'PPPPkkkPPPP', 'PPPkkCkkPPP', 'PPpPkckpPPP', 'PPpPPkPpPPP', '.PpPPPPppP.', '..PPPPPPP..'] },
+      { id: 'B',
+        pals: [{ P: '#9a6af0', p: '#7a4cd0', F: '#5a32a8', f: '#3d1e7a', k: '#2e1660', C: '#ffd23a', c: '#f0a21a' }],
+        head: ['.FFFF.FFFF.', 'FFFFfFFFFFF', 'fffFfFFFfff', 'PPpffFFfPPP', 'PPPPkkkPPPP', 'PPPkkCkkPPP', 'PPpPkckpPPP', 'PPpPPkPpPPP', '.PpPPPPppP.', '..PPPPPPP..'] },
+    ],
+  },
+  daffodil: {
+    forms: [
+      { id: 'D',
+        pals: [{ P: '#fff2b0', p: '#ead98a', C: '#ff8a24', c: '#e0601a', k: '#b84a10' }, { P: '#ffe866', p: '#f0c430', C: '#ffa82a', c: '#f08a10', k: '#d0680c' }, { P: '#ffe866', p: '#f0c430', C: '#ffd23a', c: '#e8a81a', k: '#c88a10' }],
+        head: ['....PPP....', '.PP.PPP.PP.', '.PPppppPPP.', '..PpCCcpP..', '..pCCCCcp..', '...CCkCc...', '..pcCCCcp..', '..PpcccpP..', '.PPppppPPP.', '.PP.PPP.PP.', '....PPP....'] },
+    ],
+  },
+  lily: {
+    forms: [
+      { id: 'A',
+        pals: [{ H: '#ffc8dc', P: '#ff94bc', p: '#e04a86', q: '#b02a66', A: '#c8501a', a: '#f2d84a' }],
+        head: ['...P.....P...', '..PPP...PPP..', '...pPP.PPp...', '....PP.PP....', '.....ppp.....', '.PPPpApppPPP.', 'PPppppaApppPP', '.PPPpApppPPP.', '.....ppp.....', '....PPGPP....', '...pPPGPPp...', '..PPP.G.PPP..', '...P..G..P...'] },
+      { id: 'C',
+        pals: [{ P: '#ffd0e2', p: '#ec5a94', q: '#b02a66', A: '#c8501a', a: '#f2d84a', H: '#ffe4ee' }],
+        head: ['...P.....P...', '..PPP...PPP..', '...pPP.PPp...', '....PP.PP....', '.....ppp.....', '.PPPpApppPPP.', 'PPppppaApppPP', '.PPPpApppPPP.', '.....ppp.....', '....PPGPP....', '...pPPGPPp...', '..PPP.G.PPP..', '...P..G..P...'] },
+      { id: 'D',
+        pals: [{ P: '#ffe066', p: '#f0a01a', q: '#c87a10', A: '#a8501a', a: '#f56f2a', H: '#fff09a' }],
+        head: ['...P.....P...', '..PPP...PPP..', '...pPP.PPp...', '....PP.PP....', '.....ppp.....', '.PPPpApppPPP.', 'PPppppaApppPP', '.PPPpApppPPP.', '.....ppp.....', '....PPGPP....', '...pPPGPPp...', '..PPP.G.PPP..', '...P..G..P...'] },
+      { id: 'B',
+        pals: [{ P: '#ff9a3a', p: '#e0601a', q: '#a83a10', A: '#7a2a10', a: '#ffd23a', H: '#ffb870' }],
+        head: ['...P.....P...', '..PPP...PPP..', '...pPP.PPp...', '....PP.PP....', '.....ppp.....', '.PPPpApppPPP.', 'PPppppaApppPP', '.PPPpApppPPP.', '.....ppp.....', '....PPGPP....', '...pPPGPPp...', '..PPP.G.PPP..', '...P..G..P...'] },
+    ],
+  },
+  lavender: {
+    grows: true,
+    forms: [
+      { id: 'B', foot: 2,
+        pals: [{ P: '#b48af0', p: '#8a5fd0' }, { P: '#8a5ae0', p: '#6438b8' }, { P: '#d2b8ff', p: '#a888f0' }],
+        head: ['..P..', '.PPp.', '.pPP.', 'PPpP.', '.PPpP', 'PpPP.', '.PPpP', 'PpPP.', '.pPp.', '..G..', '..G..'] },
+      { id: 'C', foot: 3,
+        pals: [{ P: '#b48af0', p: '#8a5fd0' }, { P: '#8a5ae0', p: '#6438b8' }, { P: '#d2b8ff', p: '#a888f0' }],
+        head: ['..P....', '.PPp...', '.pPP.P.', 'PPpP.Pp', '.PPpPpP', 'PpPP.Pp', '.pPp.pP', '..G..G.', '..G.G..', '...G...'] },
+      { id: 'A', foot: 4,
+        pals: [{ P: '#b48af0', p: '#8a5fd0' }, { P: '#8a5ae0', p: '#6438b8' }, { P: '#d2b8ff', p: '#a888f0' }],
+        head: ['....P....', '.P..Pp...', '.Pp.pP.P.', 'pP..Pp.Pp', '.Pp.pP.pP', 'pP..Pp.Pp', '.Pp.pP.pP', '.pG.Pp.Pp', '..G.G..G.', '...GG.G..', '....GG...', '....G....'] },
+      { id: 'F', foot: 4,
+        pals: [{ P: '#b48af0', p: '#8a5fd0' }, { P: '#8a5ae0', p: '#6438b8' }, { P: '#d2b8ff', p: '#a888f0' }],
+        head: ['....P....', '.P..PP...', '.PP.pP.P.', 'PpP.PP.PP', '.PP.Pp.pP', 'PpP.PP.PP', '.PP.pP.Pp', '.pG.Pp.PP', '..G.G..G.', '...GG.G..', '....GG...', '....G....'] },
+    ],
+  },
+  bluebell: {
+    grows: true,
+    forms: [
+      { id: 'C', foot: 0,
+        pals: [{ P: '#6b8cf0', p: '#4566cc' }, { P: '#f590b8', p: '#d9548a' }, { P: '#8a7cf0', p: '#5e4ec8' }],
+        head: ['..GGGG...', '.G....G..', 'G.....g..', 'G....PPp.', 'G...PPPpp', 'G...PPPpp', 'G...PPPpp', 'G..pPPPpp', 'G..p.p..p'] },
+      { id: 'A', foot: 0,
+        pals: [{ P: '#6b8cf0', p: '#4566cc' }, { P: '#f590b8', p: '#d9548a' }, { P: '#8a7cf0', p: '#5e4ec8' }],
+        head: ['..GGGGGG.....', '.G......GG...', 'G...g.....G..', 'G..PPp....g..', 'G..PPp...PPp.', 'G..PPp...PPp.', 'G.pPPpp.pPPpp', 'G.p...p.p...p', 'G............'] },
+    ],
+  },
+  forget: {
+    grows: true,
+    forms: [
+      { id: 'D', foot: 2,
+        pals: [{ H: '#a8d4ff', P: '#5aa2ee', C: '#ffd23a' }, { H: '#ffd0e2', P: '#f590b8', C: '#ffd23a' }, { H: '#c8b0ff', P: '#9a7cf0', C: '#ffd23a' }],
+        head: ['..P..', '.PCP.', '..P.P', '..G.P', '..GG.', '..G..'] },
+      { id: 'A', foot: 4,
+        pals: [{ H: '#a8d4ff', P: '#5aa2ee', C: '#ffd23a' }, { H: '#ffd0e2', P: '#f590b8', C: '#ffd23a' }, { H: '#c8b0ff', P: '#9a7cf0', C: '#ffd23a' }],
+        head: ['....H....', '.H.HCP.H.', 'HCP.P.HCP', '.P..G..P.', '..G.G.G..', '...GGG...', '....G....'] },
+      { id: 'B', foot: 5,
+        pals: [{ H: '#a8d4ff', P: '#5aa2ee', C: '#ffd23a' }, { H: '#ffd0e2', P: '#f590b8', C: '#ffd23a' }, { H: '#c8b0ff', P: '#9a7cf0', C: '#ffd23a' }],
+        head: ['.P...P.....', 'PCP.PCP..P.', '.P...P..PCP', '...P..P..P.', '..PCPPCP.G.', '...PG.P.G..', '....G.G.G..', '.....GGG...', '.....G.....'] },
+    ],
+  },
+  allium: {
+    forms: [
+      { id: 'F',
+        pals: [{ P: '#c48cf2', p: '#9a62d4' }, { P: '#f5a0c8', p: '#d9649a' }, { P: '#8ab4ff', p: '#5a86e8' }],
+        head: ['P...P...P', '.P.PPP.P.', '..PPpPP..', '.PPPPPpP.', 'PPpPPPPPP', '.PPPpPPP.', '..PPPPp..', '.P.PPP.P.', 'P...P...P'] },
+    ],
+  },
+  mini: {
+    forms: [
+      { id: 'B',
+        pals: [{ H: '#ffc6da', P: '#f585ad', p: '#d9548a', q: '#a3325f', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { H: '#fff3a0', P: '#ffd23a', p: '#eda516', q: '#b8740c', m: '#fff', C: '#f56f2a', c: '#c9481a', k: '#8f2e10' }, { H: '#c9a8ff', P: '#8f62e0', p: '#6440b8', q: '#432a80', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['.p.', 'pcp', '.p.'] },
+      { id: 'C',
+        pals: [{ H: '#ffc6da', P: '#f585ad', p: '#d9548a', q: '#a3325f', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { H: '#fff3a0', P: '#ffd23a', p: '#eda516', q: '#b8740c', m: '#fff', C: '#f56f2a', c: '#c9481a', k: '#8f2e10' }, { H: '#c9a8ff', P: '#8f62e0', p: '#6440b8', q: '#432a80', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['.P.P.', 'PpcpP', '.cCc.', 'PpcpP', '.P.P.'] },
+      { id: 'F',
+        pals: [{ H: '#ffc6da', P: '#f585ad', p: '#d9548a', q: '#a3325f', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }, { H: '#fff3a0', P: '#ffd23a', p: '#eda516', q: '#b8740c', m: '#fff', C: '#f56f2a', c: '#c9481a', k: '#8f2e10' }, { H: '#c9a8ff', P: '#8f62e0', p: '#6440b8', q: '#432a80', m: '#fff07a', C: '#ffd23a', c: '#f0a21a', k: '#c46a12' }],
+        head: ['.p.....', 'pcp..p.', '.p..pcp', '.....p.'] },
+    ],
   },
 };
 

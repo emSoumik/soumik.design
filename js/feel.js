@@ -207,6 +207,22 @@ export const feel = {
     lastRun = now;
     sound((t) => bell(t, deg(runBase + run++), .022 - run * .002, { dur: .3, wet: .6 }));
   },
+  // a flower tapped again turns into another of its kind. 'ripple': a quick music-box turn, up and back, like the ring
+  // going out and coming home; 'scatter': a short bright fizz with a few notes sprinkled through it
+  morph(kind = 'ripple', x) {
+    sound((t) => {
+      const pan = panX(x), i = nextNote();
+      if (kind === 'scatter') {
+        hiss(t, .16, .022, 'bandpass', 4200, 1.4, { attack: .004, pan, wet: .3 });
+        [4, 1, 5].forEach((s, k) => bell(t + .015 + k * .045 + Math.random() * .015, deg(i + s), .026 - k * .005, { dur: .4, pan: pan + (Math.random() - .5) * .2, wet: .7 }));
+      } else {
+        tine(t, deg(i), .11, { pan });
+        [2, 4, 2].forEach((s, k) => bell(t + .05 + k * .05, deg(i + s), .026 - k * .005, { dur: .45, pan, wet: .7 }));
+      }
+      run = 0; runBase = i + 3;
+    });
+    haptic(kind === 'scatter' ? [6, 24, 6] : 8);
+  },
   // its sparkles: a glint an octave up
   sparkle(x) {
     sound((t) => bell(t, deg(pos + 7 + (Math.random() < .5 ? 0 : 2)), .03, { dur: .7, pan: panX(x), wet: 1 }));

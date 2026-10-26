@@ -57,6 +57,7 @@ try {
       }),
       onStitch: () => feel.stitch(),
       onBloom: f => feel.plant(1, f.x),
+      onMorph: (f, how) => feel.morph(how, f.x),
       onSparkle: (ms, x) => setTimeout(() => feel.sparkle(x), ms),
       onGrown: () => grown(),
     });
@@ -122,8 +123,13 @@ clearBtn.addEventListener('click', async () => {
   sayHint('fresh soil. plant again.');
   clearing = false;
 });
-function plant(x, y) {
-  const p = garden.plant(x, y);
+function plant(x, y, slop) {
+  const p = garden.plant(x, y, slop);
+  // a tap on a flower turns it into another of its kind; that's not a new planting, though the bee may come and look
+  if (p?.morphed) {
+    if (Math.random() < .3) setTimeout(() => bee.visit(p.flowers[0]), reduced ? 0 : 600);
+    return;
+  }
   if (ink) feel.plant(1);
   planted++; sinceClear++;
   nudgeHint();
@@ -142,12 +148,69 @@ function plantSomewhere() {
   const avoid = rectsOf(KEEP, 20);
   for (let i = 0; i < 40; i++) {
     const x = 30 + Math.random() * (w - 60), y = h * (m ? .14 : .12) + Math.random() * h * (m ? .5 : .58);
-    if (!avoid.some(([a, b, c, d]) => x > a && x < c && y > b && y < d + 50)) return plant(x, y);
+    // bare soil only: on a flower it would turn that one instead
+    if (!avoid.some(([a, b, c, d]) => x > a && x < c && y > b && y < d + 50) && !garden.flowerAt?.(x, y)) return plant(x, y);
   }
   plant(w / 2, h * .55);
 }
-canvas.addEventListener('click', e => { if (!about.isOpen) plant(e.offsetX, e.offsetY); });
 hint.addEventListener('click', plantSomewhere);
+
+// ---- tapping the garden. a mouse acts the moment the button goes down; a finger dips the flower the moment it lands
+// and acts as it lifts, so a swipe to scroll never plants anything. the bee and the butterflies perch right on the
+// flowers, so a tap on one sitting on a flower startles it and turns the flower too, instead of needing a second tap
+// once it's flown. a fingertip gets a little slop round each flower; a mouse is precise and barely needs any
+const SLOP = { mouse: 4, touch: 14 };
+const local = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+let down = null;
+addEventListener('pointerdown', e => {
+  if (about.isOpen || !e.isPrimary || e.button !== 0) return;
+  const perched = e.target.closest?.('.bee, .bf');
+  if (e.target !== canvas && !perched) return;
+  const [x, y] = local(e), mouse = e.pointerType === 'mouse', slop = mouse ? SLOP.mouse : SLOP.touch;
+  if (perched && !garden.flowerAt?.(x, y, slop)) return;
+  garden.press?.(x, y, slop);
+  if (!mouse) { down = { id: e.pointerId, x, y, sx: e.clientX, sy: e.clientY, slop }; return; }
+  // fast clicks on the canvas shouldn't start selecting the page's text
+  if (e.target === canvas) e.preventDefault();
+  plant(x, y, slop);
+  pointing(x, y, true);
+}, true);
+addEventListener('pointerup', e => {
+  garden.release?.();
+  if (e.pointerType === 'mouse' && e.target === canvas) pointing(...local(e));
+  if (!down || e.pointerId !== down.id) return;
+  const d = down; down = null;
+  if (!about.isOpen && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 12) plant(d.x, d.y, d.slop);
+}, true);
+addEventListener('pointercancel', e => { if (down?.id === e.pointerId) { down = null; garden.release?.(); } }, true);
+
+// the cursor, drawn like the garden: a little pixel hand over a flower (a click turns it), pressing in while the button's
+// down, and a needle over bare soil (a click stitches one in). each gets a white edge so it reads over the flowers
+function cursor(rows, ink, hx, hy) {
+  const at = (x, y) => rows[y]?.[x] ?? '.', near = (x, y) => [-1, 0, 1].some(i => [-1, 0, 1].some(j => at(x + i, y + j) !== '.'));
+  let px = '';
+  for (let y = -1; y <= rows.length; y++) for (let x = -1; x <= rows[0].length; x++) {
+    const col = at(x, y) !== '.' ? ink[at(x, y)] : near(x, y) ? '#fff' : null;
+    if (col) px += `<rect x="${x + 1}" y="${y + 1}" width="1" height="1" fill="${col}"/>`;
+  }
+  const w = rows[0].length + 2, h = rows.length + 2;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 2}" height="${h * 2}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges">${px}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hx * 2 + 3} ${hy * 2 + 3}, pointer`;
+}
+const HAND = ['.....##.......', '....#oo#......', '....#oo#......', '....#oo#......', '....#oo###....', '....#oo#oo###.', '..###oo#oo#oo#',
+  '.#oo#oooooooo#', '.#oooooooooo#.', '..#ooooooooo#.', '..#oooooooo#..', '...#ooooooo#..', '...#ooooooo#..', '....#######...'];
+const NEEDLE = ['k............', '.ks..........', '..ks.........', '...ks........', '....ks.......', '.....ks......', '......ks.....',
+  '.......kk....', '.......kpk...', '........kkp..', '...........p.', '...........p.', '..........p..'];
+const INK = { '#': '#1f1d1b', o: '#fff', k: '#1f1d1b', s: '#c3c9d2', p: '#e8578f' };
+// pressed, the hand sits a stitch lower than the click, so the fingertip reads as pushing in
+const CURSORS = { flower: cursor(HAND, INK, 5, 0), press: cursor(['..............', ...HAND.slice(0, -1)], INK, 5, 0), soil: cursor(NEEDLE, INK, 0, 0) };
+let shown = '';
+function pointing(x, y, pressing = false) {
+  const on = garden.hover?.(x, y) ?? false, c = on ? (pressing ? 'press' : 'flower') : 'soil';
+  if (c !== shown) canvas.style.cursor = CURSORS[shown = c];
+}
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') pointing(...local(e), e.buttons === 1 && shown === 'press'); }, { passive: true });
+canvas.addEventListener('pointerleave', () => { garden.hover?.(-1, -1); shown = ''; });
 
 // ---- work: one scroll below; mounted when it gets close
 const work = document.getElementById('work');
@@ -181,3 +244,10 @@ setTimeout(() => {
   mochi.say('psst. want to see what soumik made?', { action: toWork });
 }, 4400);
 if (location.hash === '#about') setTimeout(() => about.open(document.querySelector('.nav [data-about]')), 1200);
+
+// dev only, never on the live site: the Agentation annotation toolbar, and the night mode prototype (?night=A…E) when
+// its untracked folder is there. glob finds nothing for a missing file, so the build never breaks over it
+if (import.meta.env.DEV) {
+  const local = import.meta.glob(['./agentation-dev.js', './night-prototype/index.js']);
+  for (const load of Object.values(local)) load().catch(err => console.warn('[dev]', err));
+}
