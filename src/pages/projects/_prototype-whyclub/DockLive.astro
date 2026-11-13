@@ -1,0 +1,523 @@
+---
+// the dock, live (variant A): the real component on the white page with nothing around it, and only type around it.
+// its box is held at the open panel's height, so the page below never moves when the shape changes; the dock sits on the
+// box's floor and grows up into it, with the shape's name, a line on what it does and its measured size in the room
+// above. one type system: the display face at three sizes, near-black ink and two greys. controls are words with a
+// sliding underline; the tour's progress fills the picker's underline. on a laptop everything about the dock is one
+// column on one left edge, the notes hung either side with hairline leaders; the section's paragraphs, when given, take
+// the column beside it. on a phone it is one column on the page's left edge, the dock a little smaller between a row of
+// notes above and a row below.
+// every block that changes with the shape is a stack of all three versions in one grid cell, so it is always as tall as
+// its tallest version and never grows or shrinks. a tour walks pill, bar, panel, pill… while it's on screen; the first tap
+// on the dock or a control hands it over
+import { fixedHeight, mobNotes, mobRow, mobLi, underStep, type Report } from './dock';
+const shapes = [['pill', 'Pill'], ['bar', 'Bar'], ['panel', 'Panel']];
+// the step: the shape's name, its size (measured once the dock reports) and one line on when the dock takes it. what the
+// parts do is the notes' job, so the step never repeats them
+// account and more open shorter than the shop, so on a laptop their step still fits in the room above them
+const cards = [
+  ['pill', 'Pill', 'Further down the page.', '60 × 56'],
+  ['bar', 'Bar', 'At the top of the page.', '328 × 64'],
+  ['panel-account', 'Account', 'Opened from its tab.', '360 × 288'],
+  ['panel-more', 'More', 'Opened from its tab.', '360 × 288'],
+];
+interface Props { caption?: string }
+const { caption } = Astro.props;
+// each shape's notes as the built dock measures them, so every stack is sized by its real text before the dock loads
+const P = {
+  pill: { x: 16, y: 692, w: 60, h: 56 }, shell: { x: 32, y: 684, w: 328, h: 64 }, cell: { x: 40, y: 698, w: 64, h: 46 },
+  panel: { x: 16, y: 356, w: 360, h: 392 }, header: { x: 24, y: 354, w: 344, h: 48 }, tile: { x: 24, y: 402, w: 168, h: 184 }, row: { x: 24, y: 594, w: 344, h: 68 },
+  // account and more: four rows, each led by a line icon
+  list: { x: 16, y: 460, w: 360, h: 288 }, lhead: { x: 24, y: 468, w: 344, h: 48 }, lrow: { x: 24, y: 516, w: 344, h: 56 }, icon: { x: 40, y: 534, w: 20, h: 20 },
+};
+const r = (shape: string, panel: string | null, parts: object) => ({ wc: 'dock', shape, panel, labeled: true, moving: false, spring: null, parts }) as Report;
+const list = { shell: P.list, panel: P.list, header: P.lhead, row: P.lrow, icon: P.icon };
+// one entry per view: each shape, and each panel the bar can open
+const reports: Record<string, Report> = {
+  pill: r('pill', null, { pill: P.pill }),
+  bar: r('bar', null, { shell: P.shell, cell: P.cell }),
+  'panel-shop': r('panel', 'shop', { shell: P.panel, panel: P.panel, header: P.header, tile: P.tile, row: P.row }),
+  'panel-account': r('panel', 'account', list),
+  'panel-more': r('panel', 'more', list),
+};
+const views = Object.keys(reports);
+const mrow = (k: string, row: 't' | 'b' | 'a') => mobRow(underStep(mobNotes(reports[k])), reports[k].parts, row);
+const HEAD = 14;
+// the section's own paragraphs, when a page passes them in: on a laptop the column beside the dock, on a phone after the
+// controls. optional, so the dock runs without them
+const hasBody = Astro.slots.has('default');
+const hasCredit = Astro.slots.has('credit');
+---
+<figure class="dk" data-shape="pill" data-pane="pill" data-moving="true" data-mode="tour">
+  <div class="stage">
+    <div class="lcol">
+      <div class="dktop">
+        <div class="tx shapes" role="radiogroup" aria-label="Dock shape">
+          {shapes.map(([k, label], i) => <button type="button" role="radio" aria-checked={String(i === 0)} tabindex={i === 0 ? 0 : -1} data-go={k}>{label}</button>)}
+          <span class="ul" aria-hidden="true"><i></i></span>
+        </div>
+        <p class="ask"><span class="say" aria-hidden="true"><span class="t-tour"><i class="live"></i>Tap the dock to take over</span><span class="t-you"><i class="live"></i>Your turn. Tap the dock</span></span><button type="button" class="replay">Replay tour</button></p>
+      </div>
+      <div class="board">
+        <div class="mrow t" aria-hidden="true">{views.map((k) => <ol class="mk" data-for={k} set:html={mobLi(mrow(k, 't'))} />)}</div>
+        <div class="side l" aria-hidden="true"></div>
+        <div class="dockcol">
+          <div class="dockwrap">
+            <div class="win" style={`height:${fixedHeight(HEAD)}`}></div>
+          </div>
+        </div>
+        <div class="side r" aria-hidden="true"></div>
+        <div class="mrow b" aria-hidden="true">{views.map((k) => <ol class="mk" data-for={k} set:html={mobLi(mrow(k, 'b'))} />)}</div>
+        <div class="above">
+          <div class="stc">
+            {cards.map(([k, name, line, size]) => (
+              <div class="stp" data-for={k}>
+                <p class="cname"><span>{name}<em class="csize">{size}</em></span></p>
+                <p class="cline"><span>{line}</span></p>
+              </div>
+            ))}
+          </div>
+          <i class="sp"></i>
+          <div class="mrow a" aria-hidden="true">{cards.map(([k]) => <ol class="mk" data-for={k} set:html={mobLi(mrow(k, 'a'))} />)}</div>
+        </div>
+        <svg class="leaders" aria-hidden="true"></svg>
+      </div>
+      <div class="meta">
+        <div class="tx glass" role="radiogroup" aria-label="Glass" aria-describedby="dk-glassnote">
+          <button type="button" role="radio" aria-checked="true" tabindex="0" data-glass="light" aria-label="Light glass">Light</button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-glass="dark" aria-label="Dark glass">Dark</button>
+          <span class="ul" aria-hidden="true"><i></i></span>
+        </div>
+        <div class="spring" aria-hidden="true">
+          <svg class="plot" width="120" height="40" viewBox="0 0 120 40"><line class="base" x1="4" x2="116" y1="4" y2="4" /><polyline class="curve" points="4,36 116,4" /><g class="runx"><circle class="run" cx="4" cy="36" r="3" /></g></svg>
+          <p class="sline"><span class="l1">Last move <b>Expand</b> <span class="v">000 ms</span></span><span class="dot">·</span><span class="l2">Response <span class="v">0.00</span>, damping <span class="v">0.00</span></span></p>
+        </div>
+        <p class="sr" id="dk-glassnote">Dark glass shows only on an iPhone in dark mode, so the dock sits with Safari’s toolbar.</p>
+      </div>
+    </div>
+    {hasBody && <div class="prose"><slot /></div>}
+  </div>
+  {(caption || hasCredit) && (
+    <div class="after">
+      <slot name="credit" />
+      {caption && <figcaption>{caption}</figcaption>}
+    </div>
+  )}
+</figure>
+
+<style>
+  /* one system: the display face at three sizes (name, body, meta), near-black ink and two greys, an 8px rhythm, and one
+     curve for everything that moves */
+  .dk { margin: 0; container: dk / inline-size; --ease: cubic-bezier(.23, 1, .32, 1); --hair: rgba(31, 29, 27, .28);
+    --t-name: 32px; --t-body: 15px; --t-meta: 13px; --lh-meta: 20px; --in: calc(16 * 330px / 392); }
+
+  /* a laptop: everything about the dock in one column, the section's paragraphs (when given) in a narrower one beside it */
+  /* with its paragraphs the figure is wider than the article: up to 1440px, 48px clear of the window's edges, centred.
+     never narrower than the article */
+  @media (min-width: 761px) {
+    .dk:has(.prose) { --bw: max(100%, min(1440px, 100vw - 96px)); width: var(--bw); margin-inline: calc((100% - var(--bw)) / 2); }
+    /* the picker's 44px reach overhangs its words; pull it up so the words sit the section's 48px under the headline */
+    .dk:has(.prose) { margin-top: -14px; }
+  }
+  .stage { display: grid; grid-template-columns: minmax(0, 720px); justify-content: center; align-items: start; }
+  /* a tablet: two even columns, the dock's notes in rows above and below it so the left column stays narrow */
+  @container dk (min-width: 821px) {
+    .dk:has(.prose) .stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); justify-content: stretch; align-items: center; gap: 0 56px; }
+  }
+  /* a laptop: the dock and its notes take the room on the left, the paragraphs a 52 to 60 character column on the
+     right, the two centred on each other */
+  @container dk (min-width: 1180px) {
+    .dk:has(.prose) .stage { grid-template-columns: minmax(0, 1fr) clamp(420px, 34cqw, 30rem); justify-content: stretch; align-items: center; gap: 0 clamp(48px, 5cqw, 88px); }
+    .prose { justify-self: stretch; width: auto; }
+  }
+  .lcol { display: grid; gap: 16px; min-width: 0; container: lc / inline-size; }
+  .prose { min-width: 0; }
+  /* under the row: the credit and the caption, centred */
+  .after { display: grid; justify-items: center; gap: 8px; margin-top: 40px; text-align: center; }
+  .after figcaption { margin: 0; }
+  /* the credit and the caption, centred under the row; the source is underlined in ink */
+  .after :global(.credit.inside) { max-width: 76ch; font: 400 15px/1.6 var(--display); text-wrap: balance; }
+  .after :global(.credit.inside a) { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: rgba(31, 29, 27, .4); transition: text-decoration-color .2s; }
+  @media (hover: hover) { .after :global(.credit.inside a:hover) { text-decoration-color: var(--ink); } }
+
+  /* the dock between two columns of notes; the leaders run over all three */
+  .board { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 330px minmax(0, 1fr); gap: 16px; }
+  .dockwrap { position: relative; width: 100%; container-type: inline-size; }
+  /* the box: held at the open panel's height (css, from the measured panel top), the dock anchored to its floor */
+  .win { position: relative; width: 100%; overflow: hidden; }
+  .side.l { grid-area: 1 / 1; }
+  .dockcol { grid-area: 1 / 2; }
+  .side.r { grid-area: 1 / 3; }
+
+  /* the two control lines, above and below the board, start on the dock's own left edge (the pill's and the panel's) */
+  .dktop, .meta { display: flex; align-items: center; gap: 8px 32px; padding-left: calc(50% - 165px + var(--in)); min-width: 0; }
+
+  /* words as controls: the chosen one in ink, the others grey, a 2px rule under the chosen one that slides between them.
+     each word is 44px tall to the touch; its reach stops halfway into the gap, so neighbours never share a pixel */
+  .tx { position: relative; display: flex; gap: 24px; flex: none; }
+  .tx button { all: unset; position: relative; height: 44px; display: grid; place-items: center; cursor: pointer; white-space: nowrap;
+    font: 500 var(--t-body)/1 var(--display); color: var(--ink-3); transition: color 150ms ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+  .tx button::before { content: ''; position: absolute; inset: 0 -12px; }
+  .tx button[aria-checked='true'] { color: var(--ink); }
+  /* a ring only for the keyboard: never after a click or a tap, and never for the tour */
+  .dk button:focus { outline: none; }
+  .dk[data-kbd] :is(.tx button, .replay):focus-visible { outline: 2px solid rgba(31, 29, 27, .32); outline-offset: 4px; border-radius: 6px; }
+  @media (hover: hover) and (pointer: fine) { .tx button:not([aria-checked='true']):hover { color: var(--ink-2); } }
+  /* the rule: a 100px bar moved and stretched onto the chosen word (transform only), with an inner fill. on the shape
+     picker the fill is the tour's clock: it runs across the word over the hold, then the rule moves on */
+  .ul { position: absolute; left: 0; bottom: 7px; width: 100px; height: 2px; transform-origin: 0 0; pointer-events: none;
+    transform: translateX(var(--ux, 0px)) scaleX(var(--us, 0)); transition: transform 360ms var(--ease); }
+  .ul i { position: absolute; inset: 0; background: var(--ink); transform-origin: 0 0; }
+  .dk:not([data-mode='free']) .shapes .ul { background: var(--line); }
+  .dk:not([data-mode='free']) .shapes .ul i { animation: fill var(--hold, 4200ms) linear both; animation-play-state: var(--run, running); }
+  @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .dk:not([data-ready]) .ul { visibility: hidden; }
+
+  /* the tour line: a live dot and a few words, or the way back to the tour once it's been handed over. all three share
+     one cell, so the line is as wide as its longest version and nothing beside it moves */
+  .ask { margin: 0; display: grid; align-items: center; min-height: 44px; font: 400 var(--t-meta)/var(--lh-meta) var(--display); color: var(--ink-3); }
+  .ask > * { grid-area: 1 / 1; }
+  .say { display: grid; }
+  .say > span { grid-area: 1 / 1; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .live { flex: none; width: 5px; height: 5px; border-radius: 50%; background: var(--ink); animation: live 2s ease-in-out infinite; }
+  @keyframes live { 50% { opacity: .3; } }
+  .dk:not([data-mode='tour']) .t-tour, .dk:not([data-mode='you']) .t-you, .dk[data-mode='free'] .say { visibility: hidden; }
+  .replay { all: unset; position: relative; justify-self: start; height: 44px; cursor: pointer; white-space: nowrap; color: var(--ink-2);
+    text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--hair); text-underline-offset: 4px;
+    transition: text-decoration-color 150ms ease, color 150ms ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .dk:not([data-mode='free']) .replay { visibility: hidden; }
+  @media (hover: hover) and (pointer: fine) { .replay:hover { color: var(--ink); text-decoration-color: var(--ink); } }
+
+  /* the step, in the room above a pill or bar: the shape's name, its measured size, and one line on what it does. the
+     panel covers the room when it opens, and while the dock moves the text steps back */
+  .above { grid-area: 1 / 2; z-index: 2; align-self: start; padding: 24px var(--in) 0; pointer-events: none; }
+  .sp { display: none; }
+  .stc { display: grid; transition: opacity 200ms var(--ease), visibility 0s; }
+  .dk[data-pane='panel-shop'] .stc, .dk:not([data-ready]) .stc { opacity: 0; visibility: hidden; transition: opacity 100ms ease, visibility 0s 100ms; }
+  /* the three versions share one cell. each line is its own mask: the words rise into it, a beat apart */
+  .stp { grid-area: 1 / 1; display: grid; visibility: hidden; transition: visibility 0s 150ms; }
+  .stp.on { visibility: visible; transition-delay: 0s; }
+  .dk .stp p { margin: 0; overflow: clip; overflow-clip-margin: 2px; }
+  /* in: up from under its mask, a beat apart. out, as the dock starts to move: up and away, quicker */
+  .stp span { display: block; opacity: 0; transform: translateY(70%); }
+  .stp.on span { opacity: 1; transform: none; transition: opacity 280ms var(--ease), transform 420ms var(--ease); }
+  .stp.on .cline span { transition-delay: 60ms; }
+  .dk[data-moving='true'] .stp.on span { opacity: 0; transform: translateY(-40%); transition: opacity 150ms ease, transform 150ms ease; transition-delay: 0s; }
+  .dk .cname { font: 600 var(--t-name)/1.1 var(--display); letter-spacing: -.03em; color: var(--ink); }
+  /* the size sits on the name's baseline, the way every note puts its figure after its label */
+  .dk .csize { margin-left: 12px; font: 400 var(--t-meta)/1 var(--display); letter-spacing: 0; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dk .cline { margin-top: 4px; font: 400 var(--t-body)/1.45 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+  /* notes: placed by script level with the part they name, then joined to it by a hairline */
+  .side { position: relative; }
+  .side :global(.note), .mk :global(.note) { display: grid; font: 400 var(--t-meta)/var(--lh-meta) var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .side :global(.note) { position: absolute; left: 0; width: min(100%, 15rem); }
+  .side.l :global(.note) { left: auto; right: 0; }
+  .side.l :global(.note) { text-align: right; }
+  .dk :global(.note b) { font-weight: 500; color: var(--ink); }
+  .dk :global(.note em) { font-style: normal; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-left: 8px; }
+  .leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .leaders :global(.halo) { fill: none; stroke: #fff; stroke-width: 3; }
+  .leaders :global(.ln) { fill: none; stroke: var(--hair); stroke-width: 1; }
+  .leaders :global(circle) { fill: var(--ink); stroke: #fff; stroke-width: 1.5; paint-order: stroke; }
+
+  /* the phone's rows of notes, above and below the dock. each row stacks all three shapes' notes in one cell, so it is
+     as tall as its tallest version and the page never moves */
+  .mrow { display: none; }
+  .mk { grid-area: 1 / 1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; visibility: hidden; opacity: 0; transition: opacity 200ms var(--ease), visibility 0s 200ms; }
+  .mrow.t .mk, .mrow.a .mk { align-items: end; }
+  .mrow.b .mk { align-items: start; }
+  .dk[data-pane='pill'] .mk[data-for='pill'], .dk[data-pane='bar'] .mk[data-for='bar'], .dk[data-pane='panel-shop'] .mk[data-for='panel-shop'],
+  .dk[data-pane='panel-account'] .mk[data-for='panel-account'], .dk[data-pane='panel-more'] .mk[data-for='panel-more'] { visibility: visible; opacity: 1; transition-delay: 0s; }
+  .mk :global(.note.r) { grid-column: 2; }
+  /* everything pointing at a part steps back while the dock moves, and returns once it has settled */
+  .mrow, .side, .leaders { transition: opacity 200ms var(--ease); }
+  .dk[data-moving='true'] :is(.mrow, .side, .leaders), .dk:not([data-ready]) :is(.mrow, .side, .leaders) { opacity: 0; transition-duration: 100ms; }
+
+  /* the meta line: the glass, then the last move's spring */
+  .sline { margin: 0; font: 400 var(--t-meta)/var(--lh-meta) var(--display); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sline :global(b) { font-weight: 500; color: var(--ink); }
+  .sline :global(.v) { color: var(--ink-2); }
+  .sline :global(.dot) { margin: 0 8px; }
+  /* the last move's easing, drawn: the spring's progress over its duration, with a dot that runs it */
+  .spring { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .dk:not([data-sprung]) .spring { visibility: hidden; }
+  .plot { display: block; flex: none; overflow: visible; }
+  .plot .base { stroke: var(--line); stroke-dasharray: 2 3; }
+  .plot .curve { fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .plot .run { fill: var(--ink); stroke: #fff; stroke-width: 2; paint-order: stroke; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  figcaption { font: 400 var(--t-meta)/var(--lh-meta) var(--display); color: var(--ink-3); text-wrap: pretty; }
+  figcaption :global(a) { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+  /* a phone (or anything without room for notes either side): one column on the page's left edge, in reading order. the
+     dock is drawn smaller between a row of notes above and a row below, every note joined to its part by a hairline */
+  @container dk (max-width: 820px) {
+    .stage, .dk:has(.prose) .stage { grid-template-columns: minmax(0, 1fr); gap: 32px 0; }
+    .lcol { gap: 8px; }
+    .after { justify-items: start; text-align: left; margin-top: 24px; }
+  }
+  /* too narrow for notes either side (a phone, or the dock's column on a tablet) */
+  @container lc (max-width: 699px) {
+    .dktop, .board, .meta { --t-name: 28px; --t-body: 15px; --t-meta: 13px; --lh-meta: 19px; }
+    /* everything on the dock's own centre line: the picker with the tour line under it, the step, the notes either side
+       of the middle, then the last move and the glass */
+    .dktop, .meta { padding-left: 0; flex-direction: column; align-items: center; gap: 0; }
+    .ask { justify-items: center; min-height: 28px; }
+    .say > span { justify-content: center; }
+    .replay { justify-self: center; }
+    .stp { justify-items: center; text-align: center; }
+    .stp .cline { text-wrap: balance; }
+    /* the last move reads first, then the glass under it (the readout is hidden from assistive tech, so the order is visual only) */
+    .spring { order: -1; padding-top: 8px; }
+    /* a note in the left column hangs from the middle, so the two columns meet at the dock's centre */
+    .mk :global(.note:first-child:not(.r)) { justify-self: end; text-align: right; }
+    .sline :global(.l2) { display: block; }
+    .sline :global(.dot) { display: none; }
+    /* three rows: the panel's top notes, the dock, the notes under it. the room the panel opens into is never empty: over
+       a pill or bar it holds the step and that shape's own notes, which the panel covers as it opens */
+    .board { grid-template-columns: minmax(0, 1fr); gap: 8px 0; }
+    .side { display: none; }
+    .mrow { display: grid; }
+    .mrow.t { grid-area: 1 / 1; }
+    .dockcol { grid-area: 2 / 1; display: grid; justify-items: center; }
+    .mrow.b { grid-area: 3 / 1; }
+    /* the dock as wide as the phone allows, up to 300 */
+    .board { --dw: min(100cqw, 300px); }
+    .dockwrap { width: var(--dw); }
+    /* stops above the pill or bar (76 frame px from the floor), leaving room for their leaders. the free room goes
+       mostly to the leaders' run down to the dock, which is drawn on, not left blank */
+    .above { grid-area: 1 / 1 / 3 / 2; align-self: stretch; display: flex; flex-direction: column; padding: 0 0 calc(76 * var(--dw) / 392 + 16px); }
+    .above::before { content: ''; flex: .45 1 0; min-height: 8px; }
+    .above .sp { display: block; flex: .7 1 0; min-height: 16px; }
+    .above::after { content: ''; flex: 2 1 0; min-height: 0; }
+    /* inside the overlay, so it needn't hold room for the other shape: only the current shape's note takes space */
+    .mrow.a .mk { display: none; }
+    .dk[data-pane='pill'] .mrow.a .mk[data-for='pill'], .dk[data-pane='bar'] .mrow.a .mk[data-for='bar'] { display: grid; }
+    /* on a phone the panel's own notes hold the room above it, so the step steps aside for every panel */
+    .dk[data-shape='panel'] .stc { opacity: 0; visibility: hidden; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live { animation: none; }
+    .ul, .mrow, .side, .leaders, .stc, .mk { transition: none; }
+    .dk:not([data-mode='free']) .shapes .ul i { animation: none; }
+    .dk .stp span, .dk[data-moving='true'] .stp.on span { transform: none; transition: opacity 150ms ease; transition-delay: 0s; }
+  }
+</style>
+
+<script>
+  import { liveDock, markShape, notesFor, mobNotes, mobRect, mobRow, mobLi, underStep, springName, MOB, type Report, type Spring, type Note } from './dock';
+  const SVG = 'http://www.w3.org/2000/svg';
+  const HOLD = 4200;
+  // a laptop: which column each part's note sits in, and the point on the part its leader lands on (fractions of the part)
+  const PLACE: Record<string, { side: 'l' | 'r'; at: [number, number] }> = {
+    pill: { side: 'l', at: [0, .5] },
+    cell: { side: 'l', at: [0, .5] },
+    shell: { side: 'r', at: [1, .5] },
+    header: { side: 'l', at: [0, .5] },
+    tile: { side: 'l', at: [0, .5] },
+    icon: { side: 'l', at: [0, .5] },
+    panel: { side: 'r', at: [1, .36] },
+    row: { side: 'r', at: [1, .5] },
+  };
+  // the part whose size a shape's step reports
+  const SIZE: Record<string, string> = { pill: 'pill', bar: 'shell', panel: 'panel' };
+  // a view is a shape, or for the panel, which panel: each has its own notes and step
+  const view = (r: Report) => (r.shape === 'panel' ? `panel-${r.panel ?? 'shop'}` : r.shape ?? 'pill');
+  // the tour opens a different panel each time round: more, then account, then the shop
+  const PANELS = ['more', 'account', 'shop'];
+  // hairlines sit on the pixel grid, so a 1px rule is one pixel and not two half-grey ones
+  const px = (v: number) => Math.round(v) + .5;
+
+  document.querySelectorAll<HTMLElement>('figure.dk').forEach((dk) => {
+    const win = dk.querySelector<HTMLElement>('.win')!;
+    const board = dk.querySelector<HTMLElement>('.board')!;
+    const leaders = dk.querySelector<SVGSVGElement>('.leaders')!;
+    const cols = { l: dk.querySelector<HTMLElement>('.side.l')!, r: dk.querySelector<HTMLElement>('.side.r')! };
+    const sline = dk.querySelector<HTMLElement>('.sline')!;
+    const cards = [...dk.querySelectorAll<HTMLElement>('.stp')];
+    const groups = [...dk.querySelectorAll<HTMLElement>('.tx')];
+    const fill = dk.querySelector<HTMLElement>('.shapes .ul i')!;
+    let shown: Report | null = null;
+    dk.style.setProperty('--hold', `${HOLD}ms`);
+    // keyboard or pointer: the focus ring shows only after a key that moves focus
+    const KEYS = ['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    addEventListener('keydown', (e) => { if (KEYS.includes(e.key)) dk.setAttribute('data-kbd', ''); }, true);
+    addEventListener('pointerdown', () => dk.removeAttribute('data-kbd'), true);
+
+    // the rule under each group's chosen word
+    const slide = (g: HTMLElement) => {
+      const on = g.querySelector<HTMLElement>('[aria-checked="true"]');
+      const ul = g.querySelector<HTMLElement>('.ul')!;
+      if (!on) { ul.style.setProperty('--us', '0'); return; }
+      ul.style.setProperty('--ux', `${on.offsetLeft}px`);
+      ul.style.setProperty('--us', String(on.offsetWidth / 100));
+    };
+    const slideAll = () => groups.forEach(slide);
+    new MutationObserver((m) => new Set(m.map((x) => (x.target as HTMLElement).closest<HTMLElement>('.tx')!)).forEach(slide))
+      .observe(dk, { subtree: true, attributes: true, attributeFilter: ['aria-checked'] });
+    slideAll();
+    document.fonts?.ready.then(slideAll);
+    // each new hold starts the picker's fill again
+    new MutationObserver(() => { fill.style.animation = 'none'; void fill.offsetWidth; fill.style.animation = ''; })
+      .observe(dk, { attributes: true, attributeFilter: ['data-tick'] });
+
+    // a picked shape is marked at once; the settles on the way there don't move the mark back
+    let target: string | null = null, targetT = 0;
+    dk.querySelector('.shapes')!.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-go]');
+      if (!b) return;
+      target = b.dataset.go!; targetT = Date.now();
+      markShape(dk, target);
+    });
+
+    let turn = 0;
+    const d = liveDock(dk, {
+      host: win, head: 14, fixed: true, dwell: HOLD,
+      panel: () => PANELS[turn++ % PANELS.length],
+      onSettle: (r) => {
+        if (target && r.shape !== target && Date.now() - targetT < 2500) return draw(r);
+        target = null;
+        markShape(dk, r.shape); card(r); draw(r);
+      },
+      onFit: () => redraw(),
+      onSpring: showSpring,
+    });
+    // the step for the shape, its size as measured
+    function card(r: Report) {
+      cards.forEach((c) => {
+        const on = c.dataset.for === view(r);
+        c.classList.toggle('on', on);
+        const p = on && r.parts[SIZE[r.shape!]];
+        if (p) c.querySelector('.csize')!.textContent = `${Math.round(p.w)} × ${Math.round(p.h)}`;
+      });
+    }
+
+    const redraw = () => { if (shown && dk.dataset.moving !== 'true') draw(shown); };
+    // crossing between the laptop and phone layouts moves the notes, so draw again when the figure changes width
+    let lastW = 0;
+    new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== lastW) { lastW = w; slideAll(); redraw(); } }).observe(dk);
+    const wide = () => getComputedStyle(cols.l).display !== 'none';
+
+    function draw(r: Report) {
+      shown = r;
+      leaders.replaceChildren(); cols.l.replaceChildren(); cols.r.replaceChildren();
+      if (!r.shape) return;
+      dk.dataset.pane = view(r);
+      wide() ? drawCols(underStep(notesFor(r)), r) : drawRows(underStep(mobNotes(r)), r);
+    }
+
+    function lead(path: string, x: number, y: number) {
+      for (const cls of ['halo', 'ln']) {
+        const p = document.createElementNS(SVG, 'path');
+        p.setAttribute('class', cls); p.setAttribute('d', path);
+        leaders.append(p);
+      }
+      const c = document.createElementNS(SVG, 'circle');
+      c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y)); c.setAttribute('r', '2.25');
+      leaders.append(c);
+    }
+
+    // a phone: the measured notes replace the seeded ones in each row (same words, so the rows keep their height). a leader
+    // leaves each note straight towards the dock, turns in the gap if it has to, and lands on its part; a part whose
+    // leader would cross the dock's words is reached from outside the dock instead
+    function drawRows(notes: Note[], r: Report) {
+      const B = board.getBoundingClientRect();
+      (['t', 'a', 'b'] as const).forEach((row) => {
+        const ol = dk.querySelector<HTMLElement>(`.mrow.${row} .mk[data-for='${view(r)}']`)!;
+        const items = mobRow(notes, r.parts, row);
+        ol.innerHTML = mobLi(items);
+        items.forEach((nt, i) => {
+          const m = MOB[nt.part];
+          const rect = mobRect(nt, r.parts)!;
+          const end = d.at(rect, m.at[0], m.at[1], board);
+          // the dock's outline on the side the note is on: the panel, the bar or the pill
+          const outer = (row === 'a' ? r.parts.shell ?? r.parts.pill : r.parts.panel ?? r.parts.shell ?? r.parts.pill) ?? rect;
+          const nr = ol.children[i].getBoundingClientRect();
+          let x = px(end.x);
+          if (m.around) x = px(d.at(outer, m.around === 'l' ? 0 : 1, 0, board).x + (m.around === 'l' ? -8 : 8));
+          const lo = nr.left - B.left + 4, hi = nr.right - B.left - 4;
+          const sx = px(Math.min(hi, Math.max(lo, x)));
+          const down = row !== 'b';
+          const sy = Math.round(down ? nr.bottom - B.top + 6 : nr.top - B.top - 6);
+          // where a leader turns: part of the way to the dock's edge, staggered so two never share a run
+          const edge = d.at(outer, 0, down ? 0 : 1, board).y;
+          const gy = px(sy + (edge - sy) * (i + 1) / (items.length + 2));
+          let path = `M${sx} ${sy}`;
+          if (sx !== x) path += ` V${gy} H${x}`;
+          path += m.around ? ` V${px(end.y)} H${end.x}` : ` V${end.y}`;
+          lead(path, m.around ? end.x : x, end.y);
+        });
+      });
+    }
+
+    // a laptop: each note sits level with the point it names, stacked so none overlap and kept inside the box, with a
+    // hairline from the note's first line to that point: straight across, or with one step where the stack pushed it
+    function drawCols(notes: Note[], r: Report) {
+      const B = board.getBoundingClientRect();
+      const LH = parseFloat(getComputedStyle(board).getPropertyValue('--lh-meta')) || 20;
+      (['l', 'r'] as const).forEach((side) => {
+        const col = cols[side];
+        const cr = col.getBoundingClientRect();
+        const items = notes.filter((nt) => PLACE[nt.part]?.side === side).map((nt) => {
+          // on a panel of plain rows the panel's own note lands lower, clear of the first row's
+          const [fx, fy] = nt.part === 'panel' && !r.parts.tile ? [1, .72] : PLACE[nt.part].at;
+          const pt = d.at(r.parts[nt.part]!, fx, fy, board);
+          const el = document.createElement('div');
+          el.className = 'note';
+          el.innerHTML = `<span><b>${nt.title}</b>${nt.size ? `<em>${nt.size}</em>` : ''}</span><span>${nt.text}</span>`;
+          col.append(el);
+          return { el, pt, h: el.offsetHeight };
+        }).sort((a, b) => a.pt.y - b.pt.y);
+        const GAP = 16;
+        let floor = 0;
+        const tops = items.map((it) => { const t = Math.round(Math.max(it.pt.y - LH / 2 - (cr.top - B.top), floor)); floor = t + it.h + GAP; return t; });
+        // ran past the bottom of the box: push the stack back up, from the last note
+        let over = floor - GAP - cr.height;
+        for (let i = items.length - 1; i >= 0 && over > 0; i--) {
+          const room = tops[i] - (i ? tops[i - 1] + items[i - 1].h + GAP : 0);
+          const take = Math.min(over, room);
+          tops[i] -= take; over -= take;
+          // the note above may now need to move too
+          for (let j = i - 1; j >= 0 && tops[j] + items[j].h + GAP > tops[j + 1]; j--) tops[j] = tops[j + 1] - items[j].h - GAP;
+        }
+        items.forEach((it, i) => {
+          it.el.style.top = `${tops[i]}px`;
+          const nr = it.el.getBoundingClientRect();
+          const sx = Math.round((side === 'l' ? nr.right + 12 : nr.left - 12) - B.left);
+          const sy = px(nr.top - B.top + LH / 2);
+          const { x, y } = it.pt;
+          const ty = px(y);
+          // level: one straight rule. otherwise across, one step, and across again, the step a third of the way in
+          const mx = px(sx + (x - sx) / 3);
+          lead(Math.abs(ty - sy) < 1.5 ? `M${sx} ${sy} H${x}` : `M${sx} ${sy} H${mx} V${ty} H${x}`, x, Math.abs(ty - sy) < 1.5 ? sy : ty);
+        });
+      });
+    }
+
+    // ---- the last move: the spring's name and numbers, and its easing drawn ----
+    const curve = dk.querySelector<SVGPolylineElement>('.curve')!;
+    const base = dk.querySelector<SVGLineElement>('.base')!;
+    const run = dk.querySelector<SVGCircleElement>('.run')!;
+    const runx = dk.querySelector<SVGGElement>('.runx')!;
+    function showSpring(sp: Spring) {
+      sline.innerHTML = `<span class="l1">Last move <b>${springName(sp)}</b> <span class="v">${sp.durationMs} ms</span></span><span class="dot">·</span>`
+        + `<span class="l2">Response <span class="v">${sp.response.toFixed(2)}</span>, damping <span class="v">${sp.damping.toFixed(2)}</span></span>`;
+      dk.setAttribute('data-sprung', '');
+      // the easing string is a linear() list of the spring's progress; draw it as it is
+      const v = sp.easing.slice(sp.easing.indexOf('(') + 1, -1).split(',').map((x) => parseFloat(x));
+      const top = Math.max(1, ...v);
+      const X0 = 4, X1 = 116, Y0 = 36, Y1 = 4;
+      const y = (q: number) => Y0 - (q / top) * (Y0 - Y1);
+      curve.setAttribute('points', v.map((q, i) => `${(X0 + (i / (v.length - 1)) * (X1 - X0)).toFixed(1)},${y(q).toFixed(1)}`).join(' '));
+      base.setAttribute('y1', String(y(1))); base.setAttribute('y2', String(y(1)));
+      run.getAnimations().forEach((a) => a.cancel()); runx.getAnimations().forEach((a) => a.cancel());
+      // x runs at a constant speed and y follows the spring, so the dot traces the curve
+      if (d.reduced.matches) { runx.style.transform = `translateX(${X1 - X0}px)`; run.style.transform = `translateY(${y(1) - Y0}px)`; return; }
+      runx.animate({ transform: ['translateX(0)', `translateX(${X1 - X0}px)`] }, { duration: sp.durationMs, easing: 'linear', fill: 'forwards' });
+      run.animate({ transform: ['translateY(0)', `translateY(${y(1) - Y0}px)`] }, { duration: sp.durationMs, easing: sp.easing, fill: 'forwards' });
+    }
+  });
+</script>

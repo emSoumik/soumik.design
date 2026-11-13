@@ -8,6 +8,19 @@
 // their colourways in the same order, so a plant keeps its colour as it grows.
 
 export const FLOWERS = {
+  rose: {
+    forms: [
+      { id: 'A', foot: 5,
+        pals: [{ P: '#fca5be', p: '#ee6690', q: '#c0225b', k: '#e53c74', K: '#a81a4c' }, { P: '#f5707e', p: '#d9334a', q: '#8e1230', k: '#c42040', K: '#6e0c24' }],
+        head: ['....qqq....', '..qqPPPqq..', '.qqPPqpPPq.', 'qpqPkqpqPPq', 'qpqPPqKqpPq', 'qppqPPpppPq', '.qpppqPPPq.', '..pqqPPPqpq', '...qqPPPqq.', '.....qqqq..'] },
+      { id: 'B', foot: 5,
+        pals: [{ H: '#ffffff', P: '#fbf7f1', p: '#e6ddd5', q: '#c4b7ae', t: '#e6c99a', y: '#fed47a' }],
+        head: ['...qqqq....', '..qPPPPqq..', '.qPPttPPPq.', 'qPqPtHtPPPq', 'qPqPtytpPPq', 'qPpqPtpPpPq', '.qPPPpPPPq.', '.qpPPPPqpq.', '..qqPPPqq..', '....qqq....'] },
+      { id: 'C', foot: 5,
+        pals: [{ P: '#fedb85', p: '#fbb332', q: '#f39a22', k: '#eb7419' }],
+        head: ['....ppp.....', '..ppPPPpp...', '..pPPppPPP..', 'qPpPpkppPPp.', 'qPpppkkppPp.', 'qpPPppppPp..', '.qPPPPpPPp..', '..qPPpPPpp..', '...qqqppp...'] },
+    ],
+  },
   tulip: {
     forms: [
       { id: 'E',
@@ -184,7 +197,7 @@ export const FLOWERS = {
   },
 };
 
-// butterflies: wings open; the closed frame is made by squashing toward the body
+// butterflies: wings open; butterflies.js folds each side in toward the body for the frames between open and shut
 export const BUTTERFLIES = {
   flyblue: {
     pal: ['#302e30', '#96def2', '#bce9f5'],
@@ -258,3 +271,6 @@ export const BUTTERFLIES = {
     ],
   },
 };
+// two more colourways of the same two drawings, so a full garden of five has no twins
+BUTTERFLIES.flylemon = { ...BUTTERFLIES.flyblue, pal: ['#302e30', '#ffd23a', '#ffe98a'] };
+BUTTERFLIES.flylilac = { ...BUTTERFLIES.flypink, pal: ['#302e30', '#b49af7', '#d4c4fb'] };

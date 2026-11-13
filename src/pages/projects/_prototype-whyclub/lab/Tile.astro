@@ -1,0 +1,31 @@
+---
+// PROTOTYPE: one bento tile on the case study's own surface (the soft grey fill with a blur of colour behind).
+// a recording or a screen stands in it and runs off the bottom edge; numbers and the one line of copy get no screen
+import { tiles, A_, type TileKey } from './data';
+interface Props { k: TileKey; tint?: 1 | 2 | 3; class?: string; lit?: boolean }
+const { k, tint = 1, class: cls, lit } = Astro.props;
+const t = tiles[k];
+---
+<figure class:list={['tl', `k-${t.kind}`, cls]} data-tile={k} data-lit={lit === undefined ? undefined : ''}>
+  <div class:list={['fill', `t${tint}`]}>
+    {t.kind === 'rec' && (
+      <div class="dev"><div class="glass">
+        <video muted loop playsinline disablepictureinpicture preload="none" poster={`${t.src}.webp`} aria-label={t.alt}>
+          <source src={`${t.src}.webm`} type="video/webm"><source src={`${t.src}.mp4`} type="video/mp4">
+        </video>
+      </div></div>
+    )}
+    {t.kind === 'shot' && <div class="dev"><div class="glass"><img src={`${t.src}.webp`} alt={t.alt} loading="lazy" decoding="async"></div></div>}
+    {t.kind === 'safari' && (
+      <div class="dev sf" role="img" aria-label={t.alt}><div class="glass">
+        <img src={A_ + 'ios/before.webp'} alt="" loading="lazy" decoding="async">
+        <img class="aft" src={A_ + 'ios/light.webp'} alt="" loading="lazy" decoding="async">
+        <i class="wipe" aria-hidden="true"></i>
+      </div>
+      <span class="chip b4" aria-hidden="true">Before</span><span class="chip af" aria-hidden="true">After</span></div>
+    )}
+    {t.kind === 'quote' && <p class="q">{t.desc}</p>}
+    {t.kind === 'stat' && <p class="num">{t.big}</p>}
+  </div>
+  <figcaption class="cap"><strong>{t.title}</strong> {t.kind !== 'quote' && <span>{t.desc}</span>}</figcaption>
+</figure>

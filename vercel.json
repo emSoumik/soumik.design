@@ -4,6 +4,12 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/work", "destination": "/#projects", "permanent": true },
+    { "source": "/projects", "destination": "/#projects", "permanent": false },
+    { "source": "/projects/", "destination": "/#projects", "permanent": false },
+    { "source": "/work/:path+", "destination": "/projects/:path+", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/_astro/(.*)",

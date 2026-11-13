@@ -1,0 +1,290 @@
+---
+// PROTOTYPE (dev only): the vault as a wall of cards that open in place, five ways to open and five ways to arrive.
+// markup and css here, the behaviour in vault.ts. the old vault stays in index.astro for production
+import DockLive from '../../projects/_prototype-whyclub/DockLive.astro';
+import { fixedHeight } from '../../projects/_prototype-whyclub/dock';
+import { SCENES } from '../../../../js/work/reel.js';
+import { PIECES } from './pieces';
+
+const count = (k: string) => PIECES.filter((p) => p.kind === k).length;
+const FILTERS: [string, string, number][] = [['all', 'all', PIECES.length], ['Garden', 'garden', count('Garden')], ['Shader', 'shaders', count('Shader')], ['Component', 'components', count('Component')]];
+// squarish pieces sit beside their text on a laptop; wide ones run across the top
+const shape = (r: number) => (r >= 1.3 ? 'wide' : 'square');
+const ext = (href: string) => href.startsWith('http');
+const at = (i: number) => PIECES[(i + PIECES.length) % PIECES.length];
+---
+<div class="vlt" data-page="wall">
+  <div class="vlt-under">
+    <header class="vlt-intro">
+      <h1>Vault</h1>
+      <p>small things i build along the way, each one live.</p>
+    </header>
+    <header class="vlt-head">
+      <div class="vlt-crumb">
+        <button type="button" class="vlt-home" disabled>vault</button>
+        <span class="vlt-sep" aria-hidden="true">/</span>
+        <span class="vlt-crumb-text">{PIECES.length} pieces, all running</span>
+      </div>
+      <div class="vlt-controls">
+        <div class="vlt-seg" role="radiogroup" aria-label="Show">
+          {FILTERS.map(([k, label, n], j) => <button type="button" role="radio" aria-checked={String(j === 0)} tabindex={j === 0 ? 0 : -1} data-filter={k}>{label}<b>{n}</b></button>)}
+        </div>
+      </div>
+    </header>
+
+    <div class="vlt-wallview">
+      <ul class="vlt-wall">
+        {PIECES.map((p, i) => (
+          <li class="vlt-card" data-slug={p.slug} data-kind={p.kind} data-tone={p.tone} data-r={p.r} style={`--ar:${p.r}`}>
+            <div class="vlt-art">
+              {p.video ? (
+                <div class="vlt-demo vlt-film" data-demo data-film={p.video}>
+                  <picture><source srcset={`/assets/vault/${p.video}-poster.avif`} type="image/avif"><img src={`/assets/vault/${p.video}-poster.webp`} alt="" width="1080" height="1350" loading="lazy" decoding="async"></picture>
+                  <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1">
+                    <source src={`/assets/vault/${p.video}.webm`} type="video/webm">
+                    <source src={`/assets/vault/${p.video}.mp4`} type="video/mp4">
+                  </video>
+                  <button type="button" class="vlt-sound" aria-pressed="false" aria-label="Sound"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z" fill="currentColor"/><path class="on" d="M10.4 5.6a3.4 3.4 0 0 1 0 4.8M12.2 3.8a6 6 0 0 1 0 8.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="off" d="m10.5 6 3.5 4m0-4-3.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+                </div>
+              ) : p.slug === 'dock' ? (
+                <div class="vlt-dock" data-dockcard>
+                  <div class="vlt-dockwrap"><div class="win" style={`height:${fixedHeight(14)}`}></div></div>
+                </div>
+              ) : (
+                <div class="vlt-demo" data-demo data-dark={String(SCENES[p.scenes[0]]?.dark)}>
+                  <canvas aria-hidden="true"></canvas>
+                  {p.slug === 'order-pass' && <p class="vlt-head-title" data-title>{SCENES[p.scenes[0]].title}</p>}
+                  <p class="vlt-fail" hidden>This one is drawn with WebGL, and this browser has it switched off.</p>
+                </div>
+              )}
+            </div>
+            <div class="vlt-cap"><h2>{p.title}</h2><span>{p.kind.toLowerCase()}</span></div>
+            <a class="vlt-hit" href={`?piece=${p.slug}`} aria-label={`Open ${p.title}`}></a>
+          </li>
+        ))}
+      </ul>
+      <p class="vlt-empty" hidden>nothing here by that name</p>
+    </div>
+  </div>
+
+  <div class="vlt-scrim" hidden></div>
+  <div class="vlt-host" hidden>
+    <div class="vlt-grab"><i aria-hidden="true"></i><button type="button" class="vlt-x" aria-label="Close"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m3.5 3.5 9 9m0-9-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
+    {PIECES.map((p, i) => (
+      <article class="vlt-detail" data-slug={p.slug} data-tone={p.tone} data-shape={p.slug === 'dock' ? 'full' : shape(p.r)} style={`--ar:${p.r}`} hidden>
+        <div class="vlt-stage" data-dockstage={p.slug === 'dock' ? '' : undefined}>
+          {p.slug === 'dock' && <DockLive />}
+        </div>
+        <div class="vlt-title">
+          <div class="vlt-name"><h1>{p.title}</h1><p>{p.kind.toLowerCase()} · {p.partOf[0]}</p></div>
+          <div class="vlt-tools">
+            <button type="button" class="vlt-ib" data-act="full" aria-label="Fullscreen"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2.5 6V2.5H6m4 0h3.5V6m0 4v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button type="button" class="vlt-ib" data-act="share" aria-label="Share"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 10V2.5m0 0L5.2 5.3M8 2.5l2.8 2.8M3 8.5V13h10V8.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <span class="vlt-pair">
+              <button type="button" class="vlt-ib" data-act="prev" aria-label={`Previous: ${at(i - 1).title}`}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button type="button" class="vlt-ib" data-act="next" aria-label={`Next: ${at(i + 1).title}`}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </span>
+          </div>
+        </div>
+        <p class="vlt-line">{p.line}</p>
+        <div class="vlt-about">
+          <h2>How it works</h2>
+          {p.about.map((t) => <p>{t}</p>)}
+        </div>
+        <dl class="vlt-defs">
+          <div class="vlt-row"><dt>Made with</dt><dd>{p.madeWith}</dd></div>
+          <div class="vlt-row"><dt>Part of</dt><dd><a class="vlt-u" href={p.partOf[1]}>{p.partOf[0]}</a></dd></div>
+          <div class="vlt-row"><dt>Links</dt><dd class="vlt-links">{p.links.map(([label, href]) => <a href={href} {...(ext(href) ? { target: '_blank', rel: 'noopener' } : {})}>{label} <span aria-hidden="true">{ext(href) ? '↗' : '→'}</span></a>)}</dd></div>
+        </dl>
+        <nav class="vlt-pn" aria-label="More pieces">
+          <button type="button" data-act="prev"><span><small>Previous</small><b>{at(i - 1).title}</b></span><i aria-hidden="true">←</i></button>
+          <button type="button" data-act="next"><span><small>Next</small><b>{at(i + 1).title}</b></span><i aria-hidden="true">→</i></button>
+        </nav>
+      </article>
+    ))}
+  </div>
+</div>
+
+<script>import './vault.ts';</script>
+
+<style is:global>
+  /* ---- tokens. white mode: pure white with a hairline. grey mode (the dev toggle): #f2f2f2 fills, no hairline */
+  .vlt { --fill: #fff; --ring: 0 0 0 1px rgba(31, 29, 27, .08); --ctl: inset 0 0 0 1px var(--line);
+    --ios: cubic-bezier(.32, .72, 0, 1); --gap: 12px; --r: 24px;
+    max-width: 1200px; margin: 0 auto; padding: 0 16px; font: 400 15px/1.4 var(--display); color: var(--ink); }
+  html[data-proto-surface="grey"] .vlt { --fill: #f2f2f2; --ring: 0 0 0 0 transparent; --ctl: none; }
+  html:has(.vlt) .page { padding-top: 16px; padding-left: 0; padding-right: 0; }
+  @media (min-width: 640px) { .vlt { padding: 0 24px; } }
+  @media (min-width: 1024px) { .vlt { padding: 0 40px; } }
+  .vlt [hidden] { display: none !important; }
+  .vlt button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .vlt button:focus-visible, .vlt a:focus-visible, .vlt input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* ---- header. on the wall: the filters as plain words. on a piece: a crumb back to the wall */
+  .vlt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; min-height: 52px; }
+  .vlt-crumb { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .vlt[data-page="wall"] .vlt-crumb { display: none; }
+  .vlt-home { display: inline-flex; align-items: center; min-height: 44px; font-weight: 500; color: var(--ink); }
+  .vlt-home:disabled { cursor: default; }
+  .vlt-sep { color: var(--ink-3); }
+  .vlt-crumb-text { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .vlt-controls { display: flex; align-items: center; min-width: 0; }
+  .vlt[data-page="detail"] .vlt-controls { display: none; }
+  .vlt-seg { display: flex; gap: 2px; margin-left: -10px; overflow-x: auto; scrollbar-width: none; }
+  .vlt-seg button { display: inline-flex; align-items: baseline; gap: 4px; min-height: 44px; align-items: center; padding: 0 10px; font: 500 14px/1 var(--display); color: var(--ink-3); white-space: nowrap; transition: color .2s; }
+  .vlt-seg button b { font: 400 10px/1 var(--mono); color: var(--ink-3); transform: translateY(-5px); }
+  .vlt-seg button[aria-checked="true"] { color: var(--ink); }
+  @media (hover: hover) and (pointer: fine) { .vlt-seg button:hover { color: var(--ink); } }
+
+  /* ---- intro: the site's own index head, so the vault reads like projects and blog */
+  .vlt-intro { padding: clamp(12px, 2vw, 24px) 0 4px; }
+  .vlt-intro h1 { font: 500 22px/1.2 var(--display); letter-spacing: -.01em; }
+  .vlt-intro p { margin-top: 4px; font: 400 14px/1.4 var(--display); color: var(--ink-2); }
+  .vlt-under:has(.vlt-wallview[hidden]) .vlt-intro { display: none; }
+  .vlt-crumb { font: 500 12px/1 var(--mono); }
+
+  /* ---- the wall: justified rows. every card keeps its demo’s own shape (--ar, width / height); vault.ts sizes each row
+     so the cards in it share one height and fill the width. a phone stacks them full width */
+  .vlt-wall { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 32px var(--gap); }
+  .vlt-card { position: relative; width: 100%; }
+  .vlt-art { position: relative; aspect-ratio: var(--ar); overflow: hidden; border-radius: var(--r-card, 20px); background: var(--fill); box-shadow: var(--ring); transition: transform .15s ease-out; }
+  .vlt-card[data-tone="ink"] .vlt-art, .vlt-detail[data-tone="ink"] .vlt-stage { background: #050505; box-shadow: none; }
+  .vlt-card:has(.vlt-hit:active) .vlt-art { transform: scale(.985); }
+  .vlt-hit { position: absolute; inset: -6px; z-index: 2; border-radius: 24px; }
+  /* one quiet line under each piece: its name, and what kind of thing it is */
+  .vlt-cap { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 12px 2px 0; }
+  .vlt-cap h2 { min-width: 0; font: 500 14px/1.3 var(--display); letter-spacing: -.005em; color: var(--ink); }
+  .vlt-cap span { flex: none; font: 400 12px/1.3 var(--display); color: var(--ink-3); }
+  @media (max-width: 639px) { .vlt-wall { gap: 28px 0; } }
+  .vlt-empty { padding: 48px 0; color: var(--ink-2); }
+
+  /* ---- demos. one element that can be moved between a card and a stage */
+  .vlt-demo { position: absolute; inset: 0; color: #fff; opacity: 0; transition: opacity .32s var(--ease); touch-action: pan-y; }
+  .vlt-demo[data-ready] { opacity: 1; }
+  .vlt-demo[data-dark="false"] { color: #141414; }
+  .vlt-demo canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .vlt-head-title { position: absolute; left: 16px; bottom: 14px; margin: 0; font: 600 22px/1 var(--display); letter-spacing: -.03em; pointer-events: none; }
+  .vlt-stage .vlt-head-title { left: clamp(16px, 2.6vw, 32px); bottom: clamp(16px, 2.6vw, 28px); font-size: clamp(30px, 4.4vw, 56px); letter-spacing: -.035em; }
+  .vlt-fail { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; text-align: center; font: 400 14px/1.5 var(--mono); color: rgba(255, 255, 255, .7); }
+  /* a film: the finished flower as a still until the film can play (and for good under reduced motion) */
+  .vlt-film { opacity: 1; color: var(--ink); }
+  .vlt-film img, .vlt-film video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .vlt-film video { opacity: 0; transition: opacity .32s var(--ease); }
+  .vlt-film[data-ready] video { opacity: 1; }
+  .vlt-sound { position: absolute; right: 12px; bottom: 12px; z-index: 3; display: none; place-items: center; width: 36px; height: 36px; border-radius: 99px;
+    background: rgba(255, 255, 255, .86); box-shadow: 0 0 0 1px var(--line); color: var(--ink); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .vlt-sound::after { content: ""; position: absolute; inset: -4px; }
+  .vlt-stage .vlt-sound { display: grid; }
+  .vlt-sound .on, .vlt-sound[aria-pressed="true"] .off { display: none; }
+  .vlt-sound[aria-pressed="true"] .on { display: inline; }
+  .vlt-dock { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; }
+  .vlt-dockwrap { position: relative; width: min(100%, 320px); container-type: inline-size; }
+  .vlt-dockwrap .win { position: relative; width: 100%; overflow: hidden; }
+
+  /* ---- detail */
+  .vlt-host { position: relative; padding-bottom: 64px; }
+  .vlt-grab, .vlt-scrim { display: none; }
+  .vlt-detail { padding-top: 0; }
+  /* the stage keeps the demo's shape too: as wide as it can be without running past 72% of the screen's height */
+  .vlt-stage { position: relative; overflow: hidden; border-radius: var(--r); background: var(--fill); box-shadow: var(--ring);
+    aspect-ratio: var(--ar); width: min(100%, calc(72svh * var(--ar))); }
+  .vlt-stage[data-dockstage] { width: 100%; aspect-ratio: auto; min-height: 320px; padding: clamp(16px, 3vw, 40px); display: grid; align-items: center; }
+  /* a squarish piece sits beside its text on a laptop, the text in a column that stays put while the page scrolls */
+  @media (min-width: 1024px) {
+    .vlt-detail[data-shape="square"] { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: clamp(32px, 4vw, 56px); align-items: start; padding-top: 8px; }
+    .vlt-detail[data-shape="square"] > .vlt-stage { grid-column: 1; grid-row: 1 / span 4; position: sticky; top: 24px; }
+    .vlt-detail[data-shape="square"] > :not(.vlt-stage, .vlt-pn) { grid-column: 2; }
+    .vlt-detail[data-shape="square"] > .vlt-title { margin-top: 0; }
+    .vlt-detail[data-shape="square"] > .vlt-pn { grid-column: 1 / -1; }
+  }
+  .vlt-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; margin-top: 28px; }
+  .vlt-name h1 { margin: 0; font: 500 clamp(22px, 2.4vw, 28px)/1.15 var(--display); letter-spacing: -.015em; color: var(--ink); }
+  .vlt-name p { margin-top: 6px; font: 400 13px/1.3 var(--display); color: var(--ink-3); }
+  .vlt-tools { display: flex; align-items: center; gap: 4px; flex: none; }
+  .vlt-pair { display: inline-flex; gap: 4px; margin-left: 4px; }
+  .vlt-ib { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 99px; color: var(--ink-2); transition: transform .16s var(--ease), background-color .2s, color .2s; }
+  @media (hover: hover) and (pointer: fine) { .vlt-ib:hover { background: rgba(31, 29, 27, .05); color: var(--ink); } }
+  .vlt-ib::after { content: ""; position: absolute; inset: -4px; }
+  .vlt-ib:active { transform: scale(.94); }
+  .vlt-ib[data-flash]::before { content: attr(data-flash); position: absolute; bottom: calc(100% + 8px); left: 50%; translate: -50% 0; padding: 5px 8px; border-radius: 8px; font: 500 11px/1 var(--mono); background: var(--ink); color: #fff; white-space: nowrap; }
+  .vlt-line { margin: 12px 0 0; max-width: 68ch; font: 400 15px/1.65 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .vlt-about { margin-top: 40px; }
+  .vlt-about h2 { margin: 0; font: 500 15px/1.4 var(--display); color: var(--ink); }
+  .vlt-about p { margin: 12px 0 0; max-width: 68ch; font: 400 14px/1.65 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .vlt-defs { margin: 36px 0 0; border-top: 1px solid var(--line); }
+  .vlt-row { display: grid; grid-template-columns: 110px 1fr; gap: 4px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .vlt-row dt { font: 400 13px/1.5 var(--display); color: var(--ink-3); }
+  .vlt-row dd { margin: 0; font: 400 13px/1.5 var(--display); color: var(--ink-2); }
+  .vlt-u { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .vlt-links { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .vlt-links a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; transition: text-decoration-color .2s; }
+  .vlt-links a span { color: var(--ink-3); }
+  @media (hover: hover) and (pointer: fine) { .vlt-links a:hover { text-decoration-color: currentColor; } }
+  @media (max-width: 639px) { .vlt-row { grid-template-columns: 1fr; } }
+  .vlt-pn { display: flex; justify-content: space-between; gap: 16px; margin-top: 64px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .vlt-pn button { display: flex; align-items: center; gap: 10px; min-height: 44px; text-align: left; color: var(--ink-2); transition: color .2s; }
+  .vlt-pn button:last-child { flex-direction: row-reverse; text-align: right; }
+  .vlt-pn small { display: block; font: 400 12px/1.2 var(--display); color: var(--ink-3); }
+  .vlt-pn b { display: block; margin-top: 2px; font: 500 14px/1.3 var(--display); color: var(--ink); }
+  .vlt-pn i { font-style: normal; transition: transform .3s var(--spring); }
+  @media (hover: hover) and (pointer: fine) { .vlt-pn button:first-child:hover i { transform: translateX(-3px); } .vlt-pn button:last-child:hover i { transform: translateX(3px); } }
+
+  /* ---- sheet: the detail rides over the wall, which steps back */
+  .vlt-host.is-sheet { position: fixed; left: 0; right: 0; bottom: 0; top: max(12px, env(safe-area-inset-top)); z-index: 50; margin-inline: auto; padding: 0 16px 48px;
+    background: #fff; border-radius: 24px 24px 0 0; box-shadow: 0 -8px 40px rgba(0, 0, 0, .16); overflow-y: auto; overscroll-behavior: contain;
+    transform: translateY(100%); transition: transform .52s var(--ios); }
+  @media (min-width: 1024px) { .vlt-host.is-sheet { top: 40px; width: min(1080px, 100%); padding: 0 40px 64px; } }
+  .vlt-host.is-sheet .vlt-grab { display: flex; position: sticky; top: 0; z-index: 3; height: 44px; margin: 0 -16px; padding: 0 8px 0 16px; align-items: center; justify-content: flex-end; background: #fff; touch-action: pan-x; }
+  @media (min-width: 1024px) { .vlt-host.is-sheet .vlt-grab { margin: 0 -40px; padding: 0 28px 0 40px; } }
+  .vlt-grab i { position: absolute; left: 50%; top: 8px; translate: -50% 0; width: 36px; height: 5px; border-radius: 3px; background: rgba(31, 29, 27, .2); }
+  .vlt-x { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 99px; color: var(--ink); }
+  html[data-sheet="open"] .vlt-host.is-sheet { transform: none; }
+  .vlt-scrim.is-on { display: block; position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .28); opacity: 0; transition: opacity .52s var(--ios); }
+  html[data-sheet="open"] .vlt-scrim.is-on { opacity: 1; }
+  html[data-sheet-closing] .vlt-host.is-sheet, html[data-sheet-closing] .vlt-scrim.is-on, html[data-sheet-closing] .vlt-under, html[data-sheet-closing] .mast { transition-duration: .36s; }
+  html:has(.vlt) .mast, .vlt-under { transition: transform .52s var(--ios), border-radius .52s var(--ios); transform-origin: 50% var(--oy, 0px); }
+  html:has(.vlt) .mast { transform-origin: 50% 0; }
+  html[data-sheet] { overflow: hidden; }
+  html[data-sheet="open"] .vlt-under, html[data-sheet="open"]:has(.vlt) .mast { transform: scale(.94) translateY(8px); border-radius: 24px; }
+  html[data-vlt-zoom] { overflow: hidden; }
+  html[data-vlt-zoom] .vlt-host { min-height: 100svh; background: #fff; position: relative; z-index: 2; }
+
+  /* ---- same-document view transitions. every selector is :not(#_) so it beats the site-wide page-transition rules */
+  @keyframes vlt-fade-out { to { opacity: 0; } }
+  @keyframes vlt-fade-in { from { opacity: 0; } }
+  @keyframes vlt-rise { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes vlt-crumb-out { to { opacity: 0; transform: translateY(-4px); } }
+  @keyframes vlt-crumb-in { from { opacity: 0; transform: translateY(4px); } }
+  @keyframes vlt-sw-out { to { opacity: 0; transform: translateX(var(--sw, -24px)); } }
+  @keyframes vlt-sw-in { from { opacity: 0; transform: translateX(calc(var(--sw, -24px) * -1)); } }
+
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-group(vlt-piece) { animation-duration: .42s; animation-timing-function: cubic-bezier(.23, 1, .32, 1); border-radius: 24px; overflow: clip; background: var(--vlt-bg, #fff); }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-old(vlt-piece), html:not(#_)[data-vlt-vt="morph"]::view-transition-new(vlt-piece) { object-fit: none; width: 100%; height: 100%; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-old(vlt-piece) { animation: .12s cubic-bezier(.23, 1, .32, 1) both vlt-fade-out; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-new(vlt-piece) { animation: .22s cubic-bezier(.23, 1, .32, 1) .2s both vlt-fade-in; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-old(root) { animation: .16s cubic-bezier(.23, 1, .32, 1) both vlt-fade-out; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-new(root) { animation: .28s cubic-bezier(.23, 1, .32, 1) .06s both vlt-rise; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-old(vlt-crumb), html:not(#_)[data-vlt-vt="morph"]::view-transition-new(vlt-crumb) { object-fit: none; object-position: left center; width: 100%; height: 100%; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-old(vlt-crumb) { animation: .15s cubic-bezier(.23, 1, .32, 1) both vlt-crumb-out; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-new(vlt-crumb) { animation: .26s cubic-bezier(.23, 1, .32, 1) .06s both vlt-crumb-in; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-old(vlt-controls) { animation: .22s cubic-bezier(.23, 1, .32, 1) both vlt-fade-out; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="morph"]::view-transition-new(vlt-controls) { animation: .32s cubic-bezier(.23, 1, .32, 1) .1s both vlt-fade-in; mix-blend-mode: normal; }
+
+  /* window: the transition only fades the old page; the stage's own animation does the rest */
+  html:not(#_)[data-vlt-vt="window"]::view-transition-old(root) { animation: .24s ease both vlt-fade-out; mix-blend-mode: normal; z-index: 1; }
+  html:not(#_)[data-vlt-vt="window"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+  /* switching pieces: the article slides out and the next slides in */
+  html:not(#_)[data-vlt-vt="switch"] { --sw: -24px; }
+  html:not(#_)[data-vlt-vt="switch"][data-vlt-dir="back"] { --sw: 24px; }
+  html:not(#_)[data-vlt-vt="switch"]::view-transition-old(root) { display: none; }
+  html:not(#_)[data-vlt-vt="switch"]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="switch"]::view-transition-group(vlt-content) { animation: none; }
+  html:not(#_)[data-vlt-vt="switch"]::view-transition-old(vlt-content) { animation: .16s cubic-bezier(.23, 1, .32, 1) both vlt-sw-out; mix-blend-mode: normal; }
+  html:not(#_)[data-vlt-vt="switch"]::view-transition-new(vlt-content) { animation: .28s cubic-bezier(.23, 1, .32, 1) .06s both vlt-sw-in; mix-blend-mode: normal; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vlt-demo, .vlt-art, .vlt-film video, .vlt-controls, .vlt-ib, .vlt-pn button { transition: none; }
+    .vlt-host.is-sheet, .vlt-scrim.is-on, .vlt-under, html:has(.vlt) .mast { transition: none; }
+  }
+</style>

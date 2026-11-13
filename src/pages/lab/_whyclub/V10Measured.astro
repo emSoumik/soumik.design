@@ -1,0 +1,556 @@
+---
+// LAB direction 10, "Measured": every decision in the store has a number. each section leads with one huge real number,
+// says what it is in a line, tells the short story and gives you an instrument to feel it. the numbers roll up like an
+// odometer once as they enter view. phone: number across the top, meaning, instrument edge to edge, then the story.
+// desktop: a 12-column grid where the number and its meaning stay pinned in the left five columns while the
+// instrument and the story scroll past on the right seven
+import Shot from './Shot.astro';
+import TintToy from './TintToy.astro';
+import SoundKeys from './SoundKeys.astro';
+import FooterIndex from './FooterIndex.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+const index = [
+  ['ms-dock', '90', 'ms', 'Dock squeeze'],
+  ['ms-wait', '350', 'ms', 'Outline'],
+  ['ms-tint', '16', 'px', 'Safari strip'],
+  ['ms-sound', '25', 'ms', 'Tap thump'],
+  ['ms-pass', '4', '', 'Pass stages'],
+  ['ms-foot', '6', 'px', 'Footer slide'],
+  ['ms-ledger', '251', '', 'Commits'],
+];
+const stages = [
+  ['confirmed', 'You’re in'],
+  ['packed', 'All packed'],
+  ['shipped', 'On its way'],
+  ['delivered', 'It’s home'],
+];
+const T = String(index.length).padStart(2, '0');
+---
+<article class="ms">
+  <header class="head">
+    <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>2026</p>
+    <h1>WhyClub</h1>
+    <p class="thesis">Most of what makes a store feel right is measured in milliseconds and pixels nobody sees. I designed and built the whole store, the brand, the frontend and the backend, so I got to choose every one of them.</p>
+    <dl class="meta">
+      <div><dt>Role</dt><dd>Design and engineering</dd></div>
+      <div><dt>Stack</dt><dd>Astro, React, Convex, Cloudflare Workers, WebGL</dd></div>
+      <div><dt>Live</dt><dd><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in <span aria-hidden="true">↗</span></a></dd></div>
+    </dl>
+  </header>
+
+  <nav class="strip" aria-label="The numbers">
+    <p class="strip-h">The numbers, in order. Each one runs in the page.</p>
+    <ol>
+      {index.map(([id, n, u, l]) => (
+        <li><a href={`#${id}`}><span class="n">{n}<small>{u}</small></span><span class="l">{l}</span></a></li>
+      ))}
+    </ol>
+  </nav>
+
+  <!-- 1: 90ms -->
+  <section class="sec" id="ms-dock" aria-labelledby="ms-dock-h">
+    <div class="rule"><span>01 / {T}</span></div>
+    <div class="lead">
+      <p class="big"><span class="sr">90 milliseconds</span><span class="fig" aria-hidden="true"><span class="roll">90</span><span class="unit">ms</span></span></p>
+      <h2 class="mean" id="ms-dock-h">How long the dock squeezes before it springs open.</h2>
+    </div>
+    <div class="right">
+      <div class="plate dockplate">
+        <div class="dockhold" data-dock-hold></div>
+        <div class="ctrls">
+          <button type="button" class="pill" data-act="open" aria-pressed="false">Open Shop</button>
+        </div>
+        <p class="readout" aria-live="polite" data-spring>Tap the dock, or press the button.</p>
+      </div>
+      <div class="compare" data-compare>
+        <p class="cl">Press both. One squeezes for exactly 90ms, then springs. The other just opens.</p>
+        <div class="mkrow">
+          <span class="mt">Squeeze 90ms, then spring</span>
+          <div class="mk"><button type="button" class="mb" data-squeeze="90" aria-expanded="false"><span class="lab">Shop</span><span class="tiles" aria-hidden="true"><i>Women</i><i>Men</i></span></button></div>
+        </div>
+        <div class="mkrow">
+          <span class="mt">No squeeze</span>
+          <div class="mk"><button type="button" class="mb" data-squeeze="0" aria-expanded="false"><span class="lab">Shop</span><span class="tiles" aria-hidden="true"><i>Women</i><i>Men</i></span></button></div>
+        </div>
+      </div>
+      <div class="story">
+        <p>Clothes get bought on phones, so navigation sits at the bottom where the thumb is. Tap Shop, Account or More and the bar squeezes for 90ms, then springs open into a panel: Women and Men as photos, Sale and My collection below, and Back to fold it up.</p>
+        <p class="detail">The springs are written in Apple’s terms, response and damping, and sampled into CSS linear() easings. They’re plain transitions, so a tap halfway through a move picks up from wherever the dock is. Only opening a panel overshoots, a little. The idea of a bar that becomes the menu is <a href="#ms-credits">Danny Williams’</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: 350ms -->
+  <section class="sec" id="ms-wait" aria-labelledby="ms-wait-h">
+    <div class="rule"><span>02 / {T}</span></div>
+    <div class="lead">
+      <p class="big"><span class="sr">350 milliseconds</span><span class="fig" aria-hidden="true"><span class="roll">350</span><span class="unit">ms</span></span></p>
+      <h2 class="mean" id="ms-wait-h">When the grey blocks turn into an outline of the page you asked for.</h2>
+    </div>
+    <div class="right">
+      <div class="plate waitplate" data-wait>
+        <div class="lm" data-lm data-state="idle" aria-hidden="true">
+          <div class="old"><i></i><i></i><i></i></div>
+          <div class="blocks"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="lines"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="real"><b></b><u></u><s></s><s></s><s></s><s></s></div>
+        </div>
+        <div class="tl">
+          <div class="track" aria-hidden="true"><i class="fill" data-fill></i></div>
+          <ol>
+            <li data-t="0"><b>Press</b><span>Grey blocks cover the old page.</span></li>
+            <li data-t="1"><b>350ms</b><span>They draw themselves into an outline, in reading order.</span></li>
+            <li data-t="2"><b>Ready</b><span>The real page fades in over the same lines.</span></li>
+            <li data-t="3" class="late"><b>10s</b><span>Still nothing? You get the old page back.</span></li>
+          </ol>
+          <div class="ctrls">
+            <button type="button" class="pill dark" data-load>Load a page</button>
+            <div class="seg" role="radiogroup" aria-label="Playback speed" data-speed>
+              <button type="button" role="radio" aria-checked="true" data-rate="1">1×</button>
+              <button type="button" role="radio" aria-checked="false" data-rate="0.25">¼×</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Shot class="waitclip" src={A + 'p-loading'} video alt="Tapping Shop, then Women, on a slow connection: grey blocks, then an outline of the grid, then the photos land in the same places." caption="The real thing, recorded on a throttled connection: Shop, then Women." />
+      <div class="story">
+        <p>A spinner tells you nothing. Tap a link and the store works out from the address what kind of page is coming. Grey blocks cover the old page at once, at 350ms they draw themselves into an outline of that page, and the real one fades in over the same lines, so nothing jumps.</p>
+        <p class="detail">The outlines are measured from the real pages at phone and desktop widths. The grid on the left is a rebuild, the clip above it is the store.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: 16px -->
+  <section class="sec" id="ms-tint" aria-labelledby="ms-tint-h">
+    <div class="rule"><span>03 / {T}</span></div>
+    <div class="lead">
+      <p class="big"><span class="sr">16 pixels</span><span class="fig" aria-hidden="true"><span class="roll">16</span><span class="unit">px</span></span></p>
+      <h2 class="mean" id="ms-tint-h">The strip along the top of each photo that Safari’s colour is read from.</h2>
+      <p class="sub">48×12 canvas · 160ms after a swipe</p>
+    </div>
+    <div class="right">
+      <div class="plate tintplate"><TintToy /></div>
+      <div class="story">
+        <p>Safari 26 tints its bars from the page behind them. With a white page edge every hero looked pasted in, and a free shipping bar sat on top of it. I took the bar out. Now the store averages the top 16px of each photo on a 48×12 canvas, mixes it 65/35 with its own brightness, darkens it a touch and hands that shade to the browser.</p>
+        <p class="detail">It waits 160ms after a swipe settles, and each photo is read once. The phone above is a rebuild with the store’s maths.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: 25ms -->
+  <section class="sec" id="ms-sound" aria-labelledby="ms-sound-h">
+    <div class="rule"><span>04 / {T}</span></div>
+    <div class="lead">
+      <p class="big"><span class="sr">25 milliseconds</span><span class="fig" aria-hidden="true"><span class="roll">25</span><span class="unit">ms</span></span></p>
+      <h2 class="mean" id="ms-sound-h">How long a tap’s low thump takes to settle.</h2>
+    </div>
+    <div class="right">
+      <div class="plate soundplate">
+        <SoundKeys keys={[
+          { name: 'tap', label: 'Tap', note: 'Any button' },
+          { name: 'dockOpen', label: 'Dock opens', note: 'Filtered air, no note' },
+          { name: 'success', label: 'Added to bag', note: 'A fourth, struck almost together' },
+          { name: 'complete', label: 'Order placed', note: 'A slow D major strum' },
+        ]} />
+      </div>
+      <div class="story">
+        <p>The first sounds were short pitched blips, and the store felt like an arcade. Now a press is a few milliseconds of soft noise over a low thump that settles in about 25ms, detuned a little at random so a run of taps never sounds stamped.</p>
+        <p class="detail">Only rare moments carry a note, and every note is in D. All sounds are optional, and each one has something to see as well. These keys play the store’s settings, rebuilt for this page.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5: 4 -->
+  <section class="sec" id="ms-pass" aria-labelledby="ms-pass-h">
+    <div class="rule"><span>05 / {T}</span></div>
+    <div class="lead">
+      <p class="big"><span class="sr">4 stages</span><span class="fig" aria-hidden="true"><span class="roll">4</span><span class="unit">stages</span></span></p>
+      <h2 class="mean" id="ms-pass-h">What the drop pass goes through after Razorpay says yes.</h2>
+    </div>
+    <div class="right">
+      <div class="plate passplate">
+        <div class="passhold" data-pass-hold>
+          <picture><source srcset={`${A}pass/confirmed-m.avif`} type="image/avif"><img src={`${A}pass/confirmed-m.webp`} alt="" loading="lazy" decoding="async"></picture>
+        </div>
+        <div class="chips" role="group" aria-label="Order stage">
+          {stages.map(([k, t], i) => <button type="button" class="chip" aria-pressed={String(i === 0)} data-stage={k}><span class="cn">{i + 1}</span>{t}</button>)}
+        </div>
+        <button type="button" class="pill dark" data-replay>Print it again</button>
+      </div>
+      <div class="story">
+        <p>The moment Razorpay confirms a payment, the bag gives way to a printer slot and a pass feeds out. Then it only says what has happened. You’re in: a stem grows and one bloom opens. All packed: a box drops in, folds shut and gets taped. On its way: the route draws itself and light runs it to a pin. It’s home: five blooms open one after another.</p>
+        <p class="detail">Courier updates from Shiprocket move it along, by webhook. The colour band is one fragment shader drawing a different scene per stage; it pauses off screen and draws one still frame for reduced motion. The print is one speed curve, a nudge, a breath, three ticks and a glide, handed to the browser as one linear() easing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6: 6px -->
+  <section class="sec" id="ms-foot" aria-labelledby="ms-foot-h">
+    <div class="rule"><span>06 / {T}</span></div>
+    <div class="lead">
+      <p class="big"><span class="sr">6 pixels</span><span class="fig" aria-hidden="true"><span class="roll">6</span><span class="unit">px</span></span></p>
+      <h2 class="mean" id="ms-foot-h">How far a footer number slides in when you point at a link.</h2>
+      <p class="big sub-big"><span class="sr">180 milliseconds</span><span class="fig" aria-hidden="true"><span class="roll">180</span><span class="unit">ms</span></span></p>
+    </div>
+    <div class="right">
+      <div class="plate footplate"><FooterIndex /></div>
+      <div class="story">
+        <p>Every link in the footer carries a number running across all three columns, 01 to 13. Point at one: its 10px number slides 6px in over 180ms, the label steps right 1.35rem over 260ms, and the rest fall back. It’s the kind of thing you find by accident.</p>
+        <p class="detail">On a phone, tap a link.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7: the ledger -->
+  <section class="sec" id="ms-ledger" aria-labelledby="ms-ledger-h">
+    <div class="rule"><span>07 / {T}</span></div>
+    <div class="lead">
+      <h2 class="mean top" id="ms-ledger-h">Behind the counter.</h2>
+      <ul class="tri">
+        <li><p class="big"><span class="sr">251 commits</span><span class="fig" aria-hidden="true"><span class="roll">251</span></span></p><span class="tl-l">commits</span></li>
+        <li><p class="big"><span class="sr">201 test files</span><span class="fig" aria-hidden="true"><span class="roll">201</span></span></p><span class="tl-l">test files</span></li>
+        <li><p class="big"><span class="sr">24 sound cues</span><span class="fig" aria-hidden="true"><span class="roll">24</span></span></p><span class="tl-l">sound cues</span></li>
+      </ul>
+    </div>
+    <div class="right">
+      <div class="story first">
+        <p>251 commits, from the first page in March 2026 to the store today. 201 test files: unit tests in Vitest and whole flows in Playwright. 24 sound cues. Doing both halves meant nothing had to be explained to anyone before it was built.</p>
+      </div>
+      <dl class="ledger">
+        <div><dt>Front</dt><dd>Astro, React, WebGL shaders</dd></div>
+        <div><dt>Edge</dt><dd>Cloudflare Workers</dd></div>
+        <div><dt>Data</dt><dd>Convex holds the catalogue and the orders the pass reads from</dd></div>
+        <div><dt>Payments</dt><dd>Razorpay confirms a payment by webhook and the order moves to its first stage</dd></div>
+        <div><dt>Shipping</dt><dd>Shiprocket reports the courier by webhook and the order moves to its next</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <p class="visit"><a href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub <span aria-hidden="true">↗</span></a></p>
+  <div id="ms-credits"><Credits class="credits" items={['dock', 'sound', 'photos', 'stack']} /></div>
+</article>
+
+<style>
+  .ms { --plane: #fff; max-width: 1120px; margin: 0 auto; padding-bottom: 90px; }
+  .ms a { color: inherit; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  .head { max-width: 860px; }
+  .head h1 { margin-top: 18px; font: 500 15px/1 var(--mono); letter-spacing: .02em; color: var(--ink-3); }
+  .thesis { margin-top: 18px; font: 500 clamp(28px, 4.6vw, 52px)/1.08 var(--display); letter-spacing: -.03em; text-wrap: balance; }
+  .meta { display: flex; flex-wrap: wrap; gap: 14px 36px; margin-top: 26px; }
+  .meta dt { font: 500 10.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .meta dd { margin: 8px 0 0; font: 400 14px/1.4 var(--display); }
+  .meta a, .story a, .visit a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+  /* the index: a ruler of the numbers */
+  .strip { margin-top: clamp(40px, 6vw, 72px); }
+  .strip-h { font: 500 11px/1 var(--mono); letter-spacing: .04em; color: var(--ink-3); text-transform: uppercase; }
+  .strip ol { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+    background: repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 12px) top / 100% 7px no-repeat; }
+  .strip a { display: grid; gap: 4px; min-height: 44px; padding: 14px 0 10px 8px; position: relative; text-decoration: none; }
+  .strip a::before { content: ''; position: absolute; left: 0; top: 0; width: 1px; height: 16px; background: var(--ink); }
+  .strip .n { font: 500 clamp(20px, 2.6vw, 30px)/1 var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .strip small { font: 500 .5em/1 var(--mono); color: var(--ink-3); margin-left: 2px; letter-spacing: 0; }
+  .strip .l { font: 400 12px/1.3 var(--display); color: var(--ink-2); }
+  @media (hover: hover) and (pointer: fine) { .strip a:hover .n { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; } }
+
+  /* a section: hairline + index, then lead (number, meaning) and right (instrument, story) */
+  .sec { margin-top: clamp(64px, 9vw, 120px); display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; scroll-margin-top: 24px; }
+  .rule { box-shadow: inset 0 1px 0 var(--line); padding-top: 12px; font: 500 11px/1 var(--mono); letter-spacing: .04em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .lead { container-type: inline-size; min-width: 0; }
+  .right { min-width: 0; display: grid; gap: 24px; align-content: start; }
+
+  .big { font: 600 clamp(96px, 46cqw, 240px)/.95 var(--display); letter-spacing: -.055em; font-variant-numeric: tabular-nums; color: var(--ink); overflow: visible; }
+  .fig { display: inline-flex; align-items: flex-start; }
+  .unit { font: 500 .17em/1 var(--mono); letter-spacing: 0; margin: .5em 0 0 .3em; color: var(--ink-3); }
+  .mean { margin-top: 14px; font: 500 clamp(19px, 2.1vw, 24px)/1.25 var(--display); letter-spacing: -.015em; text-wrap: balance; max-width: 22em; }
+  .mean.top { margin-top: 0; }
+  .sub { margin-top: 12px; font: 500 12px/1.4 var(--mono); letter-spacing: .02em; color: var(--ink-2); }
+  .sub-big { margin-top: 18px; font-size: clamp(56px, 20cqw, 130px); }
+
+  /* odometer */
+  .roll:global(.on) { display: inline-flex; }
+  .roll :global(.col) { display: inline-block; height: .95em; overflow: hidden; vertical-align: top; padding-inline: .03em; margin-right: -.085em; margin-left: -.03em; }
+  .roll :global(.strp) { display: flex; flex-direction: column; transition: transform 1.4s var(--ease) var(--d, 0ms); }
+  .roll :global(.strp i) { display: block; height: .95em; font-style: normal; line-height: .95; letter-spacing: 0; }
+  .roll:global(.in) :global(.strp) { transform: translateY(calc(var(--end) * -.95em)); }
+
+  .story { max-width: 600px; }
+  .story p { font: 400 16.5px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .story p + p { margin-top: .9em; }
+  .story .detail { font-size: 14.5px; color: var(--ink-2); }
+
+  .plate { position: relative; border-radius: clamp(16px, 2vw, 24px); background: var(--plane); overflow: hidden; box-shadow: 0 0 0 .5px rgba(31, 29, 27, .12); }
+  .plate button:focus-visible, .compare button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .pill, .seg button { all: unset; box-sizing: border-box; height: 44px; padding: 0 18px; border-radius: 99px; display: inline-grid; place-items: center; cursor: pointer;
+    font: 500 13px/1 var(--display); color: var(--ink); -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease); }
+  .pill { background: #fff; box-shadow: 0 1px 2px rgba(31, 29, 27, .08), 0 0 0 .5px rgba(31, 29, 27, .12); }
+  .pill.dark, .pill[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 99px; background: rgba(31, 29, 27, .06); }
+  .seg button { height: 44px; min-width: 52px; color: var(--ink-2); }
+  .seg button[aria-checked='true'] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(31, 29, 27, .12), 0 0 0 .5px rgba(31, 29, 27, .08); }
+  .pill:active, .seg button:active { transform: scale(.97); }
+  .ctrls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+
+  /* 1 */
+  .dockplate { display: grid; justify-items: center; gap: 18px; padding: clamp(32px, 4vw, 48px) 20px 24px; }
+  .dockhold { position: relative; width: min(300px, 100%); aspect-ratio: 392 / 760; border-radius: 38px; overflow: hidden;
+    background: #3a2c22 url(/assets/work/whyclub/lab/hero-star.webp) center / cover; box-shadow: 0 30px 60px -36px rgba(40, 30, 15, .5); }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .readout { min-height: 36px; font: 400 12px/1.5 var(--mono); color: var(--ink-2); text-align: center; font-variant-numeric: tabular-nums; max-width: 30em; }
+  .compare { display: grid; gap: 14px; padding: 18px; border-radius: 20px; box-shadow: 0 0 0 .5px rgba(31, 29, 27, .12); }
+  .cl { font: 400 14px/1.45 var(--display); color: var(--ink-2); }
+  .mkrow { display: grid; }
+  .mt { position: absolute; left: 0; top: 0; font: 500 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .mk { position: relative; height: 150px; }
+  .mkrow { position: relative; }
+  .mb { all: unset; box-sizing: border-box; position: absolute; left: 50%; bottom: 0; width: 168px; height: 52px; border-radius: 26px; translate: -50% 0; cursor: pointer;
+    background: var(--ink); color: #fff; display: grid; align-content: space-between; padding: 0; overflow: hidden; -webkit-tap-highlight-color: transparent;
+    transition: width var(--d, 0ms) var(--e, ease), height var(--d, 0ms) var(--e, ease), border-radius var(--d, 0ms) var(--e, ease); }
+  .mb .lab { font: 500 14px/52px var(--display); text-align: center; height: 52px; }
+  .mb .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 10px 10px; opacity: 0; transition: opacity .2s ease .08s; }
+  .mb .tiles i { display: grid; place-items: end start; height: 70px; padding: 8px; border-radius: 12px; background: #3d3a37; font: 500 12px/1 var(--display); font-style: normal; }
+  .mb[data-s='squeeze'] { width: 146px; height: 48px; border-radius: 24px; }
+  .mb[aria-expanded='true'] { width: 100%; height: 150px; border-radius: 26px; }
+  .mb[aria-expanded='true'] .lab { height: 44px; line-height: 44px; }
+  .mb[aria-expanded='true'] .tiles { opacity: 1; }
+  .mb[aria-expanded='true'] .tiles i { height: 62px; }
+  .mb:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  /* 2: a loading mock, a tiny phone-shaped page */
+  .waitplate { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: clamp(20px, 3vw, 36px); padding: 24px; align-items: center; }
+  .lm { position: relative; width: 190px; aspect-ratio: 392 / 520; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 0 0 .5px rgba(31, 29, 27, .18); }
+  .lm > div { position: absolute; inset: 0; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 8px; align-content: start; }
+  .lm i, .lm b, .lm u, .lm s { display: block; border-radius: 6px; text-decoration: none; }
+  .lm .old { grid-template-columns: 1fr; grid-auto-rows: 28px; opacity: .55; }
+  .lm .old i { background: #d9d9d9; }
+  .lm .blocks, .lm .lines, .lm .real { opacity: 0; }
+  .lm .blocks { grid-template-rows: 18px 1fr 1fr 1fr; background: #fff; }
+  .lm .blocks i { background: #e1e1e1; }
+  .lm .blocks i:nth-child(1) { grid-column: 1 / -1; }
+  .lm .blocks i:nth-child(2) { grid-column: 1 / -1; }
+  .lm .lines { grid-template-rows: 18px 1fr 1fr 1fr; }
+  .lm .lines i { border: 1.5px solid var(--ink); opacity: 0; transform: scale(.96); transition: opacity .25s ease, transform .3s var(--ease); transition-delay: calc(var(--k, 1) * var(--i) * 70ms); }
+  .lm .lines i:nth-child(1), .lm .lines i:nth-child(2) { grid-column: 1 / -1; }
+  .lm .real { grid-template-rows: 18px 1fr 1fr 1fr; }
+  .lm .real b { grid-column: 1 / -1; background: var(--ink); }
+  .lm .real u { grid-column: 1 / -1; background: #b7b2ab; }
+  .lm .real s { background: #c9c4bd; }
+  .lm .real s:nth-child(4) { background: #a9a49d; }
+  .lm .real s:nth-child(5) { background: #bdb8b1; }
+  .lm .real s:nth-child(6) { background: #d2cdc6; }
+  .lm[data-state='blocks'] .old { opacity: .55; }
+  .lm[data-state='blocks'] .blocks, .lm[data-state='lines'] .blocks { opacity: 1; }
+  .lm[data-state='blocks'] .old { opacity: 0; }
+  .lm[data-state='lines'] .old, .lm[data-state='ready'] .old { opacity: 0; }
+  .lm[data-state='lines'] .blocks { opacity: 0; transition: opacity .2s ease; }
+  .lm[data-state='lines'] .lines, .lm[data-state='ready'] .lines { opacity: 1; }
+  .lm[data-state='lines'] .lines i, .lm[data-state='ready'] .lines i { opacity: 1; transform: none; }
+  .lm[data-state='ready'] .real { opacity: 1; transition: opacity .5s ease; }
+  .lm[data-state='ready'] .lines { opacity: 0; transition: opacity .5s ease .1s; }
+  .tl { display: grid; gap: 14px; min-width: 0; }
+  .tl .track { position: relative; height: 3px; border-radius: 3px; background: var(--line); }
+  .tl .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; background: var(--ink); }
+  .tl ol { list-style: none; margin: 0; padding: 0; display: grid; }
+  .tl li { display: grid; grid-template-columns: 4.4em 1fr; gap: 10px; padding: 10px 0; box-shadow: inset 0 1px 0 var(--line); font: 400 14px/1.4 var(--display); color: var(--ink-3); transition: color .2s ease; }
+  .tl li.on { color: var(--ink); }
+  .tl li b { font: 500 12px/1.8 var(--mono); font-variant-numeric: tabular-nums; }
+  .tl .ctrls { justify-content: flex-start; margin-top: 4px; }
+  .ms :global(.waitclip) { width: min(280px, 100%); }
+
+  /* 3 to 6 */
+  .tintplate { padding: clamp(28px, 4vw, 48px) 20px; }
+  .soundplate { padding: clamp(20px, 3vw, 32px); }
+  .passplate { display: grid; justify-items: center; gap: 16px; padding: clamp(28px, 4vw, 40px) 20px 24px; }
+  .passhold { position: relative; width: min(260px, 100%); aspect-ratio: 392 / 890; overflow: hidden; }
+  .passhold picture, .passhold img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .passhold :global(iframe) { opacity: 0; transition: opacity .3s var(--ease); background: #fff; }
+  .passhold:global(.is-live) :global(iframe) { opacity: 1; }
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 440px; }
+  .chip { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border-radius: 14px; cursor: pointer;
+    font: 500 14px/1.2 var(--display); color: var(--ink-2); box-shadow: 0 0 0 .5px rgba(31, 29, 27, .16); -webkit-tap-highlight-color: transparent; }
+  .chip .cn { font: 500 11px/1 var(--mono); color: var(--ink-3); }
+  .chip[aria-pressed='true'] { background: var(--ink); color: #fff; box-shadow: none; }
+  .chip[aria-pressed='true'] .cn { color: rgba(255, 255, 255, .6); }
+  .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .footplate { background: #111; }
+
+  /* 7 */
+  .tri { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .tri li { display: flex; align-items: baseline; gap: 14px; box-shadow: inset 0 1px 0 var(--line); padding-top: 10px; }
+  .tri .big { font-size: clamp(64px, 24cqw, 120px); min-width: 3.1ch; }
+  .tl-l { font: 500 12px/1.2 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .ledger { margin: 0; display: grid; }
+  .ledger div { display: grid; grid-template-columns: 6.5em 1fr; gap: 12px; padding: 14px 0; box-shadow: inset 0 1px 0 var(--line); }
+  .ledger dt { font: 500 11px/1.9 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .ledger dd { margin: 0; font: 400 16px/1.5 var(--display); color: var(--body); text-wrap: pretty; }
+
+  .visit { margin-top: clamp(72px, 10vw, 130px); font: 500 clamp(28px, 5vw, 56px)/1 var(--display); letter-spacing: -.03em; }
+  #ms-credits { margin-top: clamp(48px, 6vw, 72px); scroll-margin-top: 24px; }
+
+  /* phone: plates run edge to edge, the number spans the top */
+  @media (max-width: 640px) {
+    .ms { padding-bottom: 100px; }
+    .strip ol { grid-template-columns: repeat(4, minmax(0, 1fr)); background: none; }
+    .strip a { box-shadow: inset 0 1px 0 var(--line); }
+    .strip a::before { height: 10px; }
+    .plate { margin-inline: calc(var(--gut) * -1); border-radius: 0; box-shadow: inset 0 .5px 0 rgba(31, 29, 27, .14), inset 0 -.5px 0 rgba(31, 29, 27, .14); }
+    .dockhold { width: 76vw; border-radius: 9vw; }
+    .dockplate .ctrls, .passplate .pill { width: 100%; }
+    .dockplate .pill { width: 100%; }
+    .waitplate { grid-template-columns: 1fr; justify-items: center; padding: 28px 16px 20px; }
+    .lm { width: 64vw; }
+    .tl { width: 100%; }
+    .tl .ctrls { justify-content: space-between; }
+    .tl .ctrls .pill { flex: 1; }
+    .passhold { width: 66vw; }
+    .passplate { padding: 28px 16px 20px; }
+    .tintplate :global(.tt .phone) { width: 70vw; }
+    .soundplate { padding: 20px 16px; }
+    .ledger div { grid-template-columns: 5.5em 1fr; }
+  }
+
+  /* desktop: number and meaning pinned left, instrument and story scroll on the right */
+  @media (min-width: 900px) {
+    .sec { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 0; align-items: start; }
+    .rule { grid-column: 1 / -1; margin-bottom: 28px; }
+    .lead { grid-column: 1 / 6; position: sticky; top: 28px; }
+    .right { grid-column: 6 / 13; gap: 28px; }
+    .lead { padding-right: 8px; }
+    .sec .story.first { margin-top: 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pill, .seg button, .passhold :global(iframe), .roll :global(.strp), .mb, .mb .tiles, .lm *, .tl li { transition: none !important; }
+    .pill:active, .seg button:active { transform: none; }
+  }
+</style>
+
+<script>
+  import { frame, reduced, springEasing, whenShown } from './lab';
+
+  const root = document.querySelector<HTMLElement>('.ms')!;
+
+  // odometer: each digit gets a column that rolls up once when the number enters view. plain text stays under reduced motion
+  const rolls = [...root.querySelectorAll<HTMLElement>('.roll')];
+  if (!reduced()) {
+    rolls.forEach((el) => {
+      const txt = el.textContent!.trim();
+      el.textContent = '';
+      el.classList.add('on');
+      [...txt].forEach((ch, i, a) => {
+        const col = document.createElement('span');
+        col.className = 'col';
+        const strp = document.createElement('span');
+        strp.className = 'strp';
+        strp.innerHTML = Array.from({ length: 20 }, (_, r) => `<i>${r % 10}</i>`).join('');
+        strp.style.setProperty('--end', String(Number(ch) + (i > 0 ? 10 : 0)));
+        strp.style.setProperty('--d', `${i * 90}ms`);
+        col.append(strp);
+        el.append(col);
+      });
+    });
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) { (e.target as HTMLElement).classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.5 });
+    rolls.forEach((r) => io.observe(r));
+  }
+
+  // 1: the real dock, and what spring it reported
+  let openSpring = { response: 0.45, damping: 0.78 };
+  const hold = root.querySelector<HTMLElement>('[data-dock-hold]')!;
+  const dock = frame(hold, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  const readout = root.querySelector<HTMLElement>('[data-spring]')!;
+  const NAMES: Record<string, string> = { open: 'Open', close: 'Close', switch: 'Switch', collapse: 'Into the pill', expand: 'Out of the pill', resize: 'Resize' };
+  let panelOpen = false;
+  const sync = () => { openB.setAttribute('aria-pressed', String(panelOpen)); openB.textContent = panelOpen ? 'Close Shop' : 'Open Shop'; };
+  dock.on((d) => {
+    if (d.moving) return;
+    if (d.shape) { panelOpen = d.shape === 'panel'; sync(); }
+    if (d.spring) {
+      if (d.spring.name === 'open') openSpring = { response: d.spring.response, damping: d.spring.damping };
+      readout.textContent = `${NAMES[d.spring.name] ?? d.spring.name}: response ${d.spring.response.toFixed(2)}, damping ${d.spring.damping.toFixed(2)}, settles in ${d.spring.durationMs}ms`;
+    }
+  });
+  openB.addEventListener('click', () => { panelOpen = !panelOpen; dock.send(panelOpen ? { open: 'shop' } : { close: true }); sync(); });
+
+  // 1b: the same squeeze rebuilt in html, next to one without it
+  root.querySelectorAll<HTMLButtonElement>('.mb').forEach((b) => {
+    let t = 0;
+    b.addEventListener('click', () => {
+      clearTimeout(t);
+      const opening = b.getAttribute('aria-expanded') !== 'true';
+      const sq = Number(b.dataset.squeeze);
+      const spring = (resp: number, damp: number) => {
+        const s = springEasing(resp, damp);
+        b.style.setProperty('--d', reduced() ? '0ms' : `${s.durationMs}ms`);
+        b.style.setProperty('--e', s.easing);
+      };
+      const go = () => {
+        delete b.dataset.s;
+        spring(openSpring.response, opening ? openSpring.damping : 1);
+        b.setAttribute('aria-expanded', String(opening));
+      };
+      if (opening && sq && !reduced()) {
+        b.style.setProperty('--d', `${sq}ms`);
+        b.style.setProperty('--e', 'ease-out');
+        b.dataset.s = 'squeeze';
+        t = window.setTimeout(go, sq);
+      } else go();
+    });
+  });
+
+  // 2: the loading mock. press, 350ms, ready; ¼× slows the mock and the recording together
+  const lm = root.querySelector<HTMLElement>('[data-lm]')!;
+  lm.querySelectorAll<HTMLElement>('.lines i').forEach((el, i) => el.style.setProperty('--i', String(i)));
+  const fill = root.querySelector<HTMLElement>('[data-fill]')!;
+  const steps = [...root.querySelectorAll<HTMLElement>('.tl li')];
+  const loadB = root.querySelector<HTMLButtonElement>('[data-load]')!;
+  const speed = root.querySelector<HTMLElement>('[data-speed]')!;
+  const clip = root.querySelector<HTMLVideoElement>('.waitclip video')!;
+  let rate = 1, timers: number[] = [];
+  const mark = (n: number, pct: number, ms: number) => {
+    steps.forEach((s, i) => s.classList.toggle('on', i === n));
+    fill.style.transition = reduced() ? 'none' : `width ${ms}ms linear`;
+    fill.style.width = `${pct}%`;
+  };
+  loadB.addEventListener('click', () => {
+    timers.forEach(clearTimeout);
+    const k = 1 / rate;
+    lm.style.setProperty('--k', String(k));
+    // reset to the old page, then run: press, 350ms, ready
+    lm.dataset.state = 'idle';
+    fill.style.transition = 'none'; fill.style.width = '0%';
+    void lm.offsetWidth;
+    const at = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, reduced() ? ms / 4 * 1 : ms));
+    at(40, () => { lm.dataset.state = 'blocks'; mark(0, 0, 0); mark(0, 33, 350 * k); });
+    at(40 + 350 * k, () => { lm.dataset.state = 'lines'; mark(1, 66, 1100 * k); });
+    at(40 + 1450 * k, () => { lm.dataset.state = 'ready'; mark(2, 66, 0); });
+  });
+  speed.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-rate]');
+    if (!b) return;
+    speed.querySelectorAll('[data-rate]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+    rate = Number(b.dataset.rate);
+    clip.playbackRate = rate;
+    if (clip.paused && !reduced()) clip.play().catch(() => {});
+  });
+  clip.addEventListener('play', () => { clip.playbackRate = rate; });
+
+  // 5: the pass
+  const passHold = root.querySelector<HTMLElement>('[data-pass-hold]')!;
+  const pass = frame(passHold, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  const chips = [...root.querySelectorAll<HTMLButtonElement>('.chip')];
+  chips.forEach((c) => c.addEventListener('click', () => {
+    chips.forEach((x) => x.setAttribute('aria-pressed', String(x === c)));
+    pass.send({ stage: c.dataset.stage });
+  }));
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+
+  whenShown(root, () => { /* embeds fit themselves on resize */ });
+</script>

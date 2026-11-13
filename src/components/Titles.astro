@@ -1,0 +1,73 @@
+---
+// titles, in two voices: sans 500 titles, a pixel kicker above every title, the second clause in Instrument Serif italic.
+// one override layer for every page (home, projects, vault, blog), so it sits in the head of Base.astro and index.astro.
+// the !important is deliberate: these rules win over each page's own title styles without touching them.
+---
+<style is:inline>
+  :root {
+    --t-serif: "Instrument Serif", Georgia, serif;
+    --t-sans: "Instrument Sans", -apple-system, system-ui, sans-serif;
+    --t-pix: "Pixelify Sans", ui-monospace, "SF Mono", Menlo, monospace;
+    --t-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  /* ---- the scale.  hi = index heads, ha = article heads, h2 = sections, h3 = cards, sub = h3s inside text, sm = tiles */
+  html {
+    --t-face: var(--t-sans); --t-w1: 500; --t-w2: 500; --t-ls1: -.03em; --t-ls2: -.03em; --t-lh1: 1.04; --t-lh2: 1.1;
+    --t-hi: 40px; --t-ha: 36px; --t-h2: 28px; --t-h3: 24px; --t-sub: 20px; --t-sm: 16px; --t-ab: 24px;
+    --t-eb-face: var(--t-pix); --t-eb-size: 14px; --t-eb-t: none; --t-eb-ls: .01em; --t-eb-w: 500;
+    --t-meta: var(--t-mono); --t-kick: var(--t-pix);
+    --t-em-style: italic; --t-em-face: var(--t-serif); --t-em-size: 1.12em; --t-em-w: 400;
+    --t-cw: 500 13px/1 var(--t-pix); --t-cw-t: none; --t-cw-ls: .01em;
+  }
+  /* tablet and desktop steps */
+  @media (min-width: 641px) {
+    html { --t-hi: clamp(48px, 6.4vw, 68px); --t-ha: clamp(44px, 5.4vw, 58px); --t-h2: clamp(32px, 3.6vw, 42px); --t-h3: 24px; --t-sub: 22px; --t-cw: 500 14px/1 var(--t-pix); }
+  }
+
+  html {
+    /* index heads: one size, left aligned, eyebrow above */
+    :is(.index-head h1, .bi-head h1, .vlt-intro h1) {
+      font: var(--t-w1) var(--t-hi)/var(--t-lh1) var(--t-face) !important; letter-spacing: var(--t-ls1) !important; margin-top: 14px !important; text-align: left; text-wrap: balance; overflow-wrap: break-word;
+    }
+    /* article heads (case study, post, hand-built project pages): one size */
+    :is(.article-head h1, .bp-title, .vy h1, .pj h1, .vlt-name h1, .wk-hi) {
+      font: var(--t-w1) var(--t-ha)/var(--t-lh1) var(--t-face) !important; letter-spacing: var(--t-ls1) !important; text-align: left; text-wrap: balance; overflow-wrap: break-word;
+    }
+    .bp-title { max-width: none !important; }
+    .vy h1 [lang="hi"] { font-size: .84em !important; letter-spacing: 0 !important; }
+    /* section heads */
+    :is(.prose h2, .blog .prose h2, .vy .vy-sec h2, .pj h2, .wk-h2, .wk-title, .bi-post h2, .vlt-name h2) {
+      font: var(--t-w2) var(--t-h2)/var(--t-lh2) var(--t-face) !important; letter-spacing: var(--t-ls2) !important; text-wrap: balance; overflow-wrap: break-word;
+    }
+    .wk-title { line-height: var(--t-lh1) !important; }
+    :is(.card h2, .post h2) { font: var(--t-w2) var(--t-h3)/var(--t-lh2) var(--t-face) !important; letter-spacing: var(--t-ls2) !important; overflow-wrap: break-word; }
+    .ab-top h2 { font: var(--t-w2) var(--t-ab)/1.05 var(--t-face) !important; letter-spacing: var(--t-ls2) !important; }
+    :is(.prose h3, .pj h3) { font: var(--t-w2) var(--t-sub)/1.2 var(--t-face) !important; letter-spacing: var(--t-ls2) !important; }
+    .vlt-cap h2 { font: var(--t-w2) var(--t-sm)/1.2 var(--t-face) !important; letter-spacing: var(--t-ls2) !important; }
+    .wk-hi-dev, .vy h1 [lang="hi"] { font-family: "Tiro Devanagari Hindi", "Kohinoor Devanagari", serif !important; font-weight: 400 !important; }
+    /* the emphasised clause */
+    :is(.wk-h2, .wk-hi, .bp-title, .prose h2, .bi-head h1, .bi-post h2, .ab-top h2) :is(em, i) {
+      font-style: var(--t-em-style) !important; font-family: var(--t-em-face) !important; font-size: var(--t-em-size) !important; font-weight: var(--t-em-w) !important; letter-spacing: -.01em !important;
+    }
+    /* eyebrows */
+    :is(.eyebrow, .wk-label, .bi-head p:first-child) {
+      font: var(--t-eb-w) var(--t-eb-size)/1 var(--t-eb-face) !important; letter-spacing: var(--t-eb-ls) !important; text-transform: var(--t-eb-t) !important;
+    }
+    /* the little labels that used the pixel face */
+    :is(.bp-meta, .bi-post .meta, .blog .px, .bp-end h2, .bp-near span, .bp-refs li > span, .bi-post .go) { font-family: var(--t-meta) !important; }
+    .blog .prose h3 { font-family: var(--t-kick) !important; }
+    /* home corner words */
+    .cw { font: var(--t-cw) !important; text-transform: var(--t-cw-t) !important; letter-spacing: var(--t-cw-ls) !important; }
+  }
+
+
+  /* two voices: every title gets a pixel kicker above it, even where the page had none */
+  html :is(.vy h1, .pj.fp h1, .vlt-intro h1, .vlt-name h1)::before {
+    content: var(--t-kicker, "project"); display: block; margin-bottom: 14px; font: 500 14px/1 var(--t-pix); letter-spacing: .01em; color: var(--ink-2, rgba(31, 29, 27, .68));
+  }
+  html .vy h1 { --t-kicker: "concept"; }
+  html .pj.fp h1 { --t-kicker: "open source tool"; }
+  html .vlt-intro h1 { --t-kicker: "small live experiments"; }
+  html .vlt-name h1 { --t-kicker: "vault"; }
+</style>

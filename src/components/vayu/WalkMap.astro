@@ -1,0 +1,94 @@
+---
+// one morning walk, drawn: home, a junction where the air turns, a park, the office. the dot walks the fast road until
+// the air turns, the watch taps, and the clean route through the park takes over. vayu.ts moves the dot along these paths.
+// drawn here instead of the film's still of a route bending round a pink cloud
+const A = 'M84 352 L300 352 Q330 352 348 330 L372 302';                      // home, up the main road, into the haze
+const FAST = 'M372 302 L420 244 Q436 224 462 214 L548 180 Q574 170 574 142 L574 92'; // on through the junction
+const CLEAN = 'M372 302 Q356 284 330 280 L290 274 Q262 270 252 244 L232 176 Q226 150 252 136 L330 104 Q352 96 380 96 L540 96 Q574 96 574 92'; // round through the park
+const trees = [[150, 146], [184, 118], [206, 196], [160, 222], [230, 120], [270, 206], [196, 158], [140, 186], [254, 160], [292, 236], [128, 248], [220, 244]];
+---
+<div class="wm" data-map>
+  <svg viewBox="40 40 580 360" aria-hidden="true">
+    <defs>
+      <radialGradient id="wm-haze"><stop offset="0" stop-color="#E0301E" stop-opacity=".42"/><stop offset=".45" stop-color="#FF8A00" stop-opacity=".24"/><stop offset="1" stop-color="#FF8A00" stop-opacity="0"/></radialGradient>
+      <pattern id="wm-grid" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M44 0H0V44" fill="none" stroke="rgba(31,29,27,.07)" stroke-width="1"/></pattern>
+    </defs>
+    <rect x="40" y="40" width="580" height="360" fill="url(#wm-grid)" />
+    <!-- blocks, so it reads as a city -->
+    <g class="wm-blocks">
+      <rect x="352" y="56" width="92" height="28" rx="6"/><rect x="456" y="112" width="70" height="52" rx="6"/><rect x="400" y="300" width="96" height="40" rx="6"/>
+      <rect x="512" y="232" width="84" height="60" rx="6"/><rect x="72" y="292" width="110" height="36" rx="6"/><rect x="196" y="300" width="88" height="28" rx="6"/>
+      <rect x="440" y="360" width="140" height="28" rx="6"/><rect x="590" y="120" width="24" height="90" rx="6"/>
+    </g>
+    <!-- the park -->
+    <rect x="112" y="98" width="200" height="168" rx="28" class="wm-park"/>
+    {trees.map(([cx, cy]) => <circle cx={cx} cy={cy} r="9" class="wm-tree"/>)}
+    <text x="212" y="290" class="wm-label is-park" text-anchor="middle">park</text>
+    <!-- the main road -->
+    <path d="M40 352 L300 352 Q330 352 348 330 L420 244 Q436 224 462 214 L548 180 Q574 170 574 142 L574 40" class="wm-road"/>
+    <path d="M440 400 L420 244" class="wm-road is-side"/><path d="M372 302 L620 302" class="wm-road is-side"/>
+    <!-- the bad air at the junction -->
+    <g class="wm-haze"><circle cx="410" cy="262" r="118" fill="url(#wm-haze)"/></g>
+    <text x="470" y="276" class="wm-label is-haze">AQI 168</text>
+    <!-- the two routes, shown when the alert offers them -->
+    <g class="wm-routes">
+      <path d={FAST} class="wm-r is-fast"/><path d={CLEAN} class="wm-r is-clean"/>
+      <g class="wm-chip is-fast" transform="translate(486 150)"><rect x="-4" y="-17" width="96" height="26" rx="13"/><text x="44" y="0" text-anchor="middle">Fastest · 168</text></g>
+      <g class="wm-chip is-clean" transform="translate(152 62)"><rect x="-4" y="-17" width="128" height="26" rx="13"/><text x="60" y="0" text-anchor="middle">Cleanest · 42 · +4m</text></g>
+    </g>
+    <!-- where you've been -->
+    <path d={A} class="wm-trail" data-path="a" pathLength="1"/>
+    <path d={CLEAN} class="wm-trail is-clean" data-path="b" pathLength="1"/>
+    <!-- home and office -->
+    <g transform="translate(84 352)" class="wm-pin"><circle r="8"/><text y="30" text-anchor="middle">home</text></g>
+    <g transform="translate(574 92)" class="wm-pin is-end"><circle r="8"/><text y="-18" text-anchor="middle">office</text></g>
+    <g class="wm-dot" data-dot transform="translate(84 352)"><circle r="16" class="wm-pulse"/><circle r="8"/></g>
+  </svg>
+</div>
+
+<style>
+  .wm { position: relative; }
+  svg { display: block; width: 100%; height: auto; font-family: var(--display); }
+  .wm-blocks rect { fill: rgba(31, 29, 27, .045); }
+  .wm-park { fill: rgba(34, 160, 75, .15); stroke: rgba(34, 160, 75, .28); }
+  .wm-tree { fill: rgba(34, 160, 75, .34); }
+  .wm-road { fill: none; stroke: #fff; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 .5px rgba(31, 29, 27, .25)); }
+  .wm-road.is-side { stroke-width: 10; }
+  .wm-label { font-size: 13px; fill: rgba(31, 29, 27, .5); }
+  .wm-label.is-park { fill: #1B7A3A; }
+  .wm-label.is-haze { font-weight: 600; fill: #B8210F; opacity: 0; transition: opacity .5s var(--pj-ease); }
+  .wm-haze { transform-origin: 410px 262px; opacity: .35; scale: .7; transition: opacity 1.4s var(--pj-ease), scale 1.6s var(--pj-ease); }
+  .wm[data-air="bad"] .wm-haze { opacity: 1; scale: 1; }
+  .wm[data-air="bad"] .is-haze { opacity: 1; }
+  .wm-trail { fill: none; stroke: #1f1d1b; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--p, 0)); }
+  .wm-trail.is-clean { stroke: #1B7A3A; }
+  .wm-routes { opacity: 0; transition: opacity .5s var(--pj-ease); }
+  .wm[data-routes] .wm-routes { opacity: 1; }
+  .wm-r { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2 7; }
+  .wm-r.is-fast { stroke: #E0301E; opacity: .6; }
+  .wm-r.is-clean { stroke: #22A04B; }
+  .wm-chip rect { fill: #fff; stroke: rgba(31, 29, 27, .08); }
+  .wm-chip text { font-size: 12px; font-weight: 500; fill: #1f1d1b; }
+  .wm-chip.is-clean rect { fill: #1B7A3A; stroke: none; }
+  .wm-chip.is-clean text { fill: #fff; }
+  .wm-pin circle { fill: #fff; stroke: #1f1d1b; stroke-width: 2.5; }
+  .wm-pin text { font-size: 13px; fill: rgba(31, 29, 27, .7); }
+  .wm-pin.is-end circle { fill: #1f1d1b; }
+  .wm-dot circle:last-child { fill: #1f1d1b; stroke: #fff; stroke-width: 3; }
+  .wm-pulse { fill: rgba(31, 29, 27, .12); transform-origin: center; transform-box: fill-box; }
+  .wm[data-air="bad"] .wm-pulse { fill: rgba(224, 48, 30, .22); }
+  /* a phone draws the map at about half size: the words grow so they stay readable, and the route chips lose
+     their pills for a white halo, since the pills can't grow with them */
+  @media (max-width: 640px) {
+    .wm-label, .wm-pin text { font-size: 21px; }
+    .wm-chip rect { display: none; }
+    .wm-chip text { font-size: 19px; font-weight: 600; paint-order: stroke; stroke: #fff; stroke-width: 6px; stroke-linejoin: round; }
+    .wm-chip.is-fast text { fill: #B8210F; }
+    .wm-chip.is-clean text { fill: #1B7A3A; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .wm-pulse { animation: wm-pulse 2s cubic-bezier(.23, 1, .32, 1) infinite; }
+  }
+  @keyframes wm-pulse { 0% { scale: .6; opacity: 1; } 100% { scale: 1.6; opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .wm-haze, .wm-routes, .is-haze { transition: none; } }
+</style>

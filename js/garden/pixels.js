@@ -8,12 +8,13 @@
 //   garden.flowerAt(x, y, slop)  // the flower a tap there would turn, or null on bare soil
 //   garden.press(x, y, slop)     // a finger or button goes down: the flower under it dips a stitch until release()
 //   garden.hover(x, y)           // the pointer's over (x, y): a flower there leans towards it. true if there's one
+//   garden.peek(x, y, id)        // that flower's head box and petal colours as drawn, for a cursor to draw round (or null)
 //   garden.clear()               // every flower unstitches; resolves when the soil is bare
 //   garden.destroy()
 //
 // slop is how many CSS px off a flower a tap may land and still count as on it (a fingertip's worth, say).
 // opts.onGrown() fires each time everything has finished stitching in. opts.onMorph(f, how) when a tapped flower turns
-// ('ripple' or 'scatter').
+// ('ripple' or 'scatter'). opts.onStitch(f, part, p) as stitches land: part 'stem' | 'leaf' | 'petal', p 0..1 (1 = whole).
 //
 // field(w, h, mob) -> { rect: [x0, y0, x1, y1], avoid: [[x0, y0, x1, y1], ...], n } places the opening field.
 
@@ -21,6 +22,8 @@ import { FLOWERS } from './flora.js';
 
 // how full the garden gets before the oldest flowers start to make room
 const FULL = { phone: 24, desk: 40 };
+// past full: how long it's let be full before the oldest starts to go (ms), then the gap between each one going
+const TEND = { rest: 12000, every: [7000, 8000] };
 const STEP = 26;          // ms between stitches while a flower grows
 const SPARKS = ['#ffd23f', '#f594b8', '#4baff8', '#ff8a3d'];   // the ambient twinkles; a bloom's own sparkles take its colour
 
@@ -45,7 +48,7 @@ const LEAVES = [
 // break it up, and showpieces are the rare moment. any family flora.js adds that isn't listed here grows as an accent. the filler is never picked
 // outright: it only tucks into a tight spot between bigger blooms, or one nothing else fits
 const KINDS = {
-  staple: { w: 10, kinds: ['tulip', 'blossom', 'daisy', 'cosmos', 'poppy', 'forget'] },
+  staple: { w: 10, kinds: ['tulip', 'rose', 'blossom', 'daisy', 'cosmos', 'poppy', 'forget'] },
   accent: { w: 4.5, kinds: ['pansy', 'daffodil', 'lavender', 'iris', 'bluebell', 'allium'] },
   show: { w: 3.5, kinds: ['sunflower', 'lily'] },
   filler: { w: 1.5, kinds: ['mini'] },
@@ -65,8 +68,8 @@ const TALL = new Set(['sunflower', 'allium', 'lily', 'iris']);
 const RIPEN = { stage: [7000, 12000], full: [24000, 38000] };
 // how a tapped flower turns into the next (ms): a ripple when the new head is the same size as the old, a scatter
 // when it's bigger or smaller. each new stitch lands in FLASH for a moment
-const TURNS = { ripple: 520, scatter: 380 };
-const FLASH = '#fff3c2', FLASH_MS = 80;
+const TURNS = { ripple: 940, scatter: 480 };
+const FLASH = '#fff3c2', FLASH_MS = 70;
 // sparkles twinkle through these frames
 const SPARK = [['X'], ['.X.', 'XXX', '.X.'], ['..X..', '..X..', 'XX.XX', '..X..', '..X..'], ['.X.', 'XXX', '.X.'], ['X']];
 
@@ -302,11 +305,13 @@ export function createGarden(canvas, opts = {}) {
   let hovered = null, pressed = null, pressT = 0, liftT = 0;
   // the gardener's notebook: how many have been planted, when each kind last went in, and when the last showpiece did
   const book = { n: 0, last: {}, showAt: 0, mem: MEMORY };
+  // this visit's dice for the opening field
+  const visit = Math.floor(Math.random() * 4294967296);
   let nextId = 1, ripenT = 0, userPlanted = false, fieldPlanted = false, fieldW = 0, fieldH = 0, timers = [];
   let cssW = 0, cssH = 0, dpr = 1, cell = 6, grain = null, grainPat = null;
   let raf = 0, visible = true, destroyed = false, breeze = null, breezeT = 0, sparkT = 0, dirty = true, growing = false;
   const api = { onChange: opts.onChange, plant, patches: () => live.map(pub), flowerAt: (x, y, slop) => { const f = hit(x, y, slop); return f && pub(f); },
-    press, release, hover, clear, destroy, _stats: { frames: 0 } };
+    press, release, hover, peek, clear, destroy, _stats: { frames: 0 } };
   const pub = f => ({ id: f.id, kind: f.kind, form: f.form, x: f.x, y: f.y, flowers: [{ x: f.x, y: f.y, r: f.r * f.u + 2 }] });
   const unit = () => cell;
   const changed = () => api.onChange?.(api.patches());
@@ -343,31 +348,36 @@ export function createGarden(canvas, opts = {}) {
     return f;
   }
 
-  // the garden looks after itself. once it's properly full, the oldest flower quietly unpicks, stitch by stitch
-  // in reverse over about three seconds, then a few seconds later the next oldest, until there's room again.
-  // planting doesn't knock anything out; the garden just slowly makes space on its own clock
-  let tendT = 0;
+  // the garden looks after itself. once it's full it's let be full for a while (TEND.rest), then the oldest flower
+  // quietly unpicks, stitch by stitch in reverse over about three seconds, and every TEND.every the next oldest,
+  // until it's back at full. planting doesn't knock anything out; the garden just slowly makes space on its own clock
+  let tendT = 0, fullAt = 0, nextAt = 0;
   const cap = () => cssW <= 640 ? FULL.phone : FULL.desk;
   function unpick(old, at = now()) {
     live.splice(live.indexOf(old), 1);
     old.shown = old.cells.length;
     old.dieAt = at;
-    old.dstep = Math.min(85, 3000 / old.cells.length);
+    // reduced motion: it just goes, the way it came
+    old.dstep = reduced ? 1 : Math.min(85, 3000 / old.cells.length);
     old.morph = null; old.lean = old.dip = 0;
     dying.push(old);
   }
   // a flower someone's just been tapping counts as new again
   const age = f => f.touched ?? f.id;
   const oldest = () => live.reduce((a, b) => age(a) < age(b) ? a : b);
-  function tend() {
+  function tend(planting = true) {
     // someone planting very fast can't pile up forever: way past full, the oldest go straight away (still unpicking)
-    while (live.length > cap() + 14) unpick(oldest());
+    if (planting) while (live.length > cap() + 14) unpick(oldest());
+    // full counts from the moment it reaches the cap; dropping below starts the wait again
+    if (live.length < cap()) fullAt = 0;
+    else if (!fullAt) fullAt = now();
     if (tendT || live.length <= cap()) return;
     tendT = setTimeout(() => {
       tendT = 0;
-      if (live.length > cap()) { unpick(oldest()); dirty = true; wake(); changed(); }
+      if (live.length > cap()) { unpick(oldest()); nextAt = now() + TEND.every[0] + Math.random() * (TEND.every[1] - TEND.every[0]); dirty = true; wake(); changed(); }
       tend();
-    }, live.length > cap() + 6 ? 2200 : 4200);
+      // never the moment a flower goes in: even long after it got full, the next one waits its turn
+    }, Math.max(TEND.every[0], fullAt + TEND.rest - now(), nextAt - now()));
   }
 
   function spark(x, y, delay = 0, life = 1, col = SPARKS[0]) {
@@ -416,6 +426,15 @@ export function createGarden(canvas, opts = {}) {
       hovered = f; dirty = true; wake();
     }
     return !!f;
+  }
+  // for a cursor to draw round: a flower's head as drawn (leaning, dipped) in CSS px, and its petal stitches with their
+  // colours. by id, or whichever flower a tap at (x, y) would turn. read only
+  function peek(x, y, id) {
+    const f = id ? live.find(o => o.id === id) : hit(x, y);
+    if (!f) return null;
+    const u = f.u, dx = f.sway || f.lean || 0, dy = f.dip || 0, [a, b, c, d] = f.hb;
+    return { id: f.id, u, tint: f.tint, box: [(f.gx + a + dx) * u, (f.gy + b + dy) * u, (f.gx + c + 1 + dx) * u, (f.gy + d + 1 + dy) * u],
+      cells: f.cells.filter(q => q.o === 2).map(q => [(f.gx + q.x + dx) * u, (f.gy + q.y + dy) * u, q.col]) };
   }
   function press(x, y, slop) {
     release(0);
@@ -529,14 +548,14 @@ export function createGarden(canvas, opts = {}) {
     Object.assign(f, fl, { gx, gy, x: gx * f.u + f.u / 2, y: gy * f.u + f.u / 2, t0: -1e9, shown: fl.cells.length, step: Math.min(STEP, 900 / fl.cells.length) });
     if (!quiet) f.touched = nextId++;
     f.morph = reduced ? null : plan(f, was, how);
-    if (!reduced && !quiet) twinkle(f, how === 'ripple' ? 1 : 2, f.morph.end * .6);
+    if (!reduced && !quiet) twinkle(f, how === 'scatter' ? 2 : 1, f.morph.end * .75);
     ripen(f);
     dirty = true;
     return how;
   }
-  // when each old stitch goes and each new one comes, in ms. ripple: a ring runs out from the middle, quick at first
-  // and settling at the rim, and each stitch turns as it passes; then a fainter ring runs back in over the new head.
-  // scatter: here and there, most of them early, like a fizz. a stitch both heads share stays put, and one that just
+  // when each old stitch goes and each new one comes, in ms. ripple: one ring runs out from the middle at an even pace,
+  // a touch ragged at its edge, and each stitch turns as it passes.
+  // scatter: here and there, at random. a stitch both heads share stays put, and one that just
   // changes colour changes as the ring or the fizz reaches it. a turn that would change nothing (a one-colour flower
   // with no room to grow, say) flashes every stitch anyway, so a tap always answers
   function plan(f, was, how) {
@@ -545,15 +564,15 @@ export function createGarden(canvas, opts = {}) {
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
     const R = Math.max(1, ...all.map(c => Math.hypot(c.gx - cx, c.gy - cy))), rr = c => Math.hypot(c.gx - cx, c.gy - cy) / R;
     const D = TURNS[how], ripple = how === 'ripple';
-    const at = ripple ? c => (1 - Math.sqrt(1 - rr(c))) * D * .6 : () => Math.random() ** 2 * D;
+    const at = ripple ? c => Math.min(1, rr(c) + Math.random() * .1) * D * .9 : () => Math.random() * D;
     const id = c => c.gx + ',' + c.gy;
     const old = new Map(was.map(c => [id(c), c.col]));
     let keep = ink.filter(c => old.get(id(c)) === c.col), into = ink.filter(c => old.get(id(c)) !== c.col);
     if (!into.length) { keep = []; into = ink; }
-    for (const c of into) { c.at = at(c); if (ripple) c.back = D * (.6 + (1 - rr(c)) * .4); }
+    for (const c of into) c.at = at(c);
     const kept = new Set(keep.map(id)), comes = new Map(into.map(c => [id(c), c.at]));
     const out = was.filter(c => !kept.has(id(c))).map(c => ({ ...c, at: comes.get(id(c)) ?? at(c) }));
-    return { t0: now(), end: D + FLASH_MS, keep, out, in: into };
+    return { t0: now(), end: D + 90, keep, out, in: into };
   }
   // growing families ripen on their own clock: one timer for the whole garden, set for whichever is due first. one
   // that's full (its next stage would start it small again), or with no room to grow, waits longer. with reduced
@@ -584,7 +603,7 @@ export function createGarden(canvas, opts = {}) {
   // best of a couple of dozen random spots (furthest from those already chosen, so blue noise, never a grid). the
   // showpieces take the roomiest site either side of the middle, the rest are dealt kinds the way a planting is
   // (rank) so no neighbours match and nothing repeats until every kind has had a turn, then a tiny filler or two
-  // tucks in at the feet of the blooms. seeded, so a screen size always opens on the same garden
+  // tucks in at the feet of the blooms. a fresh garden every visit, though a resize keeps the visit's own
   function plantField() {
     fieldPlanted = true; fieldW = cssW; fieldH = cssH; lastTint = null;
     const mob = cssW <= 640;
@@ -592,7 +611,7 @@ export function createGarden(canvas, opts = {}) {
     const [x0, y0, x1, y1] = o.rect || [24, cssH * .5, cssW - 24, cssH * .9];
     const avoid = o.avoid || [];
     const n = o.n ?? (mob ? 14 : 22);
-    const rnd = mulberry(mob ? 7 : 11), frnd = mulberry(3);
+    const rnd = mulberry(visit + (mob ? 7 : 11)), frnd = mulberry(visit + 3);
     const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(frnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
     // the whole plant keeps off the type, not just its head; plants may brush leaves, but never stand in front of each other
     const bed = [];
@@ -655,7 +674,7 @@ export function createGarden(canvas, opts = {}) {
     for (const s of bed) colour(s);
     // a tiny one or two at the feet of a bloom, on the side facing its nearest neighbour, wherever one suits the spot
     const blooms = bed.filter(s => KIND[s.kind]?.size > 0);
-    for (let i = 0, t = 0; i < Math.round(n / 6) && t < 40 && blooms.length > 1; t++) {
+    for (let i = 0, t = 0; i < Math.floor(n / 6) && t < 40 && blooms.length > 1; t++) {
       const a = blooms[Math.floor(rnd() * blooms.length)], b = blooms.filter(s => s !== a).sort((p, q) => reach(p, a) - reach(q, a))[0];
       const k = .3 + rnd() * .2, s = { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k + cell * (3 + rnd() * 5) };
       const fl = sow(frnd, FILLER.k);
@@ -681,7 +700,7 @@ export function createGarden(canvas, opts = {}) {
   // everything unstitches, newest stitch first, in a quick sweep across the bed; a few petals drift down
   function clear() {
     userPlanted = true;
-    clearTimeout(tendT); tendT = 0; clearTimeout(ripenT);
+    clearTimeout(tendT); tendT = 0; fullAt = 0; clearTimeout(ripenT);
     timers.forEach(clearTimeout); timers = [];
     sparks.length = 0;
     const t = now(), all = live.splice(0);
@@ -741,12 +760,12 @@ export function createGarden(canvas, opts = {}) {
     for (const f of live) {
       if (t < f.t0) { busy = true; continue; }
       // turning: the stalk as it stands, the old head going stitch by stitch and the new one coming, each new stitch
-      // flashing pale as it lands (and in a ripple, again for a moment as the ring comes back through)
+      // flashing pale as it lands
       const m = f.morph;
       if (m && t - m.t0 > m.end) f.morph = null;
       else if (m) {
         const e = t - m.t0, dx = f.sway || f.lean || 0, dy = f.dip || 0;
-        const lit = c => e - c.at < FLASH_MS || (c.back !== undefined && e >= c.back && e - c.back < FLASH_MS * .6);
+        const lit = c => e - c.at < FLASH_MS;
         for (const c of f.cells) if (!c.hd) rect(f.gx + c.x, f.gy + c.y, c.col, f.u);
         for (const c of m.keep) rect(c.gx + dx, c.gy + dy, c.col, f.u);
         for (const c of m.out) if (e < c.at) rect(c.gx + dx, c.gy + dy, c.col, f.u);
@@ -755,7 +774,8 @@ export function createGarden(canvas, opts = {}) {
         continue;
       }
       const k = reduced ? f.cells.length : Math.floor((t - f.t0) / f.step) + 1;
-      if (k > f.shown && f.shown < f.cells.length) { opts.onStitch?.(f); f.shown = k; }
+      // which part the newest stitch is (stem, leaf or petal) and how far through the flower, so its sound can follow
+      if (k > f.shown && f.shown < f.cells.length) { const n = Math.min(k, f.cells.length), o = f.cells[n - 1].o; opts.onStitch?.(f, o === 2 ? 'petal' : o ? 'leaf' : 'stem', n / f.cells.length); f.shown = k; }
       if (k < f.cells.length) busy = true;
       paint(f, k);
     }
@@ -845,6 +865,8 @@ export function createGarden(canvas, opts = {}) {
         plantField();
       }
     }
+    // a narrower window can mean a smaller garden: start thinning gently, not all at once
+    tend(false);
     dirty = true; wake();
   }
 

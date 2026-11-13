@@ -1,0 +1,38 @@
+---
+// two little drawings of the top of a portfolio: the usual sentence, and the garden. for the first decision in
+// "why my portfolio is a garden"
+import Wordmark from '../Wordmark.astro';
+import { head, rects } from './plant';
+interface Props { kind: 'sentence' | 'garden' }
+const { kind } = Astro.props;
+// a few flowers scattered round the name, the way the home page opens
+const bed = [['tulip', 0, 1, 10, 30], ['forget', 1, 0, 26, 12], ['poppy', 0, 0, 92, 34], ['cosmos', 1, 1, 110, 14], ['daisy', 0, 0, 132, 32], ['iris', 0, 0, 150, 12]] as const;
+---
+{kind === 'sentence'
+  ? <div class="mk mk-s" aria-label="A typical portfolio hero: a headline about craft and a button." role="img">
+      <div class="mk-nav" aria-hidden="true"><i></i><span><i></i><i></i><i></i></span></div>
+      <p class="mk-h">Design engineer who cares about craft.</p>
+      <p class="mk-p">I build delightful interfaces.</p>
+      <span class="mk-b">See my work</span>
+    </div>
+  : <div class="mk mk-g" aria-label="The top of soumik.design: the name in script on a white page, with pixel flowers around it." role="img">
+      <svg class="mk-bed" viewBox="0 0 160 46" shape-rendering="crispEdges" aria-hidden="true" set:html={bed.map(([k, f, p, x, y]) => rects(head(k, f, p), x, y)).join('')} />
+      <div class="mk-wm"><Wordmark /></div>
+      <span class="mk-hint px">tap anywhere</span>
+    </div>}
+
+<style>
+  .mk { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; padding: 40px 28px 28px; text-align: center; }
+  .mk-nav { position: absolute; left: 20px; right: 20px; top: 44px; display: flex; justify-content: space-between; }
+  .mk-nav > i { width: 22px; height: 8px; border-radius: 4px; background: var(--line); }
+  .mk-nav span { display: flex; gap: 8px; }
+  .mk-nav span i { width: 30px; height: 8px; border-radius: 4px; background: var(--line); }
+  .mk-h { font: 600 clamp(26px, 3.6vw, 40px)/1.05 var(--display); letter-spacing: -.03em; color: var(--ink); max-width: 13em; text-wrap: balance; }
+  .mk-p { font: 400 16px/1.4 var(--display); color: var(--ink-2); margin-top: 12px; }
+  .mk-b { margin-top: 20px; padding: 10px 18px; border-radius: 99px; background: var(--ink); color: #fff; font: 500 14px/1 var(--display); }
+  .mk-g { padding: 30px 20px; }
+  .mk-bed { position: absolute; inset: 40px 6% 30px; width: 88%; height: calc(100% - 70px); }
+  .mk-wm { position: relative; width: min(56%, 300px); color: var(--ink); }
+  .mk-wm :global(svg) { display: block; width: 100%; height: auto; overflow: visible; }
+  .mk-hint { position: absolute; bottom: 18px; font: 500 12px/1 var(--pixel); color: var(--ink-3); }
+</style>

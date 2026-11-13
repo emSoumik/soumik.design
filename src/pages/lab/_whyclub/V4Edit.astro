@@ -1,0 +1,373 @@
+---
+// LAB direction 4, "The edit": the store told as what came out of it. the finished store rises in as a lineup of
+// phones (after michael andreuzza), then five cuts, each with the line that was struck, what replaced it, why, and
+// the replacement running in the page. a list of smaller cuts closes it
+import Shot from './Shot.astro';
+import SoundKeys from './SoundKeys.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+const lineup = [
+  ['m-02', 'The shop: two columns of tees with their prices.'],
+  ['m-03', 'A product page: the tee on white, with sizes in a sheet below it.'],
+  ['m-01', 'The home page: a full-screen campaign photo for Please, I’m a Star.'],
+  ['m-04', 'Quick add: a sheet over the shop with photos, price and sizes.'],
+  ['m-cart', 'The bag: one tee, a free pair of socks to add, and the total.'],
+];
+const stages = [
+  ['confirmed', 'You’re in'],
+  ['packed', 'All packed'],
+  ['shipped', 'On its way'],
+  ['delivered', 'It’s home'],
+];
+const small = [
+  ['The dock’s shadow', 'the glass sits on the photo on its own'],
+  ['The rubber band at the first and last hero photo', 'the carousel just stops'],
+  ['A three-layer blurred fade under the status bar', 'a short gradient from Safari’s shade into the photo'],
+  ['Spinners on the product page and in quick add', 'adding again updates the note in place'],
+  ['Idle loops on promos and the catalogue', 'motion only answers something you did'],
+  ['A blue entrance screen', 'near-black, and any tap or key skips it'],
+  ['My collection in the phone’s More panel', 'it lives in Shop'],
+];
+---
+<article class="ed" data-ed>
+  <header class="head">
+    <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>2026</p>
+    <h1>WhyClub</h1>
+    <p class="lede">A streetwear label from India that sells oversized graphic tees in small drops. I designed and built the store. Most of what makes it feel calm is what isn’t there any more, so this is the store as five cuts: what came out, what replaced it, and why.</p>
+  </header>
+
+  <div class="lw">
+    <div class="lineup" role="group" aria-label="The finished store on five phones">
+      {lineup.map(([src, alt], i) => (
+        <div class="ph" style={`--d: ${Math.abs(i - 2)}`}><Shot src={A + src} alt={alt} /></div>
+      ))}
+    </div>
+  </div>
+
+  <!-- 01: the frame around the photo -->
+  <section class="cut" aria-labelledby="ed-1-h">
+    <div class="txt">
+      <p class="no">01</p>
+      <p class="was"><span class="sr">Taken out: </span><s>A black status bar with a free shipping ticker under it</s></p>
+      <h2 id="ed-1-h">The photo meets the glass</h2>
+      <p class="why">Safari on the iPhone now tints its bars from the page behind them. The old frame told every visitor about shipping before they saw a tee. Now the store reads the top edge of each photo and hands Safari a muted shade of it, so the picture runs to the edges of the phone.</p>
+      <p class="aside">The dock turns to dark glass only on iPhones in dark mode.</p>
+    </div>
+    <figure class="ev">
+      <div class="plane cmpplane">
+        <div class="cmp" data-cmp style="--x: 50">
+          <picture class="img"><source srcset={`${A}ios/before.avif`} type="image/avif"><img src={`${A}ios/before.webp`} alt="Before: a black status bar and a free shipping ticker above the Cupid’s Last Shot photo." loading="lazy" decoding="async" draggable="false"></picture>
+          <div class="after">
+            <picture class="img" data-mode="light"><source srcset={`${A}ios/light.avif`} type="image/avif"><img src={`${A}ios/light.webp`} alt="After: the same photo with the status bar in a muted shade of its top edge." loading="lazy" decoding="async" draggable="false"></picture>
+            <picture class="img" data-mode="dark"><source srcset={`${A}ios/dark.avif`} type="image/avif"><img src={`${A}ios/dark.webp`} alt="After, dark mode: the same page with the dock in dark glass." loading="lazy" decoding="async" draggable="false"></picture>
+          </div>
+          <span class="tagl" aria-hidden="true">Before</span><span class="tagr" aria-hidden="true">After</span>
+          <div class="line" aria-hidden="true"><i></i></div>
+          <div class="knob" role="slider" tabindex="0" data-own-keys aria-label="Before and after" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="Half and half"></div>
+        </div>
+        <div class="seg" role="radiogroup" aria-label="After, in" data-mode-pick>
+          <button type="button" role="radio" aria-checked="true" tabindex="0" data-mode="light">Light mode</button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-mode="dark">Dark mode</button>
+        </div>
+      </div>
+      <figcaption>The same photo before and after, on an iPhone. Drag the line, or focus it and use the arrow keys.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 02: a page per tab -->
+  <section class="cut" aria-labelledby="ed-2-h">
+    <div class="txt">
+      <p class="no">02</p>
+      <p class="was"><span class="sr">Taken out: </span><s>A page for every tab</s></p>
+      <h2 id="ed-2-h">One dock that grows into the menu</h2>
+      <p class="why">Every button in the old navbar went to its own page, so every tap reloaded the store. Now Shop, Account and More open as panels out of the bar itself, and scrolling down tucks the bar into a pill at the left edge. Only a panel opening gets a hint of overshoot. Everything else settles without one, and closing is the fastest, because you’re done.</p>
+    </div>
+    <figure class="ev">
+      <div class="plane dockplane">
+        <div class="dockhold" data-dock-hold></div>
+        <div class="ctrls">
+          <button type="button" class="pill" data-act="open" aria-pressed="false">Open Shop</button>
+          <button type="button" class="pill" data-act="scroll" aria-pressed="false">Scroll the page</button>
+        </div>
+        <p class="spring" aria-live="polite" data-spring>Tap the dock, or use the buttons.</p>
+      </div>
+      <figcaption>The real dock, built from the store’s code. The idea of a bar that unfolds into the menu is <a href="https://x.com/dannyjpwilliams/status/2099861544326848811" target="_blank" rel="noopener">Danny Williams’</a>.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 03: the hairline -->
+  <section class="cut" aria-labelledby="ed-3-h">
+    <div class="txt">
+      <p class="no">03</p>
+      <p class="was"><span class="sr">Taken out: </span><s>A 2px line inside the dock while a page loads</s></p>
+      <h2 id="ed-3-h">A wait the shape of the next page</h2>
+      <p class="why">On a slow load the hairline was the only sign anything was happening, so the store read as frozen. Now a tap covers the page with grey blocks at once, and at 350ms the next page draws itself as an outline in reading order. It has no photos and no labels, so it never passes for the page.</p>
+      <p class="aside">Five versions were explored on a branch before this one shipped.</p>
+    </div>
+    <figure class="ev">
+      <div class="plane solo">
+        <Shot src={A + 'p-loading'} video alt="Tapping a product shows grey blocks, then an outline of the product page, then the page." />
+      </div>
+      <figcaption>Recorded on a phone: blocks, outline, page.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 04: the blips -->
+  <section class="cut" aria-labelledby="ed-4-h">
+    <div class="txt">
+      <p class="no">04</p>
+      <p class="was"><span class="sr">Taken out: </span><s>Blips with a pitch on every press</s></p>
+      <h2 id="ed-4-h">A press you feel more than hear</h2>
+      <p class="why">The first sounds made the store feel like a game. A control you press many times a visit now makes a short contact over a low body that settles in about 25ms, with a little random detune so a run of taps never sounds stamped. Only outcomes get notes, and every note is in D.</p>
+    </div>
+    <figure class="ev">
+      <div class="plane keysplane">
+        <SoundKeys keys={[
+          { name: 'tap', label: 'Tap', note: 'Any button' },
+          { name: 'dockOpen', label: 'Dock opens', note: 'Filtered air' },
+          { name: 'success', label: 'Added to bag', note: 'A fourth' },
+          { name: 'complete', label: 'Order placed', note: 'A D major strum' },
+        ]} />
+      </div>
+      <figcaption>The store’s sounds, rebuilt from its settings. Press a key; the line is the real waveform.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 05: the pass -->
+  <section class="cut top" aria-labelledby="ed-5-h">
+    <div class="txt">
+      <p class="no">05</p>
+      <p class="was"><span class="sr">Taken out: </span><s>Film grain, a stamp slam, a pressure ring and a foil shimmer</s></p>
+      <h2 id="ed-5-h">A pass that just shows</h2>
+      <p class="why">The shader behind the order pass had film grain, and once the pass printed, its sticker slammed down with a ring and a shimmer. The grain became a dither too faint to see, and the slam, the ring and the shimmer came off. The print stays, because that’s the moment the order becomes real.</p>
+    </div>
+    <figure class="ev">
+      <div class="plane passplane">
+        <div class="seg" role="radiogroup" aria-label="Order stage" data-stage-pick>
+          {stages.map(([k, t], j) => <button type="button" role="radio" aria-checked={String(j === 0)} tabindex={j === 0 ? 0 : -1} data-stage={k}>{t}</button>)}
+        </div>
+        <button type="button" class="pill" data-replay>Print it again</button>
+        <div class="passhold" data-pass-hold></div>
+      </div>
+      <figcaption>The real pass: one scene per stage and five faint glints. Pick a stage, or print it again.</figcaption>
+    </figure>
+  </section>
+
+  <section class="small" aria-labelledby="ed-s-h">
+    <h2 id="ed-s-h">Smaller cuts</h2>
+    <ul>
+      {small.map(([was, now]) => (
+        <li><s>{was}</s><span class="now">{now}</span></li>
+      ))}
+    </ul>
+    <p class="how">Many of these were picked from three to five working versions behind a switcher, and the others were set aside. This page is one of five made the same way.</p>
+    <p class="visit"><a href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub<span aria-hidden="true"> ↗</span></a></p>
+  </section>
+
+  <Credits class="credits" items={['lineup', 'dock', 'sound', 'photos', 'stack']} />
+</article>
+
+<style>
+  .ed { --plane: #f4f3f0; max-width: 1180px; margin: 0 auto; }
+  .head { max-width: 700px; }
+  .head h1 { margin-top: 18px; font: 500 clamp(44px, 7vw, 76px)/1 var(--display); letter-spacing: -.03em; }
+  .lede { margin-top: 18px; font: 400 clamp(18px, 2vw, 21px)/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* the lineup: five phones rise out of a horizon, overshoot a touch and land in a shallow arc */
+  .lw { --g: clamp(10px, 2vw, 28px); container-type: inline-size; margin-top: clamp(40px, 6vw, 72px); }
+  .lineup { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--g); align-items: start; overflow: clip;
+    height: calc((100cqw - 4 * var(--g)) / 5 * 848 / 392 * .78); padding-top: 4px;
+    -webkit-mask: linear-gradient(#000 78%, transparent); mask: linear-gradient(#000 78%, transparent); }
+  .ph { --y: calc(var(--d) * 4cqw); transform: translateY(var(--y)); animation: rise .95s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(100ms + var(--d) * 80ms); }
+  @keyframes rise {
+    0% { opacity: 0; transform: translateY(calc(var(--y) + 18cqw)); }
+    55% { opacity: 1; transform: translateY(calc(var(--y) - 1.2cqw)); }
+    100% { opacity: 1; transform: translateY(var(--y)); }
+  }
+
+  /* a cut: the struck line, what replaced it and why on the left; the replacement running on the right */
+  .cut { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 6vw, 88px); align-items: center; padding-top: clamp(80px, 11vw, 150px); }
+  .cut.top { align-items: start; }
+  .no { font: 500 12px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .was { margin-top: 18px; font: 400 15px/1.45 var(--display); color: var(--ink-2); max-width: 26em; }
+  s { position: relative; text-decoration: none; }
+  s::after { content: ''; position: absolute; left: -2px; right: -2px; top: 54%; height: 1.5px; border-radius: 1px; background: currentColor;
+    transform: scaleX(0); transform-origin: left; transition: transform .55s cubic-bezier(.65, 0, .35, 1) .1s; }
+  .seen s::after { transform: none; }
+  .cut h2 { margin-top: 8px; font: 500 clamp(28px, 3.4vw, 40px)/1.1 var(--display); letter-spacing: -.024em; text-wrap: balance; }
+  .why { margin-top: 18px; max-width: 31em; font: 400 17px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .aside { margin-top: 14px; max-width: 31em; font: 400 14.5px/1.55 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+  .ev { margin: 0; min-width: 0; }
+  .plane { display: grid; justify-items: center; gap: 18px; padding: clamp(28px, 4vw, 48px) clamp(18px, 3vw, 40px); border-radius: 24px; background: var(--plane); }
+  .ev > figcaption { margin-top: 12px; font: 400 13.5px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .ev a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(31, 29, 27, .25); text-underline-offset: 3px; }
+
+  /* controls: state changes are instant, only the press scales */
+  .pill, .seg button { all: unset; box-sizing: border-box; height: 44px; padding: 0 18px; border-radius: 99px; display: inline-grid; place-items: center; cursor: pointer;
+    font: 500 13.5px/1 var(--display); color: var(--ink); -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease); }
+  .pill { background: #fff; box-shadow: 0 1px 2px rgba(31, 29, 27, .08), 0 0 0 .5px rgba(31, 29, 27, .1); }
+  .pill[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .seg { display: inline-flex; flex-wrap: wrap; justify-content: center; padding: 3px; border-radius: 24px; background: rgba(31, 29, 27, .06); }
+  .seg button { height: 38px; padding: 0 14px; color: var(--ink-2); }
+  .seg button[aria-checked='true'] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(31, 29, 27, .12), 0 0 0 .5px rgba(31, 29, 27, .08); }
+  .plane button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .pill:active, .seg button:active { transform: scale(.96); }
+  @media (hover: hover) and (pointer: fine) { .seg button:hover { color: var(--ink); } }
+
+  /* 01: the compare slider. the after image is clipped from the left; the line follows */
+  .cmp { position: relative; width: min(300px, 100%); aspect-ratio: 720 / 1565; border-radius: 35px; overflow: hidden;
+    touch-action: pan-y; cursor: ew-resize; user-select: none; -webkit-user-select: none; background: #ddd;
+    box-shadow: 0 0 0 .5px rgba(22, 20, 15, .14), 0 18px 40px -24px rgba(40, 30, 15, .32); }
+  .cmp .img, .cmp .img img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+  .after { position: absolute; inset: 0; clip-path: inset(0 0 0 calc(var(--x) * 1%)); }
+  .after [data-mode] { transition: opacity .25s var(--ease); }
+  .cmp[data-mode='light'] .after [data-mode='dark'], .cmp:not([data-mode]) .after [data-mode='dark'], .cmp[data-mode='dark'] .after [data-mode='light'] { opacity: 0; }
+  .line { position: absolute; inset: 0; transform: translateX(calc((var(--x) - 50) * 1%)); pointer-events: none; }
+  .line i { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .18); }
+  .line i::after { content: ''; position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+  .knob { position: absolute; inset: 0; outline: none; }
+  .cmp:has(.knob:focus-visible) .line i::after { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .tagl, .tagr { position: absolute; top: 15%; padding: 5px 9px; border-radius: 99px; background: rgba(20, 18, 16, .5); color: #fff; font: 500 11px/1 var(--display);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); pointer-events: none; }
+  .tagl { left: 7%; }
+  .tagr { right: 7%; }
+
+  /* 02: the live dock over a campaign photo */
+  .dockhold { position: relative; width: min(300px, 100%); aspect-ratio: 392 / 760; border-radius: 40px; overflow: hidden;
+    background: #3a2c22 url(/assets/work/whyclub/lab/hero-cupid.webp) center / cover; box-shadow: 0 30px 60px -36px rgba(40, 30, 15, .5); }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .ctrls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .spring { min-height: 20px; font: 400 12.5px/1.5 var(--mono); color: var(--ink-2); text-align: center; font-variant-numeric: tabular-nums; text-wrap: balance; }
+
+  .solo :global(.shot) { width: min(260px, 100%); }
+  .keysplane { justify-items: stretch; padding-block: clamp(36px, 5vw, 64px); }
+
+  /* 05: the live pass, clipped to the height it reports so a short stage has no empty plate under it */
+  .passplane { background: #fff; }
+  .passhold { position: relative; width: min(300px, 100%); aspect-ratio: 392 / var(--ph, 672); overflow: hidden; border-radius: 18px; }
+  .passhold :global(iframe) { background: #fff; }
+
+  .small { margin-top: clamp(96px, 12vw, 160px); max-width: 760px; }
+  .small h2 { font: 500 clamp(24px, 2.6vw, 30px)/1.15 var(--display); letter-spacing: -.02em; }
+  .small ul { list-style: none; margin: 18px 0 0; padding: 0; }
+  .small li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 14px 0; box-shadow: inset 0 1px 0 var(--line); font: 400 15.5px/1.5 var(--display); }
+  .small li s { color: var(--ink-2); justify-self: start; }
+  .small .now { color: var(--body); }
+  .how { margin-top: 28px; font: 400 16px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .visit { margin-top: 18px; font: 500 16px/1.4 var(--display); }
+  .visit a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .ed :global(.credits) { margin-top: clamp(64px, 8vw, 96px); }
+
+  /* phones: the lineup runs off both edges, each cut stacks with its evidence edge to edge */
+  @media (max-width: 760px) {
+    .lw { margin-inline: calc(-1 * var(--gut)); --g: 12px; }
+    .lineup { grid-template-columns: repeat(5, 44vw); justify-content: center; height: calc(44vw * 848 / 392 * .72); }
+    .ph { --y: calc(var(--d) * 7vw); }
+    .cut { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 80px; }
+    .why { font-size: 16.5px; }
+    .plane { margin-inline: calc(-1 * var(--gut)); border-radius: 0; padding: 32px var(--gut); }
+    .ev > figcaption { margin-top: 10px; }
+    .cmp, .dockhold { width: min(76vw, 300px); }
+    .cmp { border-radius: min(8.8vw, 35px); }
+    .dockhold { border-radius: min(10vw, 40px); }
+    .small li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .spring { min-height: 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ph { animation: none; }
+    s::after { transform: none; transition: none; }
+    .after [data-mode], .pill, .seg button { transition: none; }
+  }
+</style>
+
+<script>
+  import { frame, whenShown } from './lab';
+
+  const root = document.querySelector<HTMLElement>('[data-ed]')!;
+
+  // the strike lines draw as each cut comes into view
+  const strike = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('seen'); strike.unobserve(e.target); }
+  }, { threshold: 0.35 });
+  root.querySelectorAll('.cut, .small li').forEach((el) => strike.observe(el));
+  // the lineup replays when this direction is switched to
+  whenShown(root, () => root.querySelectorAll<HTMLElement>('.ph').forEach((p) => p.getAnimations().forEach((a) => { a.cancel(); a.play(); })));
+
+  // a radiogroup with arrow keys, used by the mode and stage pickers
+  const radios = (group: HTMLElement, onPick: (b: HTMLButtonElement) => void) => {
+    const all = [...group.querySelectorAll<HTMLButtonElement>('[role=radio]')];
+    const pick = (b: HTMLButtonElement, focus = false) => {
+      all.forEach((r) => { r.setAttribute('aria-checked', String(r === b)); r.tabIndex = r === b ? 0 : -1; });
+      if (focus) b.focus();
+      onPick(b);
+    };
+    group.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=radio]'); if (b) pick(b); });
+    group.addEventListener('keydown', (e) => {
+      const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (!k) return;
+      e.preventDefault();
+      const i = all.findIndex((r) => r.getAttribute('aria-checked') === 'true');
+      pick(all[(i + k + all.length) % all.length], true);
+    });
+  };
+
+  // 01: compare. pointer drags set the split; the knob takes arrow keys, home and end
+  const cmp = root.querySelector<HTMLElement>('[data-cmp]')!;
+  const knob = cmp.querySelector<HTMLElement>('.knob')!;
+  const setX = (x: number) => {
+    x = Math.round(Math.min(100, Math.max(0, x)));
+    cmp.style.setProperty('--x', String(x));
+    knob.setAttribute('aria-valuenow', String(x));
+    knob.setAttribute('aria-valuetext', x <= 2 ? 'All after' : x >= 98 ? 'All before' : `${x}% before`);
+  };
+  const fromEvent = (e: PointerEvent) => { const r = cmp.getBoundingClientRect(); setX(((e.clientX - r.left) / r.width) * 100); };
+  cmp.addEventListener('pointerdown', (e) => { cmp.setPointerCapture(e.pointerId); fromEvent(e); });
+  cmp.addEventListener('pointermove', (e) => { if (cmp.hasPointerCapture(e.pointerId)) fromEvent(e); });
+  knob.addEventListener('keydown', (e) => {
+    const cur = Number(knob.getAttribute('aria-valuenow'));
+    const step = e.shiftKey ? 20 : 5;
+    const next = { ArrowLeft: cur - step, ArrowDown: cur - step, ArrowRight: cur + step, ArrowUp: cur + step, Home: 0, End: 100 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    setX(next);
+  });
+  cmp.dataset.mode = 'light';
+  radios(root.querySelector<HTMLElement>('[data-mode-pick]')!, (b) => { cmp.dataset.mode = b.dataset.mode; });
+
+  // 02: the live dock, driven by two buttons; it reports the spring it used
+  const dock = frame(root.querySelector<HTMLElement>('[data-dock-hold]')!, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  const scrollB = root.querySelector<HTMLButtonElement>('[data-act=scroll]')!;
+  const readout = root.querySelector<HTMLElement>('[data-spring]')!;
+  const NAMES: Record<string, string> = { open: 'Open', close: 'Close', switch: 'Switch', collapse: 'Into the pill', expand: 'Out of the pill', resize: 'Resize' };
+  let panelOpen = false, scrolled = false;
+  const sync = () => {
+    openB.setAttribute('aria-pressed', String(panelOpen));
+    openB.textContent = panelOpen ? 'Close Shop' : 'Open Shop';
+    scrollB.setAttribute('aria-pressed', String(scrolled));
+    scrollB.textContent = scrolled ? 'Back to the top' : 'Scroll the page';
+  };
+  dock.on((d) => {
+    if (d.moving) return;
+    if (d.shape) { panelOpen = d.shape === 'panel'; sync(); }
+    if (d.spring) readout.textContent = `${NAMES[d.spring.name] ?? d.spring.name}: response ${d.spring.response.toFixed(2)}s, damping ${d.spring.damping.toFixed(2)}, settles in ${d.spring.durationMs}ms`;
+  });
+  openB.addEventListener('click', () => { panelOpen = !panelOpen; dock.send(panelOpen ? { open: 'shop' } : { close: true }); sync(); });
+  scrollB.addEventListener('click', () => {
+    scrolled = !scrolled;
+    if (panelOpen) { panelOpen = false; dock.send({ close: true }); }
+    dock.send({ scroll: scrolled ? 'down' : 'top' });
+    sync();
+  });
+
+  // 05: the live pass; the holder follows the height the pass reports
+  const passHold = root.querySelector<HTMLElement>('[data-pass-hold]')!;
+  const pass = frame(passHold, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  pass.on((d) => { if (d.height) passHold.style.setProperty('--ph', String(Math.min(890, Math.ceil(d.height)))); });
+  radios(root.querySelector<HTMLElement>('[data-stage-pick]')!, (b) => pass.send({ stage: b.dataset.stage }));
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+</script>

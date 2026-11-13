@@ -1,0 +1,88 @@
+---
+// the problem, drawn: one walk past a busy junction. the air turns, your breathing and heart rate follow a minute later,
+// and nothing on your wrist says a word. drawn here instead of the film's still of a flyover with words over it
+const X0 = 48, X1 = 688, Y0 = 70, Y1 = 262, MIN = 25;
+const x = (m: number) => X0 + (m / MIN) * (X1 - X0);
+const y = (v: number) => Y1 - v * (Y1 - Y0);
+// a smooth line through the points (catmull-rom as cubic béziers)
+const line = (pts: [number, number][]) => {
+  const p = pts.map(([m, v]) => [x(m), y(v)]);
+  let d = `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const a = p[i - 1] ?? p[i], b = p[i], c = p[i + 1], e = p[i + 2] ?? c;
+    d += ` C${(b[0] + (c[0] - a[0]) / 6).toFixed(1)} ${(b[1] + (c[1] - a[1]) / 6).toFixed(1)} ${(c[0] - (e[0] - b[0]) / 6).toFixed(1)} ${(c[1] - (e[1] - b[1]) / 6).toFixed(1)} ${c[0].toFixed(1)} ${c[1].toFixed(1)}`;
+  }
+  return d;
+};
+const air = line([[0, .22], [6, .24], [10, .36], [12.5, .84], [15.5, .93], [18, .86], [20.5, .5], [25, .3]]);
+const breath = line([[0, .3], [11, .31], [13.5, .58], [16.5, .72], [19.5, .66], [22, .46], [25, .36]]);
+const heart = line([[0, .4], [11.5, .41], [14, .55], [17, .64], [20, .6], [23, .48], [25, .44]]);
+const ticks = [0, 5, 10, 15, 20, 25];
+---
+<div class="bc" data-draw>
+  <svg viewBox="0 0 720 330" role="img" aria-labelledby="bc-t">
+    <title id="bc-t">A chart of one 25 minute walk. At a busy junction the air quality jumps. A minute later breathing rate and heart rate rise with it. That is when Vayu would tap your wrist. The walker doesn't notice anything.</title>
+    <defs>
+      <linearGradient id="bc-haze" x1="0" x2="1"><stop offset="0" stop-color="#FF8A00" stop-opacity="0"/><stop offset=".3" stop-color="#FF8A00" stop-opacity=".13"/><stop offset=".7" stop-color="#E0301E" stop-opacity=".13"/><stop offset="1" stop-color="#E0301E" stop-opacity="0"/></linearGradient>
+    </defs>
+    <rect x={x(10)} y={Y0 - 26} width={x(21) - x(10)} height={Y1 - Y0 + 26} fill="url(#bc-haze)" class="bc-fade" />
+    <text x={x(15.5)} y={Y0 - 32} class="bc-zone bc-fade" text-anchor="middle">the junction at rush hour</text>
+    {ticks.map((m) => <>
+      <line x1={x(m)} x2={x(m)} y1={Y1} y2={Y1 + 6} class="bc-axis" />
+      <text x={x(m)} y={Y1 + 24} class="bc-tick" text-anchor="middle">{['8:40', '8:45', '8:50', '8:55', '9:00', '9:05'][m / 5]}</text>
+    </>)}
+    <line x1={X0} x2={X1} y1={Y1} y2={Y1} class="bc-axis" />
+    <path d={air} class="bc-l is-air" pathLength="1" />
+    <path d={breath} class="bc-l is-breath" pathLength="1" />
+    <path d={heart} class="bc-l is-heart" pathLength="1" />
+    <g class="bc-mark">
+      <line x1={x(13.6)} x2={x(13.6)} y1={Y1} y2={y(.98)} />
+      <circle cx={x(13.6)} cy={y(.58)} r="6" />
+      <text x={x(13.6) - 12} y={y(.9)} text-anchor="end">8:53 · your body reacts</text>
+      <text x={x(13.6) - 12} y={y(.9) + 19} text-anchor="end" class="bc-sub">Vayu taps your wrist here</text>
+    </g>
+    <g class="bc-mark is-late">
+      <text x={X1} y={y(.06)} text-anchor="end">you notice: later, if at all</text>
+    </g>
+  </svg>
+  <ul class="bc-key" aria-hidden="true">
+    <li class="is-air">Air (AQI)</li><li class="is-breath">Breathing rate</li><li class="is-heart">Heart rate</li>
+  </ul>
+</div>
+
+<style>
+  .bc { padding: clamp(16px, 3vw, 32px) clamp(12px, 3vw, 32px) clamp(14px, 2vw, 24px); }
+  svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--display); }
+  .bc-axis { stroke: rgba(31, 29, 27, .18); }
+  .bc-tick { font-size: 13px; fill: rgba(31, 29, 27, .45); font-variant-numeric: tabular-nums; }
+  .bc-zone { font-size: 13px; fill: #B85A00; }
+  .bc-l { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .is-air { stroke: #E0301E; --c: #E0301E; }
+  .is-breath { stroke: #2F3FBF; --c: #2F3FBF; }
+  .is-heart { stroke: #E3197E; --c: #E3197E; }
+  .bc-mark line { stroke: #1f1d1b; stroke-dasharray: 3 4; }
+  .bc-mark circle { fill: #fff; stroke: #1f1d1b; stroke-width: 2.5; }
+  .bc-mark text { font-size: 14px; font-weight: 500; fill: #1f1d1b; }
+  .bc-mark .bc-sub { font-weight: 400; fill: rgba(31, 29, 27, .6); }
+  .is-late text { font-weight: 400; fill: rgba(31, 29, 27, .6); font-style: italic; }
+  .bc-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 20px; margin: 14px 0 0; padding: 0; list-style: none; font: 400 13px/1.4 var(--display); color: rgba(31, 29, 27, .62); }
+  .bc-key li { display: inline-flex; align-items: center; gap: 8px; }
+  .bc-key li::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: var(--c); }
+  @media (max-width: 640px) {
+    .bc-tick { font-size: 24px; }
+    .bc-tick:nth-of-type(odd) { display: none; }
+    .bc-zone, .bc-mark .bc-sub { display: none; }
+    .bc-mark text { font-size: 26px; }
+    .is-late text { font-size: 24px; }
+    .bc-l { stroke-width: 5; }
+  }
+  /* drawn in once, the air first, the body a beat behind it, then the notes */
+  @media (prefers-reduced-motion: no-preference) {
+    .bc-l { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.8s cubic-bezier(.65, 0, .35, 1); }
+    .is-breath { transition-delay: .35s; } .is-heart { transition-delay: .5s; }
+    .bc-fade, .bc-mark { opacity: 0; transition: opacity .6s var(--pj-ease); }
+    .bc-fade { transition-delay: .2s; } .bc-mark { transition-delay: 1.7s; } .is-late { transition-delay: 2.3s; }
+    .bc.in .bc-l { stroke-dashoffset: 0; }
+    .bc.in .bc-fade, .bc.in .bc-mark { opacity: 1; }
+  }
+</style>

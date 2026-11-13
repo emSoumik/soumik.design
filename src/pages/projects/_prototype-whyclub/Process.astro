@@ -1,0 +1,115 @@
+---
+// PROTOTYPE: how it got made, kept short: where the photos come from, the loop the store was built in, and what it
+// runs on. every fact here is from the store's repo or the sessions it was built in
+import Screen from './Screen.astro';
+const P = '/assets/work/whyclub/process/';
+const photos = [
+  { src: P + 'tee', caption: 'The tee', desc: 'Please, I’m a Star on its own, front side.', alt: 'The black Please, I’m a Star tee on white, front side.' },
+  { src: P + 'front', caption: 'On a generated model', desc: 'The real tee swapped onto a generated model, with the light softened to match.', alt: 'A model wearing the Please, I’m a Star tee in front of a weathered wall.' },
+  { src: P + 'back', caption: 'Turned around', desc: 'The same model from the back, so the print on the back gets its own photo.', alt: 'The same model from behind, showing the star print on the back of the tee.' },
+];
+const loop = [
+  ['A reference', 'A link, a screen recording or a pin, pasted in with what I want from it.'],
+  ['Versions side by side', 'Claude builds three to five versions behind a switcher. I pick one and the rest go.'],
+  ['Notes on the page', 'I click an element on the running store and write the note right there, so feedback points at the exact thing.'],
+  ['On a real phone', 'The iOS Simulator first, then my iPhone. A push to main is the deploy, so nothing ships before that.'],
+];
+const stack = [
+  ['Storefront', 'Astro on Cloudflare Workers, React islands, Tailwind'],
+  ['Orders and sign-in', 'Convex'],
+  ['Payments', 'Razorpay, cash on delivery included'],
+  ['Shipping and email', 'Shiprocket, Resend'],
+  ['Motion and sound', 'GSAP, Framer Motion, WebGL shaders, Web Audio'],
+];
+---
+<section class="process" aria-labelledby="process-h">
+  <header class="head">
+    <p class="label">Process</p>
+    <h2 id="process-h">How it got made.</h2>
+  </header>
+
+  <div class="part">
+    <div class="copy">
+      <h3>Real tees, generated models</h3>
+      <p>The tees are real. The people wearing them aren’t. Each photo starts from the actual tee, swapped onto a generated model, then the same model turns around for the back. The store says so in its footer and its terms.</p>
+      <p>Claude sorted the finished photos onto the four tees and encoded them with ffmpeg. One batch went from 356 MB of PNGs to 5.3 MB of AVIF.</p>
+    </div>
+    <ol class="strip">
+      {photos.map((p, i) => (
+        <li>
+          <Screen src={p.src} art alt={p.alt} title={p.caption} desc={p.desc} class:list={['ph', { flat: i === 0 }]} />
+          <p class="cap"><span class="n">{String(i + 1).padStart(2, '0')}</span>{p.caption}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+
+  <div class="part">
+    <div class="copy">
+      <h3>Built in a loop</h3>
+      <p>I built the store with Claude, in short loops like this one. Since late September 2026 that’s 98 sessions and 426 prompts.</p>
+    </div>
+    <ol class="loop">
+      {loop.map(([t, d], i) => (
+        <li><span class="n">{String(i + 1).padStart(2, '0')}</span><b>{t}</b><span class="d">{d}</span></li>
+      ))}
+    </ol>
+  </div>
+
+  <div class="part">
+    <div class="copy"><h3>What it runs on</h3></div>
+    <dl class="stack">{stack.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+  </div>
+</section>
+
+<style>
+  .process { width: min(var(--wide), 100%); margin: clamp(112px, 15vw, 200px) auto 0; }
+  .label { font: 500 13px/1.4 var(--display); color: var(--ink-3); }
+  .head h2 { margin-top: 8px; font: 500 clamp(28px, 3.6vw, 42px)/1.08 var(--display); letter-spacing: -.025em; }
+  .part { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: clamp(28px, 5vw, 72px); margin-top: clamp(56px, 8vw, 96px); align-items: start; }
+  .copy h3 { font: 500 20px/1.25 var(--display); letter-spacing: -.012em; }
+  .copy p { margin-top: 12px; font: 400 15.5px/1.6 var(--display); color: var(--body); text-wrap: pretty; max-width: 40ch; }
+  .n { font: 500 11px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+
+  /* the photo, three steps: same size, side by side, numbered like the steps below */
+  .strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 1.4vw, 16px); }
+  .strip :global(.ph) { --art-ratio: 4 / 5; }
+  /* the packshot is shot on white; multiplied onto the fill it sits on the same paper as the photos */
+  .strip :global(.flat .glass) { background: #fff; }
+  .strip :global(.flat img) { mix-blend-mode: multiply; }
+  .cap { margin-top: 12px; display: flex; gap: 10px; align-items: baseline; font: 400 13px/1.45 var(--display); color: var(--ink-2); }
+
+  /* the loop: four steps on one line, joined by a hairline */
+  .loop { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 clamp(14px, 2vw, 24px); position: relative; }
+  .loop li { display: grid; gap: 6px; align-content: start; padding-top: 22px; position: relative; }
+  .loop li::before { content: ''; position: absolute; left: 0; right: calc(-1 * clamp(14px, 2vw, 24px)); top: 4px; height: 1px; background: var(--line); }
+  .loop li::after { content: ''; position: absolute; left: 0; top: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .loop li:last-child::before { right: 0; }
+  .loop b { font: 600 14px/1.3 var(--display); color: var(--ink); margin-top: 4px; }
+  .loop .d { font: 400 13.5px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+  .stack { margin: 0; display: grid; }
+  .stack div { display: grid; grid-template-columns: 11em 1fr; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); font: 400 14px/1.5 var(--display); }
+  .stack div:last-child { border-bottom: 1px solid var(--line); }
+  .stack dt { color: var(--ink-3); }
+  .stack dd { margin: 0; color: var(--ink); }
+
+  @media (max-width: 860px) {
+    .part { grid-template-columns: 1fr; gap: 24px; }
+    .loop { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
+    .loop li:nth-child(2n)::before { right: 0; }
+  }
+  /* phones: the photo steps become a row you swipe, the loop a list down a line */
+  @media (max-width: 640px) {
+    .strip { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 16px; margin: 0 -16px; padding: 0 16px; gap: 10px; scrollbar-width: none; }
+    .strip::-webkit-scrollbar { display: none; }
+    .strip li { flex: 0 0 72%; scroll-snap-align: start; }
+    .loop { grid-template-columns: 1fr; gap: 0; }
+    .loop li { padding: 0 0 22px 24px; }
+    .loop li::before { left: 4px; right: auto; top: 12px; bottom: 0; width: 1px; height: auto; }
+    .loop li:last-child::before { display: none; }
+    .loop li::after { top: 3px; }
+    .loop b { margin-top: 0; }
+    .stack div { grid-template-columns: 1fr; gap: 2px; }
+  }
+</style>

@@ -1,0 +1,220 @@
+---
+// PROTOTYPE: click any screen or plate to see it large, with its title and one line about it.
+// the media grows out of the thing you clicked and shrinks back into it; arrows and ← → step through the page's
+// shots in reading order, esc or a click on the backdrop closes. on touch, swipe sideways to step and pull down to close.
+// one small dialog, no library
+---
+<dialog class="viewer" aria-label="Screen viewer" tabindex="-1">
+  <div class="stage"></div>
+  <div class="text">
+    <p class="count" aria-hidden="true"></p>
+    <h2 class="title"></h2>
+    <p class="desc"></p>
+  </div>
+  <button type="button" class="nav prev" aria-label="Previous">←</button>
+  <button type="button" class="nav next" aria-label="Next">→</button>
+  <button type="button" class="close" aria-label="Close">×</button>
+</dialog>
+
+<style>
+  .viewer { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+    background: transparent; color: var(--ink); overflow: hidden; outline: none; touch-action: none; }
+  .viewer::backdrop { background: rgba(255, 255, 255, .92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transition: opacity .28s var(--ease); }
+  .viewer.on::backdrop { opacity: calc(1 - var(--pull, 0) * .7); }
+  .stage { position: absolute; inset: 0; pointer-events: none; }
+  .stage :global(.media) { position: absolute; left: 0; top: 0; overflow: hidden; transform-origin: 0 0; pointer-events: auto;
+    box-shadow: 0 0 0 .5px rgba(22, 20, 15, .12), 0 40px 80px -40px rgba(30, 20, 10, .35); will-change: transform; }
+  .stage :global(.media img), .stage :global(.media video) { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .text { position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); translate: -50% 0; width: min(520px, 100% - 40px); text-align: center;
+    opacity: 0; transform: translateY(6px); transition: opacity .25s var(--ease), transform .35s var(--ease); }
+  .viewer.on .text { opacity: calc(1 - var(--pull, 0) * 2); transform: none; transition-delay: .12s; }
+  .count { font: 500 11px/1 var(--mono); letter-spacing: .06em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .title { margin-top: 10px; font: 500 17px/1.3 var(--display); letter-spacing: -.01em; }
+  .desc { margin-top: 6px; font: 400 14px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .nav, .close { all: unset; position: absolute; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; cursor: pointer;
+    font: 400 18px/1 var(--display); color: var(--ink-2); opacity: 0; transition: opacity .25s, background-color .2s, color .2s; -webkit-tap-highlight-color: transparent; }
+  .viewer.on .nav, .viewer.on .close { opacity: 1; }
+  .viewer.on .nav:disabled { opacity: .25; cursor: default; }
+  .nav { top: 50%; translate: 0 -50%; }
+  .prev { left: max(12px, env(safe-area-inset-left)); }
+  .next { right: max(12px, env(safe-area-inset-right)); }
+  .close { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); font-size: 24px; }
+  .nav:focus-visible, .close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .nav:hover, .close:hover { background: rgba(31, 29, 27, .06); color: var(--ink); } }
+  .nav:active, .close:active { scale: .96; }
+  @media (max-width: 640px) { .nav { top: auto; bottom: calc(18px + env(safe-area-inset-bottom)); translate: none; } .text { bottom: calc(76px + env(safe-area-inset-bottom)); } }
+  @media (prefers-reduced-motion: reduce) { .viewer::backdrop, .text { transition: none; } }
+</style>
+
+<script>
+  const dlg = document.querySelector<HTMLDialogElement>('.viewer')!;
+  const stage = dlg.querySelector<HTMLElement>('.stage')!;
+  const [count, title, desc] = ['.count', '.title', '.desc'].map((s) => dlg.querySelector<HTMLElement>(s)!);
+  const prev = dlg.querySelector<HTMLButtonElement>('.prev')!, next = dlg.querySelector<HTMLButtonElement>('.next')!;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const EASE = 'cubic-bezier(.2, .8, .2, 1)';
+  let items: HTMLElement[] = [], at = 0, media: HTMLElement | null = null, from: HTMLElement | null = null, busy = false;
+  // where the media rests, so a drag can move it from there and put it back
+  let rest = { x: 0, y: 0 };
+
+  // the shots on screen right now, in reading order; hidden layout variants are left out
+  const collect = () => [...document.querySelectorAll<HTMLElement>('[data-view]')].filter((el) => el.checkVisibility({ opacityProperty: true, visibilityProperty: true }) && !el.closest('dialog, [inert]'));
+  const surface = (el: HTMLElement) => el.querySelector<HTMLElement>('.glass') ?? el;
+
+  // where the media lands: as big as fits above the text, at the shot's own aspect
+  const target = (el: HTMLElement) => {
+    const r = surface(el).getBoundingClientRect(), ratio = r.width / r.height;
+    const room = { w: innerWidth - (innerWidth < 640 ? 32 : 160), h: innerHeight - (innerWidth < 640 ? 230 : 210) };
+    let w = room.w, h = w / ratio;
+    if (h > room.h) { h = room.h; w = h * ratio; }
+    return { x: (innerWidth - w) / 2, y: Math.max(20, (innerHeight - (innerWidth < 640 ? 160 : 130) - h) / 2), w, h };
+  };
+
+  const build = (el: HTMLElement) => {
+    const box = document.createElement('div');
+    box.className = 'media';
+    const src = surface(el);
+    box.style.borderRadius = getComputedStyle(src).borderRadius;
+    const v = src.querySelector('video'), img = src.querySelector('img');
+    if (v) {
+      const nv = document.createElement('video');
+      Object.assign(nv, { muted: true, loop: true, playsInline: true, poster: v.poster, currentTime: v.currentTime });
+      v.querySelectorAll('source').forEach((s) => nv.append(s.cloneNode()));
+      box.append(nv);
+      if (!reduced) nv.play().catch(() => {});
+    } else if (img) {
+      const ni = new Image();
+      ni.src = img.currentSrc || img.src;
+      ni.alt = img.alt;
+      box.append(ni);
+    }
+    return box;
+  };
+
+  const place = (box: HTMLElement, el: HTMLElement, t: ReturnType<typeof target>, start: boolean) => {
+    const r = surface(el).getBoundingClientRect();
+    Object.assign(box.style, { width: `${t.w}px`, height: `${t.h}px` });
+    const k = r.width / t.w;
+    const a = `translate(${r.left}px, ${r.top}px) scale(${k})`, b = `translate(${t.x}px, ${t.y}px) scale(1)`;
+    return start ? [a, b] : [b, a];
+  };
+
+  const text = (el: HTMLElement) => {
+    count.textContent = `${String(at + 1).padStart(2, '0')} / ${String(items.length).padStart(2, '0')}`;
+    prev.disabled = at === 0;
+    next.disabled = at === items.length - 1;
+    title.textContent = el.dataset.title || '';
+    desc.textContent = el.dataset.desc || '';
+  };
+
+  const open = (el: HTMLElement) => {
+    items = collect();
+    at = Math.max(0, items.indexOf(el));
+    from = el;
+    text(el);
+    dlg.showModal();
+    dlg.focus();
+    media = build(el);
+    stage.append(media);
+    const [a, b] = place(media, el, target(el), true);
+    el.style.visibility = 'hidden';
+    requestAnimationFrame(() => dlg.classList.add('on'));
+    const t = target(el);
+    rest = { x: t.x, y: t.y };
+    media.style.transform = b;
+    if (!reduced) media.animate([{ transform: a }, { transform: b }], { duration: 460, easing: EASE });
+  };
+
+  const close = async () => {
+    if (!media || !from || busy) return;
+    busy = true;
+    dlg.classList.remove('on');
+    const [, a] = place(media, from, target(from), false);
+    if (!reduced) await media.animate([{ transform: getComputedStyle(media).transform }, { transform: a }], { duration: 360, easing: EASE, fill: 'forwards' }).finished.catch(() => {});
+    from.style.visibility = '';
+    media.remove(); media = null;
+    dlg.close();
+    from.focus({ preventScroll: true });
+    busy = false;
+  };
+
+  // step to the next shot: a short crossfade in place, then the page underneath follows along
+  const step = (d: number) => {
+    if (!media || busy || items.length < 2) return;
+    if (at + d < 0 || at + d >= items.length) return;
+    const to = items[at + d];
+    at = items.indexOf(to);
+    if (from) from.style.visibility = '';
+    from = to;
+    to.style.visibility = 'hidden';
+    to.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior });
+    const old = media;
+    media = build(to);
+    const t = target(to);
+    rest = { x: t.x, y: t.y };
+    Object.assign(media.style, { width: `${t.w}px`, height: `${t.h}px`, transform: `translate(${t.x}px, ${t.y}px)` });
+    stage.append(media);
+    text(to);
+    if (reduced) { old.remove(); return; }
+    media.animate([{ opacity: 0, transform: `translate(${t.x + d * 24}px, ${t.y}px)` }, { opacity: 1, transform: `translate(${t.x}px, ${t.y}px)` }], { duration: 320, easing: EASE });
+    old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(() => old.remove());
+  };
+
+  document.addEventListener('click', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-view]');
+    if (!el || el.closest('dialog') || e.metaKey || e.ctrlKey) return;
+    e.preventDefault();
+    open(el);
+  });
+  document.addEventListener('keydown', (e) => {
+    const el = (e.target as HTMLElement).closest?.<HTMLElement>('[data-view]');
+    if (!el || el !== e.target || el.closest('dialog') || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    open(el);
+  });
+  dlg.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    if (dragged) { dragged = false; return; }
+    if (t.closest('.prev')) return step(-1);
+    if (t.closest('.next')) return step(1);
+    if (t.closest('.close') || !t.closest('.media, .text')) close();
+  });
+
+  // touch: the media follows the finger. sideways past 60px (or a flick) steps, down past 110px (or a flick) closes,
+  // anything less springs back to rest
+  let drag: { x: number; y: number; t: number; axis: '' | 'x' | 'y'; id: number } | null = null, dragged = false;
+  const at0 = (dx: number, dy: number) => `translate(${rest.x + dx}px, ${rest.y + dy}px)`;
+  dlg.addEventListener('pointerdown', (e) => {
+    if (!media || busy || e.pointerType === 'mouse' || (e.target as HTMLElement).closest('button')) return;
+    drag = { x: e.clientX, y: e.clientY, t: e.timeStamp, axis: '', id: e.pointerId };
+  });
+  dlg.addEventListener('pointermove', (e) => {
+    if (!drag || !media || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.axis) { if (Math.hypot(dx, dy) < 8) return; drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'; dlg.setPointerCapture(e.pointerId); }
+    dragged = true;
+    if (drag.axis === 'x') media.style.transform = at0(items.length > 1 ? dx : dx * .25, 0);
+    else {
+      const d = Math.max(0, dy) + Math.min(0, dy) * .2;
+      media.style.transform = at0(0, d);
+      dlg.style.setProperty('--pull', String(Math.min(1, Math.max(0, d) / 300)));
+    }
+  });
+  const release = (e: PointerEvent) => {
+    if (!drag || !media || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y, v = (drag.axis === 'x' ? Math.abs(dx) : dy) / Math.max(1, e.timeStamp - drag.t);
+    const axis = drag.axis;
+    drag = null;
+    if (!axis) return;
+    if (axis === 'x' && items.length > 1 && (Math.abs(dx) > 60 || v > .45)) return step(dx < 0 ? 1 : -1);
+    if (axis === 'y' && (dy > 110 || v > .5)) { dlg.style.removeProperty('--pull'); return close(); }
+    const now = media.style.transform;
+    media.style.transform = at0(0, 0);
+    dlg.style.removeProperty('--pull');
+    if (!reduced) media.animate([{ transform: now }, { transform: at0(0, 0) }], { duration: 320, easing: EASE });
+  };
+  dlg.addEventListener('pointerup', release);
+  dlg.addEventListener('pointercancel', release);
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+  dlg.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') step(-1); if (e.key === 'ArrowRight') step(1); });
+</script>

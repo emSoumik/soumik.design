@@ -1,39 +1,91 @@
 ---
 title: A garden that tends itself
-description: How the pixel garden on my home page grows, plays music and clears up after itself, without ever getting in the way.
+description: How the pixel garden on my home page draws only when something moves, plays in one scale and clears up after itself.
 date: 2026-10-25
 tags: [garden, canvas, sound]
 draft: false
+header: xray
+accent: tends
+refs: [raf, pixels-js, feel-js, webaudio, pentatonic, reduced-motion]
 ---
 
-My home page is a white page with a pixel garden. Tap anywhere and a flower stitches itself in, pixel by pixel. Here's how a few of the small parts work.
+My home page is a white page with a pixel garden on it. Tap and a flower stitches itself in. A garden on a home page should behave. It shouldn't keep a phone busy, play a wrong note or grow until it covers the name.
 
-## It only draws when something moves
+So it has three manners. It draws only when something moves. It plays in one scale. It tidies itself up when it gets full. Each one is a decision, with an easier version I could have kept.
 
-The garden is a single `<canvas>`, drawn in stepped frames like real pixel art. When nothing is growing, flying or unpicking, it stops drawing completely. An idle garden costs nothing, which matters on a phone that's been sitting open in a tab.
+### decision 01
 
-## Every tap is in tune
+## Draw all the time, or only when something moves
 
-All the sound is synthesized live with the Web Audio API, so there are no audio files to download. Everything plays in one key, D major pentatonic. That scale has no notes that clash, so any mix of taps, in any order, comes out sounding like music.
+<Decision tried="Redraw the canvas every frame, whether or not anything changed." kept="Draw only while something moves. Then stop." why="An open tab should cost nothing. An idle garden does no work at all, even on a phone left open in a tab." cost="Everything that moves has to wake the loop. Add an animation and forget to wake it, and it freezes." />
+
+The garden is one `<canvas>`.<Ref id="pixels-js" /> It asks the browser for a frame with `requestAnimationFrame`<Ref id="raf" /> and asks again only while something is growing, flying, turning, unpicking or twinkling. Here is the line that decides, from `pixels.js`.
+
+```js
+const busy = sprouting || turning || dying.length || petals.length || b || sparks.some(s => t >= s.t0);
+if (busy) raf = requestAnimationFrame(loop);
+```
+
+If `busy` is false, nothing is asked for. The loop ends. Something that wants to move calls `wake()`, which starts it again.
+
+```js
+function wake() { if (!raf && !destroyed) raf = requestAnimationFrame(loop); }
+```
+
+The loop also gives up when the canvas is off screen or the tab is hidden. And when it does run, it draws at most once every 24 ms. Stitches land at about that pace anyway, and nothing here needs 60 frames a second.
+
+Don't take my word for it. This is the real garden, with a counter on every frame it draws. Plant something, then stop touching it.
+
+<Demo name="idle" label="fig. 1" caption="tap the soil and the number climbs while the flower stitches in. when nothing is moving it stops, and stays there until something does." />
+
+<Aside label="what counts">The counter counts how many times the canvas is cleared, which happens once per frame. The garden's own code is untouched.</Aside>
+
+The one thing I had to be careful about: the garden is supposed to twinkle now and then, which is movement on a timer. So when the loop stops, it sets one timeout for the next sparkle and goes back to sleep. A timer is cheaper than a loop.
+
+### decision 02
+
+## Any note, or one scale
+
+<Decision tried="Let every tap pick from all twelve notes." kept="One scale: D major pentatonic." why="Five notes to the octave, none a semitone apart. Any tap in any order sounds like music, even three fingers at once." cost="Nothing can sound sharp either. You can't play a wrong note, and you can't play a tense one." />
+
+All the sound is made live with the Web Audio API,<Ref id="webaudio" /> so there are no audio files to download. Every flower family has its own instrument: kalimba, glass, wood or music box.<Ref id="feel-js" /> They all read from the same five notes.<Ref id="pentatonic" />
 
 ```js
 // D major pentatonic. degree 0 is D5; negative degrees go down, 5 is D6
 const PENTA = [0, 2, 4, 7, 9];
 const ROOT = 74;
 const hz = m => 440 * 2 ** ((m - 69) / 12);
-const deg = i => hz(ROOT + PENTA[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5));
+const mid = i => ROOT + PENTA[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5);
+const deg = i => hz(mid(i));
 ```
 
-Planting walks a small melody on a kalimba-like tone. A growing flower plays a music-box run, and its sparkles chime an octave up.
+`ROOT` is a MIDI note number (74 is D5). `deg(i)` turns a step number into a frequency. Step 5 is the same note one octave up, step -1 is the note below the root, and nothing you can ask for is outside the scale.
 
-## It makes room on its own
+<Demo name="tune" label="fig. 2" caption="switch to all twelve and play a handful at random: some pairs rub. switch back and they can’t. (sound on, if you can.)" />
 
-A garden that only grows ends up as a wall of flowers. So once it passes 40 flowers (24 on a phone), the oldest one unpicks itself over about three seconds, and another goes a few seconds later. It never clears the moment a new flower lands, so you always see what you just planted.
+### decision 03
+
+## Grows forever, or makes room
+
+A garden that only grows ends up as a wall. I wanted it to look after itself instead, with one rule: it never clears the moment a new flower lands, so you always see what you just planted.
+
+```js
+const FULL = { phone: 24, desk: 40 };
+const TEND = { rest: 12000, every: [7000, 8000] };
+```
+
+Once it holds 40 flowers (24 on a phone), it is left alone for 12 seconds. Then the oldest one unpicks, stitch by stitch in reverse, over about three seconds. If it is still over the limit, the next oldest goes 7 to 8 seconds later, and so on until it is back down.
+
+<Demo name="room" label="fig. 3" caption="a garden of eight, so you don’t have to plant forty. once it’s full, the oldest wears a small black stitch. plant one more and watch it go." />
+
+Two small details from the code. A flower you tap counts as new again, so it moves to the back of the queue. And if someone plants very fast, the garden doesn't wait: more than 14 over the limit and the oldest go straight away, still unpicking rather than vanishing.
+
+### decision 04
 
 ## Calm when you ask for calm
 
-Every animation has a reduced-motion version. With reduced motion on, flowers appear without stitching, butterflies sit still and the scroll effects are off. The garden still works. It just stops moving.
+Every animation on the site has a reduced-motion version.<Ref id="reduced-motion" /> With it on, flowers appear without stitching, butterflies sit still and the scroll effects are off. Unpicking gets the same treatment: the flower just goes, the way it came.
 
----
+The garden still works. It only stops moving.
 
-If you want to see it, [go plant something](/).
+[Go plant something](/), then leave it alone and see how little it does.

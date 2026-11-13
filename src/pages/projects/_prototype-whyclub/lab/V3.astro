@@ -1,0 +1,39 @@
+---
+// PROTOTYPE: 3 · storyboard. the whole journey as six labelled frames with a playhead, like stageshow's opening
+// board. on a laptop all six sit in a row and the playing one lifts; on a phone it's one frame at a time, story
+// style, with bars on top and taps to step. under it, small feature loops
+import Head from './Head.astro';
+import Tile from './Tile.astro';
+import Hold from './Hold.astro';
+import { frames } from './data';
+const props = Astro.props as any;
+---
+<section class="v v3" data-variant="3" aria-label="Overview, storyboard">
+  <Head {...props} class="split" />
+  <div class="v3-board" data-board>
+    <div class="segs" aria-hidden="true">{frames.map(() => <i></i>)}</div>
+    <ol class="frames">
+      {frames.map((f, i) => (
+        <li class="fr" data-i={i}>
+          <div class={`fill t${(i % 3) + 1}`}><div class="dev"><div class="glass"><img src={`${f.src}.webp`} alt={f.alt} loading="lazy" decoding="async"></div></div></div>
+          <p class="lbl"><span class="n">{f.n}</span><b>{f.t}</b><span class="d">{f.d}</span></p>
+        </li>
+      ))}
+    </ol>
+    <button type="button" class="tap prev" data-prev aria-label="Previous screen"></button>
+    <button type="button" class="tap next" data-next aria-label="Next screen"></button>
+    <Hold />
+  </div>
+
+  <div class="bento v3-bento">
+    <header class="bh"><h2>Small loops</h2><p>One interaction each, recorded on a phone.</p></header>
+    <div class="grid rail">
+      <Tile k="dock" tint={1} />
+      <Tile k="sheet" tint={2} />
+      <Tile k="loading" tint={3} />
+      <Tile k="doors" tint={1} />
+      <Tile k="drops" tint={2} />
+      <Tile k="pass" tint={3} />
+    </div>
+  </div>
+</section>

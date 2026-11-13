@@ -1,0 +1,185 @@
+---
+// PROTOTYPE: part two, the case study. shaped after three references: josh lucas (a tl;dr up top, then failed
+// attempts and why they were dropped, the answer as numbered steps), penny banks (why / what / how, plain first
+// person, the problem as a fact) and tongfang sun (an overview block, insights with bold lead-ins, an outcome at the
+// end). the google ux template is only a checklist. product, interface and build each get their own say.
+// every fact comes from the store, its code or its docs; dashed lab notes mark what's missing and isn't faked
+import { A_ } from './data';
+const chapters = [
+  ['tldr', 'TL;DR'], ['why', 'Why'], ['what', 'What'], ['how', 'How'], ['failed', 'What didn’t work'],
+  ['interface', 'The interface'], ['build', 'The build'], ['now', 'Where it is now'],
+];
+const journey = [
+  { t: 'Discover', d: 'A drop, full screen.', src: 'm-01' },
+  { t: 'Decide', d: 'Fit, price and delivery, in one sheet.', src: 'm-03' },
+  { t: 'Bag', d: 'Size and quantity, one line per piece.', src: 'm-cart' },
+  { t: 'Checkout', d: 'As a guest or signed in. Never forced.' },
+  { t: 'Pay', d: 'Razorpay, checked once on the server.' },
+  { t: 'Track', d: 'The pass follows the parcel.', src: 'pass/shipped-m' },
+];
+const calls = [
+  { t: 'No account before buying.', why: 'The account is for after the order: history, tracking, the wishlist. It should never stand between someone and a tee.',
+    cost: 'A guest still has to find their order. Checkout leaves a secret in the browser, the server keeps only its hash, it lasts 30 days, and signing in claims the order.' },
+  { t: 'Buy from the grid.', why: 'Most of the deciding happens while browsing, so quick add brings photos, price and size to the card.',
+    cost: 'The sheet has to open with its photos ready, so they load in the background: less on a slow connection, none with Data Saver on.' },
+  { t: 'Make the wait the good part.', why: 'After paying, a store usually goes quiet: an email and a tracking link. The pass is meant to give people a reason to come back.',
+    cost: 'The public tracking view shows progress and nothing else: no address, contact details, prices or payment references.' },
+  { t: 'Sound and touch are extras.', why: 'A soft tick on a tap and a breath when a panel opens make the store feel physical.',
+    cost: 'It all has to work silently first. Every cue has a visual twin, Sound and Haptics switch off separately, and both go quiet with reduced motion.' },
+];
+const failed = [
+  { t: 'A splash that drew the logo first', wrong: 'On phones it held back the first real screen by more than three seconds.', now: 'Gone. The store loads straight in.' },
+  { t: 'A scroll that settled photos into place', wrong: 'After you let go, it eased the category photos to a stop. On iOS it could leave the page stuck.', now: 'Native scrolling. The photos follow your finger and nothing takes over.' },
+  { t: 'Quick add that fetched photos on open', wrong: 'The sheet could rise before its photos had arrived.', now: 'Photos load in the background, the one you point at first.' },
+];
+const dock = [
+  ['Bar', 'At the top of a page: five tabs, where your thumb already is.'],
+  ['Pill', 'Scroll, and it shrinks and slides left, out of the way of the buy button.'],
+  ['Panel', 'Tap Shop, Account or More and the bar grows into a menu, with Back at the top.'],
+];
+const care = [
+  ['Motion can be turned down', 'The store follows reduced motion, and the sound goes quiet with it.'],
+  ['Nothing relies on sound or colour', 'A saved state, a changed bag line or a new total says what happened, cue or no cue.'],
+  ['One clear target per thing', 'One link per category photo, the same labels everywhere, visible focus and press states.'],
+];
+const stack = [
+  ['Edge', 'Astro on Cloudflare Workers', 'Renders the store and sets the security headers.'],
+  ['Islands', 'React', 'The bag, checkout, account and the dock.'],
+  ['Backend', 'Convex', 'Catalog, orders, passes, coupons, reviews and an audit trail.'],
+  ['Providers', 'Razorpay, Resend, Shiprocket', 'Payment, email and delivery. Every callback is checked before anything changes.'],
+];
+const n2 = (i: number) => String(i).padStart(2, '0');
+---
+<section class="study" aria-label="Case study">
+  <nav class="toc" aria-label="Chapters">
+    <p class="toc-h">Case study</p>
+    <ol>{chapters.map(([id, t], i) => <li><a href={`#c-${id}`} data-toc={id}><span class="n">{n2(i)}</span>{t}</a></li>)}</ol>
+  </nav>
+
+  <div class="ch-wrap">
+    <section class="ch" id="c-tldr">
+      <p class="kick"><span>00</span>TL;DR</p>
+      <h2>I designed and built a streetwear store, from the brand to the backend.</h2>
+      <dl class="meta">
+        <div><dt>Role</dt><dd>Everything: brand, interface, frontend, backend</dd></div>
+        <div><dt>Timeline</dt><dd>March 2026 to now</dd></div>
+        <div><dt>Made for</dt><dd>Phones first, on the web</dd></div>
+        <div><dt>Live</dt><dd><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in <span aria-hidden="true">↗</span></a></dd></div>
+      </dl>
+      <ul class="tldr">
+        <li><b>Problem</b>A label that sells in drops needs a store that’s quick on a phone, lets anyone buy, and stays in touch after the order.</li>
+        <li><b>What I made</b>One dock that changes shape, quick add from the grid, guest checkout, and a pass that follows the parcel.</li>
+        <li><b>Where it is</b>Live, with 251 commits behind it and 201 test files guarding it.</li>
+      </ul>
+    </section>
+
+    <section class="ch" id="c-why">
+      <p class="kick"><span>01</span>Why <em>Product</em></p>
+      <h2>Clothes get bought on phones, and drops don’t wait.</h2>
+      <p class="say">WhyClub sells streetwear in limited drops. The store has one job: someone should find a piece, trust its fit and delivery, buy it without making an account, and track it afterwards. The art and the motion support that path. They are never the path.</p>
+      <p class="say">I was the only person on it. That meant no handovers, so nothing got lost between the design and the build, and it meant every hour spent on one part was an hour not spent on another.</p>
+    </section>
+
+    <section class="ch" id="c-what">
+      <p class="kick"><span>02</span>What <em>Product</em></p>
+      <h2>Six steps, from a drop to your door.</h2>
+      <ol class="journey">
+        {journey.map((j, i) => (
+          <li>
+            <div class:list={['fill', `t${(i % 3) + 1}`]}>
+              {j.src ? <div class="dev"><div class="glass"><img src={`${A_}${j.src}.webp`} alt="" loading="lazy" decoding="async"></div></div> : <span class="nb" aria-hidden="true">{n2(i + 1)}</span>}
+            </div>
+            <p><b>{j.t}</b>{j.d}</p>
+          </li>
+        ))}
+      </ol>
+      <aside class="labnote"><b>Lab note</b>No research study or usability rounds are reported here, because none were run. When they are, the findings go here, quoted, not turned into a persona.</aside>
+    </section>
+
+    <section class="ch" id="c-how">
+      <p class="kick"><span>03</span>How <em>Product</em></p>
+      <h2>Four calls, and what each one cost.</h2>
+      <ol class="calls">
+        {calls.map((d, i) => (
+          <li>
+            <p class="cn">{n2(i + 1)}</p>
+            <h3>{d.t}</h3>
+            <p class="why"><span>Why</span>{d.why}</p>
+            <p class="cost"><span>What it cost</span>{d.cost}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="ch" id="c-failed">
+      <p class="kick"><span>04</span>What didn’t work <em>UI and UX</em></p>
+      <h2>Three things I built, then took out.</h2>
+      <ol class="fails">
+        {failed.map((f, i) => (
+          <li>
+            <p class="cn">Attempt {String.fromCharCode(65 + i)}</p>
+            <h3>{f.t}</h3>
+            <p><span>What went wrong</span>{f.wrong}</p>
+            <p><span>Now</span>{f.now}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="ch" id="c-interface">
+      <p class="kick"><span>05</span>The interface <em>UI and UX</em></p>
+      <h2>A loud brand on a quiet store.</h2>
+      <p class="say">The drops are loud: campaign photos and graphic tees. Everything you shop from sits on black, white and one soft grey, so the clothes are the loudest thing on screen.</p>
+      <h3 class="sub">The dock, in three shapes</h3>
+      <ol class="steps">
+        {dock.map(([t, d], i) => <li><span class="n">{i + 1}</span><b>{t}</b>{d}</li>)}
+      </ol>
+      <div class="kit">
+        <div class="kc type">
+          <p class="kh">Two typefaces, two jobs</p>
+          <p class="spec voice">Aa</p><p class="sl"><b>Faculty Glyphic</b> for the brand’s voice</p>
+          <p class="spec use">Aa</p><p class="sl"><b>Manrope</b> for everything you use</p>
+        </div>
+        <div class="kc color">
+          <p class="kh">Colour</p>
+          <ul>
+            <li><i style="background:#000"></i><b>Black</b>#000000</li>
+            <li><i style="background:#fff"></i><b>White</b>#ffffff</li>
+            <li><i style="background:rgba(0,0,0,.08)"></i><b>Grey</b>8% black</li>
+            <li><i style="background:#e00000"></i><b>Red</b>#e00000, for sale prices</li>
+          </ul>
+        </div>
+        <div class="kc motion">
+          <p class="kh">Motion</p>
+          <dl>
+            <div><dt>280 ms</dt><dd>Text coming in on the home page</dd></div>
+            <div><dt>480 ms</dt><dd>A large photo coming in</dd></div>
+            <div><dt>Interruptible</dt><dd>Tap the dock mid-move and it picks up from where it is</dd></div>
+          </dl>
+        </div>
+      </div>
+      <h3 class="sub">Accessibility, built in</h3>
+      <ol class="care">{care.map(([t, d], i) => <li><span class="n">{i + 1}</span><b>{t}</b>{d}</li>)}</ol>
+    </section>
+
+    <section class="ch" id="c-build">
+      <p class="kick"><span>06</span>The build <em>Engineering</em></p>
+      <h2>I built the half you don’t see too.</h2>
+      <p class="say">Doing both halves meant the details survived. The sheet over the photo, the dock that becomes a menu, the pass that changes when the parcel ships: none of it had to be explained to anyone first.</p>
+      <ol class="stack">{stack.map(([k, t, d]) => <li><span class="k">{k}</span><b>{t}</b><span class="d">{d}</span></li>)}</ol>
+      <dl class="nums">
+        <div><dt>251</dt><dd>commits since March 2026</dd></div>
+        <div><dt>201</dt><dd>test files</dd></div>
+        <div><dt>24</dt><dd>sound cues, all optional</dd></div>
+        <div><dt>30 days</dt><dd>a guest’s tracking secret lasts</dd></div>
+      </dl>
+    </section>
+
+    <section class="ch" id="c-now">
+      <p class="kick"><span>07</span>Where it is now</p>
+      <h2>Live, and next is editing, not adding.</h2>
+      <p class="say">The store grew over many rounds, and some parts are more settled than others. Next I want it simpler and more consistent: one way to get around, one product card, one way of moving.</p>
+      <aside class="labnote"><b>Lab note</b>Impact goes here once there are real numbers: orders, returns, how many people open their pass. Nothing is estimated in the meantime.</aside>
+    </section>
+  </div>
+</section>

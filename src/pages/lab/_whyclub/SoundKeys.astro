@@ -1,0 +1,98 @@
+---
+// LAB: a row of the store's sounds as keys. each key draws the sound's real waveform (rendered offline from the
+// same settings it plays with) and plays it on press
+import type { SoundName } from './sound';
+interface Key { name: SoundName; label: string; note: string }
+interface Props { keys: Key[]; class?: string }
+const { keys, class: cls } = Astro.props;
+---
+<div class:list={['sk', cls]} data-sk>
+  {keys.map((k) => (
+    <button type="button" class="key" data-sound={k.name} aria-label={`Play: ${k.label}`}>
+      <span class="wave" aria-hidden="true"><canvas></canvas><i class="head"></i></span>
+      <span class="label">{k.label}</span>
+      <span class="note">{k.note}</span>
+    </button>
+  ))}
+</div>
+
+<style>
+  .sk { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: clamp(8px, 1.4vw, 14px); }
+  .key { all: unset; box-sizing: border-box; display: grid; align-content: start; gap: 4px; padding: 14px 14px 16px; min-height: 44px; border-radius: 16px;
+    background: var(--key-bg, #fff); cursor: pointer; -webkit-tap-highlight-color: transparent; text-align: left;
+    box-shadow: 0 1px 2px rgba(31, 29, 27, .06), 0 0 0 .5px rgba(31, 29, 27, .08); transition: transform .16s var(--ease); }
+  .key:active { transform: scale(.97); }
+  .key:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .wave { position: relative; display: block; height: 44px; margin-bottom: 8px; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .head { position: absolute; left: 0; top: 0; bottom: 0; width: 1.5px; background: var(--ink); opacity: 0; }
+  .label { font: 500 14px/1.3 var(--display); color: var(--ink); }
+  .note { font: 400 12.5px/1.4 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  @media (hover: hover) and (pointer: fine) { .key:hover { box-shadow: 0 2px 8px rgba(31, 29, 27, .08), 0 0 0 .5px rgba(31, 29, 27, .12); } }
+  @media (max-width: 640px) { .sk { grid-template-columns: 1fr 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .key { transition: none; } .key:active { transform: none; } }
+</style>
+
+<script>
+  import { play, render, type SoundName } from './sound';
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const draw = async (key: HTMLElement) => {
+    const canvas = key.querySelector('canvas')!;
+    const data = await render(key.dataset.sound as SoundName);
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!data || !w) return;
+    const dpr = Math.min(devicePixelRatio, 2);
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    const c = canvas.getContext('2d')!;
+    c.scale(dpr, dpr);
+    // peak per pixel column, normalised to the loudest sound in the row so quiet ones look quiet
+    let peak = 0;
+    const cols = Math.floor(w / 2);
+    const vals = Array.from({ length: cols }, (_, i) => {
+      let m = 0;
+      const a = Math.floor((i / cols) * data.length), b = Math.floor(((i + 1) / cols) * data.length);
+      for (let j = a; j < b; j++) m = Math.max(m, Math.abs(data[j]));
+      peak = Math.max(peak, m);
+      return m;
+    });
+    key.dataset.seconds = String(data.length / 44100);
+    key.dataset.peak = String(peak);
+    return { c, vals, w, h };
+  };
+  document.querySelectorAll<HTMLElement>('[data-sk]').forEach((row) => {
+    const keys = [...row.querySelectorAll<HTMLElement>('.key')];
+    row.style.setProperty('--n', String(keys.length));
+    let drawn = false;
+    const paint = async () => {
+      if (drawn) return;
+      const results = await Promise.all(keys.map(draw));
+      if (results.some((r) => !r)) return;
+      drawn = true;
+      const top = Math.max(...keys.map((k) => Number(k.dataset.peak) || 0)) || 1;
+      const ink = getComputedStyle(row).getPropertyValue('--ink').trim() || '#1f1d1b';
+      results.forEach((r) => {
+        if (!r) return;
+        const { c, vals, h } = r;
+        c.fillStyle = ink;
+        vals.forEach((v, i) => {
+          const bar = Math.max(1, (v / top) * (h - 2));
+          c.globalAlpha = 0.85;
+          c.fillRect(i * 2, (h - bar) / 2, 1.2, bar);
+        });
+      });
+    };
+    new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) paint(); }, { rootMargin: '200px' }).observe(row);
+
+    row.addEventListener('click', (e) => {
+      const key = (e.target as HTMLElement).closest<HTMLElement>('.key');
+      if (!key) return;
+      play(key.dataset.sound as SoundName);
+      const head = key.querySelector<HTMLElement>('.head')!;
+      if (reduced()) return;
+      const ms = (Number(key.dataset.seconds) || 0.3) * 1000;
+      head.getAnimations().forEach((a) => a.cancel());
+      head.animate([{ opacity: 1, transform: 'translateX(0)' }, { opacity: 1, transform: `translateX(${key.querySelector('.wave')!.clientWidth}px)` }], { duration: ms, easing: 'linear' })
+        .finished.then(() => {}, () => {});
+    });
+  });
+</script>

@@ -1,0 +1,27 @@
+/* shared controls for the dock variants B, C and D: shape picker, glass toggle, the ask line and replay. scoped by .dkx */
+.dkx { margin: 0; container-type: inline-size; }
+.dkx .seg { display: flex; padding: 3px; border-radius: 99px; box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .1); }
+.dkx .seg button, .dkx .replay { all: unset; box-sizing: border-box; position: relative; height: 38px; padding: 0 16px; border-radius: 99px; display: grid; place-items: center; cursor: pointer;
+  font: 500 13px/1 var(--display); color: var(--ink-2); transition: color .15s, background-color .15s, scale .12s cubic-bezier(.23, 1, .32, 1); -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+.dkx .seg button::before { content: ''; position: absolute; inset: -3px 0; }
+.dkx .seg button[aria-checked='true'] { background: var(--ink); color: #fff; }
+.dkx .seg button:active, .dkx .replay:active { scale: .96; }
+.dkx .replay { height: 44px; color: var(--ink); text-decoration: underline; text-decoration-color: rgba(31, 29, 27, .25); text-underline-offset: 4px; }
+.dkx button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .dkx .seg button:not([aria-checked='true']):hover { color: var(--ink); } }
+
+/* the ask: says the tour is playing, then asks; once it's theirs it becomes a way back to the tour */
+.dkx .ask { margin: 0; height: 44px; display: grid; place-items: center; }
+.dkx .say { display: flex; align-items: center; gap: 8px; font: 400 13px/1 var(--display); color: var(--ink-2); }
+.dkx .say i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink); animation: dkx-pulse 1.6s ease-in-out infinite; }
+.dkx[data-mode='tour'] .t-you, .dkx[data-mode='you'] .t-tour, .dkx[data-mode='free'] .say, .dkx:not([data-mode='free']) .replay { display: none; }
+@keyframes dkx-pulse { 50% { opacity: .25; } }
+
+.dkx .win { position: relative; width: 100%; height: 90px; overflow: hidden; }
+.dkx .sline { margin: 0; font: 400 12px/1.45 var(--display); color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: center; min-height: 18px; }
+.dkx .sline b { font-weight: 600; color: var(--ink); }
+.dkx figcaption { margin-top: 14px; font: 400 13px/1.45 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dkx .say i { animation: none; }
+}

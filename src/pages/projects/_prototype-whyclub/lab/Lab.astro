@@ -1,0 +1,101 @@
+---
+// PROTOTYPE: the whyclub lab (dev only, /lab/whyclub). part one is the project at a glance, in five takes after
+// benji's stageshow (scripted demos, cropped phones, one thing lit at a time); a picker at the bottom switches them.
+// part two is the case study. the real case study page is untouched
+import './lab.css';
+import './study.css';
+import V1 from './V1.astro';
+import V2 from './V2.astro';
+import V3 from './V3.astro';
+import V4 from './V4.astro';
+import V5 from './V5.astro';
+import Study from './Study.astro';
+const props = Astro.props;
+const takes = ['Stage', 'Spotlight', 'Storyboard', 'Notes', 'Push-in'];
+---
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&family=Manrope:wght@600&display=swap">
+<div class="lab">
+  <header class="lab-top"><span class="lab-tag">Lab</span><p>Part one is the project at a glance, in five takes. Part two is <a href="#c-tldr">the case study</a>.</p></header>
+  <V1 {...props} />
+  <div hidden data-wrap="2"><V2 {...props} /></div>
+  <div hidden data-wrap="3"><V3 {...props} /></div>
+  <div hidden data-wrap="4"><V4 {...props} /></div>
+  <div hidden data-wrap="5"><V5 {...props} /></div>
+  <Study />
+  <div class="pick" role="radiogroup" aria-label="Overview take">
+    {takes.map((t, i) => <button type="button" role="radio" data-v={String(i + 1)} aria-checked={String(i === 0)} tabindex={i === 0 ? 0 : -1}><span class="pn">{i + 1}</span><span class="pl">{t}</span></button>)}
+  </div>
+</div>
+
+<script>
+  import { phone, rotate, videos, holds, loop, refresh } from './lab';
+  const lab = document.querySelector<HTMLElement>('.lab')!;
+  const vs = [...lab.querySelectorAll<HTMLElement>('[data-variant]')];
+  const btns = [...lab.querySelectorAll<HTMLButtonElement>('.pick button')];
+  // takes 2 to 5 start wrapped so they don't flash before the script runs
+  lab.querySelectorAll<HTMLElement>('[data-wrap]').forEach((w) => { w.replaceWith(...w.childNodes); });
+
+  // the take you picked stays picked across reloads, and ?v=3 links straight to one
+  const read = () => { try { return localStorage.getItem('wc-lab-take'); } catch { return null; } };
+  const pick = (n: string, focus = false) => {
+    vs.forEach((v) => (v.hidden = v.dataset.variant !== n));
+    btns.forEach((b) => {
+      const on = b.dataset.v === n;
+      b.setAttribute('aria-checked', String(on));
+      b.tabIndex = on ? 0 : -1;
+      if (on && focus) b.focus();
+    });
+    try { localStorage.setItem('wc-lab-take', n); } catch {}
+    const u = new URL(location.href); u.searchParams.set('v', n); history.replaceState(null, '', u);
+    refresh();
+  };
+  btns.forEach((b, i) => {
+    b.addEventListener('click', () => pick(b.dataset.v!));
+    b.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      pick(btns[(i + d + btns.length) % btns.length].dataset.v!, true);
+    });
+  });
+  const first = new URL(location.href).searchParams.get('v') ?? read() ?? '1';
+  pick(vs.some((v) => v.dataset.variant === first) ? first : '1');
+
+  lab.querySelectorAll<HTMLElement>('[data-phone]').forEach(phone);
+  videos(lab);
+  holds(lab);
+
+  // 2: the light moves tile to tile; pointing at one takes it there
+  const spot = lab.querySelector<HTMLElement>('.v2 [data-spot]')!;
+  const lit = [...spot.querySelectorAll<HTMLElement>('[data-lit]')];
+  const sr = rotate(spot, lit, 3400);
+  lit.forEach((t, i) => t.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') sr.go(i); }));
+
+  // 3: the storyboard; each bar restarts its fill when its frame comes up
+  const board = lab.querySelector<HTMLElement>('[data-board]')!;
+  const segs = [...board.querySelectorAll<HTMLElement>('.segs i')];
+  const frs = [...board.querySelectorAll<HTMLElement>('.fr')];
+  const br = rotate(board, frs, 2800, (i) => {
+    segs.forEach((s, k) => { s.classList.remove('on'); s.classList.toggle('done', k < i); });
+    void board.offsetWidth;
+    segs[i].classList.add('on');
+  });
+  board.querySelector('[data-prev]')!.addEventListener('click', br.prev);
+  board.querySelector('[data-next]')!.addEventListener('click', br.next);
+  frs.forEach((f, i) => f.addEventListener('click', () => { if (matchMedia('(min-width: 900px)').matches) br.go(i); }));
+
+  // 5: wide, then the camera pushes in on the live phone while it shops, and pulls back once it's home
+  const cam = lab.querySelector<HTMLElement>('[data-cam]')!;
+  loop(cam, [[0, () => cam.classList.remove('close')], [2400, () => cam.classList.add('close')], [9500, () => cam.classList.remove('close')]], 11000, () => {});
+
+  // the chapter you're reading lights in the list
+  const links = [...lab.querySelectorAll<HTMLAnchorElement>('[data-toc]')];
+  const io = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return;
+    const id = e.target.id.slice(2);
+    links.forEach((a) => a.setAttribute('aria-current', String(a.dataset.toc === id)));
+  }), { rootMargin: '-40% 0px -55% 0px' });
+  lab.querySelectorAll('.ch').forEach((c) => io.observe(c));
+</script>

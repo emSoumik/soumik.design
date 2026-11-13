@@ -1,0 +1,26 @@
+---
+// idle: the real garden with a counter of every frame it draws. it climbs while something moves and stops dead when
+// nothing does
+import { gardenStill, BED } from '../scene';
+---
+<div class="dm-stage id" style="--dm-h: 280px; --dm-hp: 260px">
+  <svg class="id-still dm-still" viewBox={`50 0 ${BED.w - 100} ${BED.h}`} preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" aria-hidden="true" set:html={gardenStill(42)} />
+  <div class="id-count" aria-hidden="true"><span class="px">frames drawn</span><b data-n>0</b><span class="id-state px" data-state>stopped</span></div>
+</div>
+<div class="dm-bar">
+  <button class="dm-btn solid" type="button" data-plant disabled><span>plant one</span></button>
+  <output class="dm-read" aria-live="off">tap the soil, then stop and watch the number</output>
+</div>
+
+<style>
+  .id { cursor: pointer; touch-action: manipulation; }
+  .id-still { position: absolute; inset: 70px 0 10px; width: 100%; height: calc(100% - 80px); }
+  .id-count { position: absolute; z-index: 2; right: 18px; top: 48px; display: grid; justify-items: end; gap: 6px; pointer-events: none; }
+  .id-count .px { font: 500 12px/1 var(--pixel); color: var(--ink-2); }
+  .id-count b { font: 400 56px/.9 var(--serif); color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .id-state { display: inline-flex; align-items: center; gap: 6px; }
+  .id-state::before { content: ""; width: 7px; height: 7px; background: var(--ink-3); }
+  .id-state[data-on]::before { background: #1f8a3a; }
+  .id-state[data-on] { color: var(--ink); }
+  @media (max-width: 640px) { .id-count { top: 14px; right: var(--gut); } .id-count b { font-size: 44px; } }
+</style>

@@ -1,0 +1,65 @@
+---
+// LAB: the store's footer links with their running index, on the same #111 and with the same css values
+// (why-club src/styles/global.css .wc-link-no / .wc-link-label, links from src/lib/siteFooter.ts).
+// on touch there's no hover, so a tap lights a link the way a pointer would
+const columns = [
+  ['Shop', ['All Products', 'Men', 'Women', 'New Arrivals']],
+  ['Help', ['Shipping', 'Exchange', 'Size Guide', 'FAQs', 'Track Order']],
+  ['Company', ['Our Story', 'Contact Us', 'Privacy Policy', 'Terms & Conditions']],
+] as const;
+let n = 0;
+const cols = columns.map(([title, links]) => ({ title, links: links.map((label) => ({ label, no: String(++n).padStart(2, '0') })) }));
+interface Props { class?: string }
+const { class: cls } = Astro.props;
+---
+<div class:list={['fi', cls]} data-fi>
+  {cols.map((c) => (
+    <div class="col">
+      <p class="ct">{c.title}</p>
+      <ul>
+        {c.links.map((l) => <li><button type="button" aria-pressed="false"><span class="no" aria-hidden="true">{l.no}</span><span class="lb">{l.label}</span></button></li>)}
+      </ul>
+    </div>
+  ))}
+</div>
+
+<style>
+  .fi { --ease-out: cubic-bezier(.23, 1, .32, 1); background: #111; color: #fff; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;
+    padding: clamp(28px, 4vw, 48px); }
+  .ct { font: 700 11px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  button { all: unset; box-sizing: border-box; position: relative; display: flex; align-items: center; min-height: 44px; width: 100%; cursor: pointer;
+    color: #fff; font: 400 14px/1.3 var(--display); -webkit-tap-highlight-color: transparent; }
+  .no { position: absolute; left: 0; top: 50%; color: #777; font-size: 10px; letter-spacing: .06em; font-variant-numeric: tabular-nums;
+    opacity: 0; translate: -6px -50%; transition: opacity 180ms var(--ease-out), translate 180ms var(--ease-out); pointer-events: none; }
+  /* #aaa, #fff and #666 on #111 as opacity, so only opacity and translate animate */
+  .lb { display: inline-block; opacity: .64; transition: opacity 150ms ease, translate 260ms var(--ease-out); }
+  button:focus-visible .lb, button[aria-pressed='true'] .lb { opacity: 1; }
+  button:focus-visible { outline: 1.5px solid rgba(255, 255, 255, .6); outline-offset: 2px; border-radius: 4px; }
+  button:focus-visible .no, button[aria-pressed='true'] .no { opacity: 1; translate: 0 -50%; }
+  button:focus-visible .lb, button[aria-pressed='true'] .lb { translate: 1.35rem 0; }
+  .fi:has([aria-pressed='true']) button:not([aria-pressed='true']) .lb { opacity: .36; }
+  @media (hover: hover) and (pointer: fine) {
+    .fi:has(button:hover) button:not(:hover) .lb { opacity: .36; }
+    button:hover .lb { opacity: 1; }
+    button:hover .no { opacity: 1; translate: 0 -50%; }
+    button:hover .lb { translate: 1.35rem 0; }
+  }
+  @media (max-width: 640px) {
+    .fi { grid-template-columns: 1fr 1fr; padding: 24px 20px; }
+    .col:first-child { grid-column: 1 / -1; }
+    .col:first-child ul { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .no, .lb, button { transition: none; } }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-fi]').forEach((fi) => {
+    fi.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest('button');
+      if (!b) return;
+      const on = b.getAttribute('aria-pressed') !== 'true';
+      fi.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b && on)));
+    });
+  });
+</script>

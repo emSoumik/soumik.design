@@ -1,0 +1,143 @@
+---
+// LAB: ten directions for the whyclub case study on one dev-only route. all five render; the bar at the bottom
+// (or ?v=1..10, or ← →) picks which one shows. videos play only while on screen
+import V1 from './V1Exhibit.astro';
+import V2 from './V2Order.astro';
+import V3 from './V3Letter.astro';
+import V4 from './V4Edit.astro';
+import V5 from './V5Pocket.astro';
+import V6 from './V6Receipt.astro';
+import V7 from './V7Lookbook.astro';
+import V8 from './V8Ask.astro';
+import V9 from './V9Board.astro';
+import V10 from './V10Measured.astro';
+
+const dirs = [
+  { n: '1', name: 'Exhibit', thesis: 'Six working parts, each running in the page with a figure number and a caption. A lead judges the craft by using it.' },
+  { n: '2', name: 'One order', thesis: 'Follow one order from the first swipe to the doorstep. Each decision shows up where a customer meets it.' },
+  { n: '3', name: 'Letter', thesis: 'A short essay in one column: small captioned media, footnotes for the numbers, sounds you can play in the text.' },
+  { n: '4', name: 'The edit', thesis: 'Judgment over volume. Each section is something Soumik took out, what replaced it, and why.' },
+  { n: '5', name: 'Pocket', thesis: 'The case study is built from the store’s own patterns: a photo up top, a sheet over it, a dock for the sections.' },
+  { n: '6', name: 'Receipt', thesis: 'The case study is the store’s own receipt. Each decision is a line item you tear open; the total is what it took, and the pass prints at the end.' },
+  { n: '7', name: 'Lookbook', thesis: 'Shot like a drop. Each look pairs a campaign photo with the piece of UI it wears, credited like clothes.' },
+  { n: '8', name: 'Ask', thesis: 'The reader asks, the page answers. Pick a question and the answer arrives as a message, with the thing itself inside it.' },
+  { n: '9', name: 'Board', thesis: 'The working board, not the finished deck. Pan around the screens and notes, or take the tour.' },
+  { n: '10', name: 'Measured', thesis: 'Every decision has a number. Each section leads with one, and lets you feel it: 90ms, 350ms, 16px.' },
+];
+const asked = Number(Astro.url.searchParams.get('v'));
+const start = dirs.some((d) => Number(d.n) === asked) ? String(asked) : '1';
+---
+<div class="lab" data-lab>
+  <div data-dir="1" hidden={start !== '1'}><V1 /></div>
+  <div data-dir="2" hidden={start !== '2'}><V2 /></div>
+  <div data-dir="3" hidden={start !== '3'}><V3 /></div>
+  <div data-dir="4" hidden={start !== '4'}><V4 /></div>
+  <div data-dir="5" hidden={start !== '5'}><V5 /></div>
+  <div data-dir="6" hidden={start !== '6'}><V6 /></div>
+  <div data-dir="7" hidden={start !== '7'}><V7 /></div>
+  <div data-dir="8" hidden={start !== '8'}><V8 /></div>
+  <div data-dir="9" hidden={start !== '9'}><V9 /></div>
+  <div data-dir="10" hidden={start !== '10'}><V10 /></div>
+</div>
+
+<nav class="switch" aria-label="Case study directions" data-dirs={JSON.stringify(dirs)} data-start={start}>
+  <button type="button" class="step" data-step="-1" aria-label="Previous direction"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg></button>
+  <button type="button" class="now" aria-expanded="false" aria-controls="lab-thesis">
+    <span class="n"></span><span class="name"></span>
+  </button>
+  <button type="button" class="step" data-step="1" aria-label="Next direction"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg></button>
+  <p class="thesis" id="lab-thesis"></p>
+</nav>
+
+<style>
+  .lab { width: 100%; }
+  .switch { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 90; translate: -50% 0;
+    display: grid; grid-template-columns: 44px auto 44px; align-items: center; padding: 3px; border-radius: 26px; background: #121110; color: #fff;
+    box-shadow: 0 10px 30px -8px rgba(0, 0, 0, .35); font: 500 13px/1 var(--ui); max-width: calc(100vw - 24px); }
+  /* pocket has its own dock at the bottom, so the bar moves to the top there */
+  :global(body:has([data-dir='5']:not([hidden]))) .switch { bottom: auto; top: calc(10px + env(safe-area-inset-top)); }
+  .switch button { all: unset; box-sizing: border-box; height: 40px; display: grid; place-items: center; border-radius: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .step svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .switch .now { display: flex; gap: 8px; padding: 0 14px; min-width: 132px; justify-content: center; }
+  .n { color: rgba(255, 255, 255, .5); font-variant-numeric: tabular-nums; }
+  .switch button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+  .switch button:active { scale: .96; }
+  @media (hover: hover) and (pointer: fine) { .switch button:hover { background: rgba(255, 255, 255, .1); } }
+  .thesis { grid-column: 1 / -1; max-width: 420px; padding: 2px 14px 10px; font: 400 12.5px/1.45 var(--ui); color: rgba(255, 255, 255, .72); text-align: center; text-wrap: pretty; }
+  .switch:not(.open) .thesis { display: none; }
+</style>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('.switch')!;
+  const dirs: { n: string; name: string; thesis: string }[] = JSON.parse(bar.dataset.dirs!);
+  const panes = [...document.querySelectorAll<HTMLElement>('[data-dir]')];
+  const now = bar.querySelector<HTMLButtonElement>('.now')!;
+  let cur = bar.dataset.start!;
+
+  const show = (n: string, first = false) => {
+    if (!dirs.some((d) => d.n === n)) n = '1';
+    const d = dirs.find((x) => x.n === n)!;
+    panes.forEach((p) => (p.hidden = p.dataset.dir !== n));
+    bar.querySelector('.n')!.textContent = `${n}/${dirs.length}`;
+    bar.querySelector('.name')!.textContent = d.name;
+    bar.querySelector('.thesis')!.textContent = d.thesis;
+    const url = new URL(location.href);
+    url.searchParams.set('v', n);
+    history.replaceState(null, '', url);
+    if (!first) scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    cur = n;
+    dispatchEvent(new CustomEvent('lab:show', { detail: n }));
+  };
+  const step = (k: number) => show(dirs[(dirs.findIndex((d) => d.n === cur) + k + dirs.length) % dirs.length].n);
+  show(new URLSearchParams(location.search).get('v') ?? cur, true);
+  // the thesis shows on the first visit, then folds into the name
+  bar.classList.add('open');
+  now.setAttribute('aria-expanded', 'true');
+  setTimeout(() => { bar.classList.remove('open'); now.setAttribute('aria-expanded', 'false'); }, 5000);
+
+  bar.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const s = t.closest<HTMLElement>('[data-step]');
+    if (s) return step(Number(s.dataset.step));
+    if (t.closest('.now')) { const open = bar.classList.toggle('open'); now.setAttribute('aria-expanded', String(open)); }
+  });
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+    const t = e.target as HTMLElement;
+    if (t.closest('input, textarea, select, [contenteditable], [data-own-keys], [role=radiogroup], [role=tablist]') || document.querySelector('dialog[open], :popover-open')) return;
+    step(e.key === 'ArrowLeft' ? -1 : 1);
+  });
+
+  // recordings play only while on screen; with reduced motion they wait for a press
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const videos = [...document.querySelectorAll<HTMLVideoElement>('video[data-lab-video]')];
+  const held = new WeakSet<HTMLVideoElement>();
+  const btnOf = (v: HTMLVideoElement) => v.parentElement?.querySelector<HTMLButtonElement>('[data-lab-vbtn]');
+  const mark = (v: HTMLVideoElement) => {
+    const b = btnOf(v);
+    if (!b) return;
+    b.toggleAttribute('data-paused', v.paused);
+    b.setAttribute('aria-label', v.paused ? 'Play' : 'Pause');
+  };
+  const io = new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      const v = target as HTMLVideoElement;
+      // a direction that runs its own videos (a sticky stage of stacked clips) opts out with data-own-video
+      if (isIntersecting && !held.has(v) && !reduced && !v.closest('[data-own-video]')) { v.preload = 'auto'; v.play().catch(() => {}); } else if (!isIntersecting) v.pause();
+    }
+  }, { threshold: 0.35 });
+  videos.forEach((v) => {
+    io.observe(v);
+    v.addEventListener('play', () => mark(v));
+    v.addEventListener('pause', () => mark(v));
+    mark(v);
+  });
+  document.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-lab-vbtn]');
+    if (!b) return;
+    const v = b.parentElement!.querySelector('video')!;
+    if (v.paused) { held.delete(v); v.preload = 'auto'; v.play().catch(() => {}); } else { held.add(v); v.pause(); }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) videos.forEach((v) => v.pause()); });
+</script>

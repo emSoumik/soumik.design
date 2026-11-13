@@ -1,0 +1,43 @@
+---
+// LAB: the dock section four ways, stacked and labelled so they can be compared on one page. A is what the case study uses
+import A from '../../projects/_prototype-whyclub/DockLive.astro';
+import B from '../../projects/_prototype-whyclub/DockLiveB.astro';
+import C from '../../projects/_prototype-whyclub/DockLiveC.astro';
+import D from '../../projects/_prototype-whyclub/DockLiveD.astro';
+const takes = [
+  { id: 'a', name: 'Columns', thesis: 'Notes either side with leaders to the parts. On a phone, a row of notes above the dock and a row below.', C: A },
+  { id: 'b', name: 'Hotspots', thesis: 'Numbered hotspots sit on the parts. One note opens next to its hotspot; the tour walks from one to the next.', C: B },
+  { id: 'c', name: 'Steps', thesis: 'Three steps you can scrub, each filling while its shape is held. The notes for the step sit beside it, keyed by number.', C: C },
+  { id: 'd', name: 'Spec sheet', thesis: 'Dimension lines drawn on the dock like a blueprint, with every measured size, and a short spec list under it.', C: D },
+];
+---
+<div class="dlab">
+  <header class="intro">
+    <h1>The dock, four ways</h1>
+    <p>Each one runs the real dock. Pick the one that reads best on a phone and on a laptop.</p>
+    <nav aria-label="Takes">{takes.map((t) => <a href={`#take-${t.id}`}>{t.id.toUpperCase()} · {t.name}</a>)}</nav>
+  </header>
+  {takes.map((t) => (
+    <section class="take" id={`take-${t.id}`} aria-labelledby={`take-${t.id}-h`}>
+      <div class="label">
+        <h2 id={`take-${t.id}-h`}><span>{t.id.toUpperCase()}</span>{t.name}</h2>
+        <p>{t.thesis}</p>
+      </div>
+      <t.C caption="The real dock, running in this page." />
+    </section>
+  ))}
+</div>
+
+<style>
+  .dlab { max-width: var(--wide); margin: 0 auto; padding: clamp(24px, 5vw, 64px) var(--gut) 120px; }
+  .intro { max-width: 640px; margin-bottom: clamp(40px, 6vw, 72px); }
+  h1 { margin: 0 0 8px; font: 600 clamp(28px, 4vw, 40px)/1.1 var(--display); letter-spacing: -.02em; color: var(--ink); }
+  .intro p { margin: 0 0 16px; font: 400 15px/1.5 var(--display); color: var(--ink-2); }
+  nav { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+  nav a { display: inline-flex; align-items: center; min-height: 44px; font: 500 14px/1 var(--display); color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+  .take { padding: clamp(36px, 6vw, 72px) 0; border-top: 1px solid rgba(31, 29, 27, .1); scroll-margin-top: 24px; }
+  .label { max-width: 560px; margin-bottom: clamp(20px, 3vw, 36px); }
+  h2 { margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px; font: 600 20px/1.2 var(--display); color: var(--ink); }
+  h2 span { font: 500 13px/1 var(--mono); color: var(--ink-3); }
+  .label p { margin: 0; font: 400 14px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+</style>

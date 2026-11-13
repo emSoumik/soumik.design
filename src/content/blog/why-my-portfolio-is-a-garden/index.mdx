@@ -1,0 +1,113 @@
+---
+title: Why my portfolio is a garden
+description: I had a hero section to fill and nothing honest to put in it. So I left it white and let people plant flowers.
+date: 2026-11-10
+tags: [garden, design, process]
+draft: true
+header: garden
+accent: garden
+refs: [webaudio, pentatonic, flora-js]
+---
+import Mock from '../../../components/blog/Mock.astro';
+
+On 15 October soumik.design went up saying "coming soon". Then I had to decide what goes at the top.
+
+This post is seven decisions. For each one: what I tried first, what I kept, and why. Most you can try for yourself.
+
+### decision 01
+
+## A sentence, or proof
+
+Every option I could think of was a sentence about myself. "Design engineer who cares about craft." "I build delightful interfaces." You have read that line on a lot of portfolios and believed it on none. I wouldn't either. Nobody can prove craft in a sentence.
+
+<Compare label="the top of the page" was="a sentence" now="a garden" why="if the flower feels good under your finger, you know what I do. if it doesn’t, no headline would have saved me.">
+  <Mock slot="before" kind="sentence" />
+  <Mock slot="after" kind="garden" />
+</Compare>
+
+So I stopped writing the sentence and built the proof. The top of my site is a white page with my name on it. Tap anywhere and a flower stitches itself in, one pixel at a time, and plays a note. That's the whole pitch. There's a small garden at the top of this post, if you want to check.
+
+## Why a garden
+
+<Aside>I'm one person. A white page with a few flowers is the right size for one person.</Aside>
+
+A garden is a thing on a screen that nobody tries to finish. There's no score and no right place to tap. Plant one flower, then another next to it. You don't need instructions.
+
+It suits the job too. A portfolio is about me, but you're the one using it. In a garden, you made half of it. By the time you scroll down to the work, the page already has something of yours on it.
+
+### decision 02
+
+## Watercolour, then pixels
+
+The first garden was painted. Soft ink blooms that spread on the page, washes of colour. The pixel garden landed the same afternoon, 16 October, about three hours later.
+
+<Compare label="the same afternoon" was="watercolour" now="pixels" height={340} why="watercolour hides its edges, and edges are where the craft shows. both of these are the real gardens. tap them.">
+  <Demo slot="before" name="ink" bare />
+  <Demo slot="after" name="pixel" bare />
+</Compare>
+
+It looked like a picture of a garden. You tapped and something lovely happened near your finger, but you couldn't say what you had made.
+
+<Aside label="still there">The painted garden is still in the code. Add <code>?garden=ink</code> to the home page's address and it comes back.</Aside>
+
+Pixels don't hide anything. A pixel flower is a few dozen squares, and you can see every one arrive. So the pixel garden replaced it, and the dot of the "i" in my name became a small flower.
+
+### decision 03
+
+## Fade, or stitch
+
+Fading is how most things arrive on a web page. My flowers don't fade. They're stitched, cell by cell, stem first, the way you'd sew one onto cloth. Each new cell flashes pale yellow for a moment before it takes its colour.
+
+<Demo name="stitch" label="fig. 1" caption="the same daisy both ways, over the same time. drag the speed and play it again. the garden’s own pace is 26 ms a stitch." />
+
+A fade shows you a flower. A stitch shows you every square of it going in. Each flower is a little grid of letters, one letter per stitch.<Ref id="flora-js" /> I redrew them more than once.
+
+<Flowers />
+
+A flower also looks where it's going. It avoids my name and the buttons, and leaves room for its neighbours. Tap one that's already grown and it turns into another of its kind, either rippling from the middle or scattering and landing again. There used to be a handful of ways for a flower to change. Those two stayed.
+
+### decision 04
+
+## Any note, or one scale
+
+There are no sound files on the site. Each note is made in the browser when you tap.<Ref id="webaudio" />
+
+Everything plays in one scale, D major pentatonic, which has no two notes a semitone apart.<Ref id="pentatonic" /> Tap fast, tap slow, tap with three fingers. It comes out as a tune. Here's the same row of pads with every note allowed, so you can hear what the scale saves you from.
+
+<Demo name="tune" label="fig. 2" caption="switch to all twelve and play twelve at random: a few pairs rub. switch back and they can’t. (sound on, if you can.)" />
+
+Sound on a website is usually a mistake. If it can't be wrong, it has a chance of being welcome. There's still a mute button, and it remembers.
+
+### decision 05
+
+## Grows forever, or makes room
+
+The garden used to grow forever, which ends in a wall of flowers. Now it holds 40 (24 on a phone). Past that, the oldest one unpicks itself, stitch by stitch in reverse, over about three seconds.
+
+<Demo name="room" label="fig. 3" caption="a garden of eight, and quicker about it, so you don’t have to plant forty. once it’s full, the oldest wears a small black stitch. plant one more and watch it go." />
+
+### decision 06
+
+## Plant on touch, or on lift
+
+On a phone, a flower used to plant the moment your finger landed, so every scroll left a trail. Now it plants when the finger lifts, and only if the finger didn't move.
+
+<Demo name="lift" label="fig. 4" caption="swipe across it in both modes. up and down still scrolls the page in either one; that part was never the problem." />
+
+### decision 07
+
+## The cat who talked over the work
+
+A bee turns up a couple of seconds in and visits what you plant. Butterflies follow, up to five on a desktop and two on a phone.
+
+<Decision tried="A bee, butterflies and Mochi the cat." kept="The bee and the butterflies. Mochi is switched off." why="One guest too many. The cat was the one who talked over the work." cost="Nothing yet. She's one line of code away from coming back." />
+
+## The part you don't see
+
+The canvas used to redraw all the time. Now it stops completely when nothing is moving, so an open tab costs nothing. [That one gets its own post](/blog/a-garden-that-tends-itself/), with a counter you can watch stop.
+
+## What's next
+
+The garden has a day. It doesn't have an evening yet. I'm working on one: stay and plant for a while, and the light starts to go. I'll write about it when it's good enough to ship.
+
+Until then, [go plant something](/).

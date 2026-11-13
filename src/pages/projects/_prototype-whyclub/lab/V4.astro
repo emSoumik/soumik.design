@@ -1,0 +1,40 @@
+---
+// PROTOTYPE: 4 · notes. one phone, and a single note at a time drawn out to the part it's about, in step with the
+// finger. on a phone the line can't fit beside the screen, so a ring marks the spot and the note sits under it.
+// the grid under it is editorial: numbered figures with their captions outside the tiles
+import Head from './Head.astro';
+import Phone from './Phone.astro';
+import Tile from './Tile.astro';
+import Hold from './Hold.astro';
+import { notes } from './data';
+const props = Astro.props as any;
+---
+<section class="v v4" data-variant="4" aria-label="Overview, notes">
+  <Head {...props} class="split" />
+  <div class="v4-stage fill t2">
+    <div class="anchor">
+      <Phone class="v4-ph" />
+      <div class="notes" aria-hidden="true">
+        {notes.map((n) => <p class="note" data-beat-id={n.id} style={`--x:${n.x};--y:${n.y}`}><span><b>{n.t}</b>{n.d}</span></p>)}
+      </div>
+    </div>
+    <Hold />
+  </div>
+  <p class="now v4-say" aria-hidden="true">{notes.map((n) => <span class="say" data-beat-id={n.id}><b>{n.t}.</b> {n.d}</span>)}</p>
+
+  <div class="bento v4-bento">
+    <header class="bh"><h2>Figures</h2><p>The parts of the store worth a closer look, numbered.</p></header>
+    <div class="grid figs rail">
+      <Tile k="drops" class="w7" tint={3} />
+      <Tile k="pass" class="w5" tint={1} />
+      <Tile k="safari" class="w4" tint={2} />
+      <Tile k="dock" class="w4" tint={3} />
+      <Tile k="lost" class="w4" tint={1} />
+    </div>
+    <div class="grid stats">
+      <Tile k="commits" />
+      <Tile k="tests" />
+      <Tile k="sounds" />
+    </div>
+  </div>
+</section>

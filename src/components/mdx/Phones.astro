@@ -1,0 +1,22 @@
+---
+// <Phones items={[{ src, alt, caption, video? }, …]} caption="…" />: three phone screens side by side on a soft panel.
+// stays three across on a phone too, so a row is a glance, not a page
+import Phone from './Phone.astro';
+
+interface Item { src: string; alt: string; caption?: string; video?: boolean }
+interface Props { items: Item[]; caption?: string }
+const { items, caption } = Astro.props;
+---
+<figure class="phones wide">
+  <div class="row">
+    {items.map((it) => <Phone {...it} />)}
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .phones { padding: clamp(18px, 4.4vw, 52px) clamp(12px, 4.4vw, 52px) clamp(18px, 3.6vw, 40px); border-radius: clamp(16px, 2.6vw, 28px); background: var(--wash); }
+  .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 4vw, 48px); max-width: 720px; margin: 0 auto; }
+  .phones > figcaption { margin-top: clamp(16px, 2.6vw, 28px); text-align: center; font: 400 13px/1.5 var(--mono); color: var(--ink-2); text-wrap: pretty; }
+  @media (max-width: 640px) { .row { gap: 10px; } }
+</style>

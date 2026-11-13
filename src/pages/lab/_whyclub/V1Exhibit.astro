@@ -1,0 +1,393 @@
+---
+// LAB direction 1, "Exhibit": the store as six working parts, each a numbered figure that runs in the page
+// (after historyofsoftware.org's restored figures). every figure says whether it's live, rebuilt or recorded
+import Shot from './Shot.astro';
+import TintToy from './TintToy.astro';
+import SoundKeys from './SoundKeys.astro';
+import FooterIndex from './FooterIndex.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+const figs = [
+  ['ex-dock', 'The dock'],
+  ['ex-pass', 'The drop pass'],
+  ['ex-tint', 'Safari’s colour'],
+  ['ex-wait', 'Waiting'],
+  ['ex-sound', 'Sound'],
+  ['ex-foot', 'The footer'],
+];
+const stages = [
+  ['confirmed', 'You’re in.', 'A stem grows and one bloom opens.'],
+  ['packed', 'All packed.', 'A box drops in, folds shut and gets taped.'],
+  ['shipped', 'On its way.', 'The route draws itself and light runs it to a pin.'],
+  ['delivered', 'It’s home.', 'Five blooms open, one after another.'],
+];
+---
+<article class="ex">
+  <header class="head">
+    <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>2026</p>
+    <h1>WhyClub</h1>
+    <p class="lede">A streetwear label from India that sells oversized graphic tees in small drops. I designed and built the store: the art direction, the design system, the frontend, and the backend that runs every order.</p>
+    <dl class="meta">
+      <div><dt>Role</dt><dd>Design and engineering</dd></div>
+      <div><dt>Stack</dt><dd>Astro, React, Convex, WebGL</dd></div>
+      <div><dt>Live</dt><dd><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in <span aria-hidden="true">↗</span></a></dd></div>
+    </dl>
+  </header>
+
+  <figure class="fig zero">
+    <div class="plate store">
+      <Shot class="side l" src={A + 'm-02'} alt="The shop on a phone: two columns of tees with their prices." eager />
+      <Shot class="mid" src={A + 'p-hero'} video alt="The home page on a phone, swiping from one drop’s campaign photo to the next." />
+      <Shot class="side r" src={A + 'm-03'} alt="The product page for the Please, I’m a Star tee, with its price and sizes." eager />
+    </div>
+    <figcaption><span class="no">Fig. 0</span> The store. Each drop gets a campaign photo that fills the phone, and the shopping happens on plain neutrals.</figcaption>
+  </figure>
+
+  <nav class="index" aria-label="Figures">
+    <p>Below are the parts I’d point to first. Each one runs in this page, so try them.</p>
+    <ol>{figs.map(([id, t], i) => <li><a href={`#${id}`}><span class="no">{i + 1}</span>{t}</a></li>)}</ol>
+  </nav>
+
+  <!-- fig 1: the real dock -->
+  <section class="fig" id="ex-dock" aria-labelledby="ex-dock-h">
+    <div class="plate dockplate">
+      <div class="dockhold" data-dock-hold aria-label="The WhyClub dock, live"></div>
+      <div class="ctrls">
+        <button type="button" class="pill" data-act="open" aria-pressed="false">Open Shop</button>
+        <button type="button" class="pill" data-act="scroll" aria-pressed="false">Scroll the page</button>
+        <div class="seg" role="radiogroup" aria-label="Glass">
+          <button type="button" role="radio" aria-checked="true" data-glass="light">Light glass</button>
+          <button type="button" role="radio" aria-checked="false" data-glass="dark">Dark glass</button>
+        </div>
+      </div>
+      <p class="spring" aria-live="polite" data-spring>Tap the dock, or use the buttons.</p>
+    </div>
+    <div class="cap">
+      <p class="no">Fig. 1 <span class="tag">Live</span></p>
+      <h2 id="ex-dock-h">One bar that grows into the menu</h2>
+      <div class="body">
+        <p>Clothes get bought on phones, so the navigation sits where your thumb already is. Tap Shop and the bar squeezes for 90ms, then springs open into a panel: Women and Men as photos, Sale and My collection below, and Back to fold it up. Scroll a page and the labels drop away, then the bar tucks into a pill at the left edge.</p>
+        <p class="detail">The springs are written in Apple’s terms, response and damping, and sampled into CSS linear() easings. They’re plain transitions, so a tap halfway through a move picks up from wherever the dock is. Only opening a panel overshoots, a little. Dark glass shows only on an iPhone in dark mode, to sit with Safari’s toolbar. The idea of a bar that becomes the menu is <a class="cr" href="#ex-credits">Danny Williams’</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- fig 2: the real drop pass -->
+  <section class="fig" id="ex-pass" aria-labelledby="ex-pass-h">
+    <div class="plate passplate">
+      <div class="passhold" data-pass-hold>
+        <picture><source srcset={`${A}pass/confirmed-m.avif`} type="image/avif"><img src={`${A}pass/confirmed-m.webp`} alt="" loading="lazy" decoding="async"></picture>
+      </div>
+      <div class="stages">
+        <div class="list" role="radiogroup" aria-label="Order stage">
+          {stages.map(([k, t, d], i) => (
+            <button type="button" role="radio" aria-checked={String(i === 0)} tabindex={i === 0 ? 0 : -1} data-stage={k}>
+              <span class="st">{t}</span><span class="sd">{d}</span>
+            </button>
+          ))}
+        </div>
+        <button type="button" class="pill replay" data-replay>Print it again</button>
+      </div>
+    </div>
+    <div class="cap">
+      <p class="no">Fig. 2 <span class="tag">Live</span></p>
+      <h2 id="ex-pass-h">The order is a pass that changes with the parcel</h2>
+      <div class="body">
+        <p>Ordering is usually where a store goes quiet. Here, the moment Razorpay confirms a payment, the bag gives way to a printer slot and a pass feeds out of it. From then on it only says what has happened: You’re in, All packed, On its way, It’s home. Courier updates from Shiprocket move it along.</p>
+        <p class="detail">The colour band is one fragment shader that draws a different scene for each stage. It pauses when it’s off screen and draws a single still frame for reduced motion. The print is one speed curve, a nudge, a breath, three ticks and a glide, handed to the browser as one linear() easing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- fig 3: safari's colour, rebuilt with the store's maths -->
+  <section class="fig" id="ex-tint" aria-labelledby="ex-tint-h">
+    <div class="plate tintplate">
+      <TintToy />
+      <div class="real">
+        <Shot src={A + 'ios/before'} ratio="720 / 1565" alt="Before, on an iPhone: a free shipping bar above the photo, and Safari’s toolbar on white under the dock." caption="Before" />
+        <Shot src={A + 'ios/light'} ratio="720 / 1565" alt="After, light mode: the same photo, with the status bar in a muted shade of its top edge and the photo running under Safari’s toolbar." caption="After" />
+        <Shot src={A + 'ios/dark'} ratio="720 / 1565" alt="After, dark mode: the same page with the dock in dark glass." caption="After, dark mode" />
+      </div>
+    </div>
+    <div class="cap">
+      <p class="no">Fig. 3 <span class="tag">Rebuilt</span></p>
+      <h2 id="ex-tint-h">The browser takes the photo’s colour</h2>
+      <div class="body">
+        <p>Safari 26 tints its bars from the page behind them. With a white page edge every hero looked pasted in, and a free shipping bar sat on top of it. I took the bar out. Now the store reads a thin strip along the top of each photo and hands a muted shade of it to the browser once a swipe settles.</p>
+        <p class="detail">The phone on the left is a rebuild with the store’s maths: the top 16px averaged on a 48 by 12 canvas, mixed with its own brightness and darkened a little. Each photo is read once, 160ms after the carousel stops. The three on the right are from an iPhone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- fig 4: page-shaped loading -->
+  <section class="fig" id="ex-wait" aria-labelledby="ex-wait-h">
+    <div class="plate waitplate">
+      <Shot class="waitclip" src={A + 'p-loading'} video alt="Tapping Shop, then Women, on a slow connection: grey blocks, then an outline of the grid, then the photos land in the same places." />
+      <div class="ruler">
+        <ol>
+          <li><b>Press</b><span>Grey blocks cover the old page.</span></li>
+          <li><b>350ms</b><span>They draw themselves into an outline of the page, in reading order.</span></li>
+          <li><b>Ready</b><span>The real page fades in over the same lines.</span></li>
+          <li><b>10s</b><span>Still nothing? You get the old page back.</span></li>
+        </ol>
+        <div class="seg" role="radiogroup" aria-label="Playback speed" data-speed>
+          <button type="button" role="radio" aria-checked="true" data-rate="1">1×</button>
+          <button type="button" role="radio" aria-checked="false" data-rate="0.25">¼×</button>
+        </div>
+      </div>
+    </div>
+    <div class="cap">
+      <p class="no">Fig. 4 <span class="tag">Recorded</span></p>
+      <h2 id="ex-wait-h">Waiting looks like the page you asked for</h2>
+      <div class="body">
+        <p>A spinner tells you nothing. Tap a link and the store works out from the address what kind of page is coming: the shop, a product, a policy, your account. Grey blocks cover the old page at once. At 350ms they draw themselves into an outline of that page, and the real one fades in over the same lines, so nothing jumps.</p>
+        <p class="detail">The outlines are measured from the real pages at phone and desktop widths. Only the page’s name shows, as pale type, and a product’s name comes from the card you pressed, so an outline never passes for the page. Recorded on a throttled connection: Shop, then Women.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- fig 5: the sounds -->
+  <section class="fig" id="ex-sound" aria-labelledby="ex-sound-h">
+    <div class="plate soundplate">
+      <SoundKeys keys={[
+        { name: 'tap', label: 'Tap', note: 'Any button' },
+        { name: 'dockOpen', label: 'Dock opens', note: 'Filtered air, no note' },
+        { name: 'success', label: 'Added to bag', note: 'A fourth, struck almost together' },
+        { name: 'complete', label: 'Order placed', note: 'A slow D major strum' },
+      ]} />
+    </div>
+    <div class="cap">
+      <p class="no">Fig. 5 <span class="tag">Rebuilt</span></p>
+      <h2 id="ex-sound-h">Felt more than heard</h2>
+      <div class="body">
+        <p>The first sounds were short pitched blips, and the store started to feel like an arcade. Now a press is a few milliseconds of soft noise over a low thump that settles in about 25ms, detuned a little at random so a run of taps never sounds stamped. Only rare moments carry a note, and every note is in D.</p>
+        <p class="detail">These keys play the store’s sound settings, rebuilt for this page. Each waveform is drawn from the sound itself.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- fig 6: the footer's index -->
+  <section class="fig" id="ex-foot" aria-labelledby="ex-foot-h">
+    <div class="plate footplate"><FooterIndex /></div>
+    <div class="cap">
+      <p class="no">Fig. 6 <span class="tag">Rebuilt</span></p>
+      <h2 id="ex-foot-h">A footer with a running index</h2>
+      <div class="body">
+        <p>Every link in the footer carries a number that runs across all three columns, 01 to 13. Point at one and its number slides in, its label steps right and the rest fall back. It’s the kind of thing you find by accident.</p>
+        <p class="detail">Same values as the store: the number is 10px and slides 6px in over 180ms, the label moves 1.35rem over 260ms. On a phone, tap a link.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="behind" aria-labelledby="ex-behind-h">
+    <h2 id="ex-behind-h">The half you don’t see</h2>
+    <p>The store runs on Astro and React on Cloudflare Workers, with Convex holding the catalogue and the orders the pass reads from. Razorpay confirms payments and Shiprocket reports courier scans, both by webhook, and each one moves an order to its next stage. Doing both halves meant none of the figures above had to be explained to anyone before they were built.</p>
+    <p class="visit"><a href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub <span aria-hidden="true">↗</span></a></p>
+  </section>
+
+  <div id="ex-credits"><Credits class="credits" items={['dock', 'sound', 'photos', 'stack']} /></div>
+</article>
+
+<style>
+  .ex { --plane: #fff; max-width: 1120px; margin: 0 auto; }
+  .head { max-width: 720px; }
+  .head h1 { margin-top: 18px; font: 500 clamp(44px, 7vw, 76px)/1 var(--display); letter-spacing: -.03em; }
+  .lede { margin-top: 18px; font: 400 clamp(18px, 2vw, 21px)/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .meta { display: flex; flex-wrap: wrap; gap: 14px 36px; margin-top: 26px; }
+  .meta dt { font: 500 10.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .meta dd { margin: 8px 0 0; font: 400 14px/1.4 var(--display); }
+  .meta a, .visit a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+  .plate { position: relative; border-radius: clamp(16px, 2vw, 24px); background: var(--plane); overflow: hidden; }
+  .no { font: 500 11px/1 var(--mono); letter-spacing: .04em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .tag { margin-left: 8px; padding: 3px 6px; border-radius: 5px; background: rgba(31, 29, 27, .06); color: var(--ink-2); }
+
+  /* fig 0: three phones standing in the plate, cut by its bottom edge */
+  .zero { margin: clamp(48px, 7vw, 80px) 0 0; }
+  .store { display: flex; justify-content: center; align-items: flex-start; gap: clamp(16px, 3vw, 44px); height: clamp(380px, 46vw, 560px); padding-top: clamp(36px, 5vw, 64px); }
+  .store :global(.shot) { flex: none; width: clamp(170px, 19vw, 250px); }
+  .store :global(.side) { margin-top: clamp(28px, 4vw, 52px); width: clamp(150px, 16.5vw, 218px); }
+  .zero figcaption { margin-top: 14px; font: 400 13.5px/1.5 var(--display); color: var(--ink-2); max-width: 640px; }
+  .zero figcaption .no { margin-right: 8px; }
+
+  .index { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 24px 48px; margin-top: clamp(64px, 9vw, 110px); align-items: start; }
+  .index p { font: 400 clamp(20px, 2.2vw, 24px)/1.4 var(--display); letter-spacing: -.01em; text-wrap: pretty; }
+  .index ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; }
+  .index a { display: flex; align-items: baseline; gap: 12px; min-height: 44px; padding-top: 12px; font: 400 16px/1.3 var(--display); color: var(--ink);
+    box-shadow: inset 0 1px 0 var(--line); }
+  .index a .no { width: 1.4em; }
+  @media (hover: hover) and (pointer: fine) { .index a:hover { color: var(--ink-2); } }
+
+  .fig { margin-top: clamp(80px, 11vw, 140px); scroll-margin-top: 24px; }
+  .cap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 12px 48px; margin-top: 22px; }
+  .cap .no { grid-column: 1 / -1; }
+  .cap h2 { font: 500 clamp(24px, 2.8vw, 32px)/1.12 var(--display); letter-spacing: -.02em; text-wrap: balance; }
+  .body p { font: 400 16.5px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .body p + p { margin-top: .9em; }
+  .body .detail { font-size: 14.5px; color: var(--ink-2); }
+  .cr { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+  /* controls on a plate */
+  .pill, .seg button { all: unset; box-sizing: border-box; height: 40px; padding: 0 16px; border-radius: 99px; display: inline-grid; place-items: center; cursor: pointer;
+    font: 500 13px/1 var(--display); color: var(--ink); -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease); }
+  .pill { background: #fff; box-shadow: 0 1px 2px rgba(31, 29, 27, .08), 0 0 0 .5px rgba(31, 29, 27, .1); }
+  .pill[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 99px; background: rgba(31, 29, 27, .06); }
+  .seg button { height: 36px; color: var(--ink-2); }
+  .seg button[aria-checked='true'] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(31, 29, 27, .12), 0 0 0 .5px rgba(31, 29, 27, .08); }
+  .plate button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .pill:active, .seg button:active { transform: scale(.97); }
+  @media (hover: hover) and (pointer: fine) { .seg button:hover { color: var(--ink); } }
+
+  /* fig 1 */
+  .dockplate { display: grid; justify-items: center; gap: 20px; padding: clamp(36px, 5vw, 64px) 20px clamp(28px, 4vw, 44px); }
+  .dockhold { position: relative; width: min(320px, 100%); aspect-ratio: 392 / 760; border-radius: 40px; overflow: hidden;
+    background: #3a2c22 url(/assets/work/whyclub/lab/hero-star.webp) center / cover; box-shadow: 0 30px 60px -36px rgba(40, 30, 15, .5); }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .ctrls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .spring { min-height: 20px; font: 400 12.5px/1.5 var(--mono); color: var(--ink-2); text-align: center; font-variant-numeric: tabular-nums; }
+
+  /* fig 2 */
+  .passplate { display: grid; grid-template-columns: auto minmax(0, 360px); justify-content: center; align-items: center; gap: clamp(28px, 5vw, 72px);
+    padding: clamp(36px, 5vw, 64px) clamp(20px, 4vw, 56px); background: #fff; }
+  .passhold { position: relative; width: clamp(240px, 24vw, 300px); aspect-ratio: 392 / 890; overflow: hidden; }
+  .passhold picture, .passhold img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .passhold :global(iframe) { opacity: 0; transition: opacity .3s var(--ease); background: #fff; }
+  .passhold:global(.is-live) :global(iframe) { opacity: 1; }
+  .stages { display: grid; gap: 18px; justify-items: start; }
+  .list { display: grid; gap: 2px; width: 100%; }
+  .list button { all: unset; box-sizing: border-box; display: grid; gap: 3px; width: 100%; padding: 12px 14px; border-radius: 14px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; }
+  .list .st { font: 500 17px/1.25 var(--display); color: var(--ink-3); }
+  .list .sd { font: 400 13.5px/1.45 var(--display); color: var(--ink-3); }
+  .list button[aria-checked='true'] { background: #fff; box-shadow: 0 1px 2px rgba(31, 29, 27, .06), 0 0 0 .5px rgba(31, 29, 27, .08); }
+  .list button[aria-checked='true'] .st { color: var(--ink); }
+  .list button[aria-checked='true'] .sd { color: var(--ink-2); }
+  @media (hover: hover) and (pointer: fine) { .list button:not([aria-checked='true']):hover .st { color: var(--ink-2); } }
+  .replay { margin-left: 14px; }
+
+  /* fig 3 */
+  .tintplate { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(24px, 4vw, 56px); padding: clamp(36px, 5vw, 64px) clamp(20px, 4vw, 56px); }
+  .real { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 1.6vw, 18px); align-self: center; }
+  .real :global(figcaption) { font-size: 12.5px; }
+
+  /* fig 4 */
+  .waitplate { display: grid; grid-template-columns: auto minmax(0, 380px); justify-content: center; align-items: center; gap: clamp(28px, 5vw, 72px); padding: clamp(36px, 5vw, 64px) clamp(20px, 4vw, 56px); }
+  .waitplate :global(.waitclip) { width: clamp(220px, 22vw, 280px); }
+  .ruler ol { list-style: none; margin: 0 0 20px; padding: 0; display: grid; }
+  .ruler li { display: grid; grid-template-columns: 4.6em 1fr; gap: 12px; padding: 12px 0; box-shadow: inset 0 1px 0 var(--line); font: 400 14.5px/1.45 var(--display); color: var(--body); }
+  .ruler b { font: 500 12px/1.9 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* fig 5, 6 */
+  .soundplate { padding: clamp(28px, 4vw, 48px); }
+  .footplate { background: #111; }
+
+  .behind { margin-top: clamp(96px, 12vw, 150px); max-width: 640px; }
+  .behind h2 { font: 500 clamp(24px, 2.8vw, 32px)/1.12 var(--display); letter-spacing: -.02em; }
+  .behind p { margin-top: 14px; font: 400 16.5px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .behind .visit { margin-top: 22px; font-weight: 500; color: var(--ink); }
+  #ex-credits { margin-top: clamp(64px, 8vw, 96px); scroll-margin-top: 24px; }
+
+  /* the phone layout: plates run edge to edge, the text keeps its gutter, side by side things stack */
+  @media (max-width: 640px) {
+    .plate { margin-inline: calc(var(--gut) * -1); border-radius: 0; }
+    .store { height: 116vw; gap: 4vw; padding-top: 8vw; }
+    .store :global(.shot) { width: 56vw; }
+    .store :global(.side) { width: 44vw; margin-top: 12vw; }
+    .index { grid-template-columns: 1fr; }
+    .index ol { grid-template-columns: 1fr; }
+    .cap { grid-template-columns: 1fr; margin-top: 18px; }
+    .body p { font-size: 16px; }
+    .dockhold { width: 78vw; border-radius: 9.6vw; }
+    .ctrls { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+    .ctrls .seg { grid-column: 1 / -1; justify-self: center; }
+    .ctrls .pill { width: 100%; height: 44px; }
+    .passplate { grid-template-columns: 1fr; justify-items: center; padding: 32px 16px; }
+    .passhold { width: 74vw; }
+    .stages { width: 100%; }
+    .list { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .list button { padding: 12px; }
+    .list .st { font-size: 15px; }
+    .list .sd { font-size: 12.5px; }
+    .replay { margin: 0; justify-self: center; height: 44px; }
+    .tintplate { grid-template-columns: 1fr; padding: 32px 16px; }
+    .tintplate :global(.tt .phone) { width: 70vw; }
+    .waitplate { grid-template-columns: 1fr; justify-items: center; padding: 32px 16px 20px; }
+    .waitplate :global(.waitclip) { width: 62vw; }
+    .ruler { width: 100%; }
+    .soundplate { padding: 20px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pill, .seg button, .list button, .list .st, .passhold :global(iframe) { transition: none; }
+  }
+</style>
+
+<script>
+  import { frame, reduced } from './lab';
+
+  const root = document.querySelector<HTMLElement>('.ex')!;
+
+  // fig 1: the dock, driven by the buttons and reporting back which spring it used
+  const hold = root.querySelector<HTMLElement>('[data-dock-hold]')!;
+  const dock = frame(hold, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  const scrollB = root.querySelector<HTMLButtonElement>('[data-act=scroll]')!;
+  const readout = root.querySelector<HTMLElement>('[data-spring]')!;
+  const NAMES: Record<string, string> = { open: 'Open', close: 'Close', switch: 'Switch', collapse: 'Into the pill', expand: 'Out of the pill', resize: 'Resize' };
+  let panelOpen = false, scrolled = false;
+  const sync = () => {
+    openB.setAttribute('aria-pressed', String(panelOpen));
+    openB.textContent = panelOpen ? 'Close Shop' : 'Open Shop';
+    scrollB.setAttribute('aria-pressed', String(scrolled));
+    scrollB.textContent = scrolled ? 'Back to the top' : 'Scroll the page';
+  };
+  dock.on((d) => {
+    if (d.moving) return;
+    if (d.shape) { panelOpen = d.shape === 'panel'; sync(); }
+    if (d.spring) readout.textContent = `${NAMES[d.spring.name] ?? d.spring.name}: response ${d.spring.response.toFixed(2)}, damping ${d.spring.damping.toFixed(2)}, settles in ${d.spring.durationMs}ms`;
+  });
+  root.querySelector('.dockplate')!.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b) return;
+    if (b === openB) { panelOpen = !panelOpen; dock.send(panelOpen ? { open: 'shop' } : { close: true }); }
+    if (b === scrollB) { scrolled = !scrolled; if (panelOpen) { panelOpen = false; dock.send({ close: true }); } dock.send({ scroll: scrolled ? 'down' : 'top' }); }
+    if (b.dataset.glass) {
+      b.parentElement!.querySelectorAll('[role=radio]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      dock.send({ glass: b.dataset.glass });
+    }
+    sync();
+  });
+
+  // fig 2: the pass. a stage restyles it; replay prints it again
+  const passHold = root.querySelector<HTMLElement>('[data-pass-hold]')!;
+  const pass = frame(passHold, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  const list = root.querySelector<HTMLElement>('.list')!;
+  const radios = [...list.querySelectorAll<HTMLButtonElement>('[role=radio]')];
+  const pick = (b: HTMLButtonElement, focus = false) => {
+    radios.forEach((r) => { r.setAttribute('aria-checked', String(r === b)); r.tabIndex = r === b ? 0 : -1; });
+    if (focus) b.focus();
+    pass.send({ stage: b.dataset.stage });
+  };
+  list.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=radio]'); if (b) pick(b); });
+  list.addEventListener('keydown', (e) => {
+    const i = radios.findIndex((r) => r.getAttribute('aria-checked') === 'true');
+    const k = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (!k) return;
+    e.preventDefault();
+    pick(radios[(i + k + radios.length) % radios.length], true);
+  });
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+
+  // fig 4: slow the recording down to see the hand-over
+  const speed = root.querySelector<HTMLElement>('[data-speed]')!;
+  const clip = root.querySelector<HTMLVideoElement>('.waitclip video')!;
+  speed.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-rate]');
+    if (!b) return;
+    speed.querySelectorAll('[data-rate]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+    clip.playbackRate = Number(b.dataset.rate);
+    if (clip.paused && !reduced()) clip.play().catch(() => {});
+  });
+  clip.addEventListener('play', () => { const on = speed.querySelector<HTMLElement>('[aria-checked=true]'); clip.playbackRate = Number(on?.dataset.rate ?? 1); });
+</script>

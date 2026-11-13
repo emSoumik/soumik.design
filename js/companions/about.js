@@ -84,7 +84,7 @@ export function createAbout({ bee } = {}) {
       <p>i design websites and apps, and then i write the code that builds them. usually that’s two different jobs done by two people, and the small details, like how a button feels when you tap it, get lost in between. i like doing both so they don’t.</p>
       <p>the biggest thing i’ve made is <a href="${WHYCLUB.href}" target="_blank" rel="noopener">whyclub${newTab}</a>, a streetwear brand i built on my own, from how it looks to the website to the system behind every order.</p>
       <dl>
-        <dt>work</dt><dd><button type="button" data-work>see what i’ve made ↓</button></dd>
+        <dt>projects</dt><dd><button type="button" data-work>see what i’ve made ↓</button></dd>
         <dt>say hi</dt><dd><a href="mailto:${EMAIL}">${EMAIL}</a></dd>
         <dt>elsewhere</dt><dd class="ab-else">${SOCIALS.filter(s => s.label !== 'Email').map(s => `<a href="${s.href}"${ext(s)}>${s.label} <span aria-hidden="true">↗</span>${newTab}</a>`).join('<span class="sep" aria-hidden="true">·</span>')}</dd>
       </dl>
@@ -206,7 +206,7 @@ export function createAbout({ bee } = {}) {
   el.querySelector('.ab-x').addEventListener('click', () => close());
   el.querySelector('[data-work]').addEventListener('click', async () => {
     await close('work');
-    document.getElementById('work')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+    document.getElementById('projects')?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
   });
   // keep tab inside the card. the bee sits outside it on purpose, so it stays a pointer-only extra
   el.addEventListener('keydown', e => {

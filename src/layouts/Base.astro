@@ -3,6 +3,9 @@
 // The home page keeps its own hand-written head and css in pages/index.astro.
 import { SOCIALS } from '../../js/content.js';
 import '../styles/site.css';
+import PageTransitions from '../components/transitions/PageTransitions.astro';
+import ProtoHead from '../components/proto/ProtoHead.astro';
+import Titles from '../components/Titles.astro';
 
 interface Props {
   title: string;
@@ -13,8 +16,10 @@ interface Props {
   published?: Date;
   /** keep a page out of search, like a list with nothing in it yet */
   noindex?: boolean;
+  /** swaps the avatar pill for a round back button (case-study pages) */
+  back?: { href: string; label: string };
 }
-const { title, description, type = 'website', image, published, noindex = false } = Astro.props;
+const { title, description, type = 'website', image, published, noindex = false, back } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const card = image ?? { src: '/assets/brand/og-card.png', width: 1200, height: 630, alt: 'The name Soumik in black script with a pixel sunflower for the i, in a little pixel garden.' };
 const og = new URL(card.src, Astro.site);
@@ -54,16 +59,26 @@ const here = Astro.url.pathname;
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Pixelify+Sans:wght@500..600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=Pixelify+Sans:wght@500..600&display=swap" rel="stylesheet">
+<PageTransitions />
+{import.meta.env.DEV && <ProtoHead />}
+<Titles />
 </head>
 <body>
 <header class="mast">
-  <a class="me" href="/" aria-label="Soumik, back to the garden">
-    <picture><source srcset="/assets/brand/avatar.avif" type="image/avif"><img src="/assets/brand/avatar.webp" alt="" width="36" height="36"></picture>
-    <span>soumik<small>back to the garden</small></span>
-  </a>
+  {back ? (
+    <a class="back" href={back.href} aria-label={`back to ${back.label}`}>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </a>
+  ) : (
+    <a class="me" href="/" aria-label="Soumik, back to the garden">
+      <picture><source srcset="/assets/brand/avatar.avif" type="image/avif"><img src="/assets/brand/avatar.webp" alt="" width="36" height="36"></picture>
+      <span>soumik<small>back to the garden</small></span>
+    </a>
+  )}
   <nav class="sections" aria-label="Sections">
-    <a href="/work/" aria-current={here.startsWith('/work') ? 'page' : undefined}>work</a>
+    <a href="/#projects" aria-current={here.startsWith('/projects') ? 'page' : undefined}>projects</a>
+    <a href="/vault/" aria-current={here.startsWith('/vault') ? 'page' : undefined}>vault</a>
     <a href="/blog/" aria-current={here.startsWith('/blog') ? 'page' : undefined}>blog</a>
   </nav>
 </header>
@@ -78,5 +93,11 @@ const here = Astro.url.pathname;
   </nav>
   <span>flowers stitched in pixels</span>
 </footer>
+{import.meta.env.DEV && (
+  <script>
+    // local-only Agentation toolbar — same path as the home page, never ships
+    import('../../js/agentation-dev.js').catch((err) => console.warn('[dev]', err));
+  </script>
+)}
 </body>
 </html>

@@ -1,0 +1,444 @@
+---
+// a quiet film player, after linear's: the controls sit on the picture over a soft shade, one row, nothing else.
+// the timeline is a hairline cut into chapters; the chapters also sit behind one small button. click or tap the
+// picture to play or pause; on a phone a double tap on either side skips 10s.
+// with the player focused: space or k plays, ← → skip 5s, shift ← → jump chapters, m sound, f full screen.
+// it plays muted on its own once it's on screen (never under reduced motion).
+// expand: the film grows from the column to a centred maximum (1240px, never edge to edge, never taller than 86% of
+// the screen) as you scroll, holds, then lets go. it's driven by the scroll itself (css scroll timelines), moves only
+// transform, clip-path and opacity, and the controls never scale with the picture: they are laid out at the full
+// size and slid into place
+interface Props { src: string; poster: string; label: string; duration: number; chapters: [number, string][]; caption?: string; expand?: boolean }
+const { src, poster, label, duration, chapters, caption, expand = false } = Astro.props;
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const spans = chapters.map(([t], i) => (chapters[i + 1]?.[0] ?? duration) - t);
+const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)).toString(36)}`;
+---
+<figure class="pl pj-figure" data-player data-duration={duration} data-chapters={JSON.stringify(chapters)} data-expand={expand ? '' : undefined}>
+  <div class="pl-run">
+    <div class="pl-frame" tabindex="0" role="group" aria-label={`${label} Space plays or pauses, the arrow keys skip, M turns the sound on, F is full screen.`}>
+      <span class="pl-dark" aria-hidden="true"><i></i></span>
+      <div class="pl-box">
+        <video playsinline muted preload="metadata" poster={poster} aria-hidden="true"><source src={src} type="video/mp4" /></video>
+        <span class="pl-shade" aria-hidden="true"></span>
+      </div>
+      <div class="pl-ui">
+        <div class="pl-mid" aria-hidden="true">
+          <span class="pl-poster"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 2.9v10.2a.7.7 0 0 0 1.07.6l8.1-5.1a.7.7 0 0 0 0-1.2l-8.1-5.1a.7.7 0 0 0-1.07.6Z"/></svg>{fmt(duration)}</span>
+          <span class="pl-flash" data-kind="play"></span>
+          <span class="pl-skip is-back">−10s</span><span class="pl-skip is-fwd">+10s</span>
+        </div>
+        <div class="pl-bar">
+          <div class="pl-l">
+            <span class="pl-chap" aria-hidden="true"></span>
+            <button type="button" class="pl-btn" data-play aria-label="Play">
+              <svg class="i-play" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.9v10.2a.7.7 0 0 0 1.07.6l8.1-5.1a.7.7 0 0 0 0-1.2l-8.1-5.1a.7.7 0 0 0-1.07.6Z"/></svg>
+              <svg class="i-pause" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg>
+            </button>
+            <button type="button" class="pl-btn" data-snd aria-pressed="false" aria-label="Sound">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6h2.3L8 3.4v9.2L4.8 10H2.5z" fill="currentColor"/><path class="on" d="M10.6 6a2.8 2.8 0 0 1 0 4M12.6 4.2a5.4 5.4 0 0 1 0 7.6"/><path class="off" d="M10.8 6.2l3.4 3.6M14.2 6.2l-3.4 3.6"/></svg>
+            </button>
+            <span class="pl-time" aria-hidden="true" data-now>0:00</span>
+          </div>
+          <div class="pl-scrub" data-track role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax={duration} aria-valuenow="0" aria-valuetext="0:00">
+            <span class="pl-rail">{spans.map((s) => <span class="pl-seg" style={`flex: ${s}`}><i></i></span>)}</span>
+            <span class="pl-tip" aria-hidden="true"></span>
+          </div>
+          <div class="pl-r">
+            <span class="pl-time is-left" aria-hidden="true" data-left>−{fmt(duration)}</span>
+            <button type="button" class="pl-btn" data-chs aria-expanded="false" aria-controls={`${id}-ch`} aria-label="Chapters">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.75 4h.01M2.75 8h.01M2.75 12h.01M6 4h7.5M6 8h7.5M6 12h7.5"/></svg>
+            </button>
+            <button type="button" class="pl-btn" data-full aria-label="Full screen">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg>
+            </button>
+            <div class="pl-menu" id={`${id}-ch`} hidden>
+              <p class="pl-menu-h" aria-hidden="true">Chapters</p>
+              <ol aria-label="Chapters">
+                {chapters.map(([t, name], i) => <li><button type="button" data-ch={i}><span class="t">{fmt(t)}</span>{name}</button></li>)}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {caption && <figcaption class="pl-cap">{caption}</figcaption>}
+</figure>
+{expand && (
+  <script is:inline>
+  /* geometry for the expand, measured before first paint so the film never jumps. it only writes custom
+     properties; the css scroll timeline does the moving. no scroll listener anywhere */
+  (function (f) {
+    if (!f || matchMedia('(prefers-reduced-motion: reduce)').matches || !CSS.supports('animation-timeline: scroll()')) return;
+    f.classList.add('is-x');
+    var q = function (s) { return f.querySelector(s); };
+    var go = function () {
+      var set = function (k, v) { f.style.setProperty(k, v); };
+      var cine = matchMedia('(min-width: 768px) and (min-aspect-ratio: 4/3)').matches, r = f.getBoundingClientRect();
+      f.classList.toggle('is-cine', cine);
+      // the cap: 1240px, or the screen less a gutter each side, or what 86% of the height allows at 16:9
+      var vw = document.documentElement.clientWidth, g = Math.max(16, Math.min(48, vw * .04));
+      var cap = Math.floor(Math.min(1240, vw - 2 * g, innerHeight * .86 * 16 / 9));
+      set('--cap', cap + 'px'); set('--r1', (vw < 640 ? 14 : 20) + 'px');
+      // the frame is centred on the column, so it grows evenly to both sides
+      set('--bx', (f.clientWidth - cap) / 2 + 'px');
+      var box = q('.pl-box'), fw = box.offsetWidth, fh = box.offsetHeight, c = (q('.pl-frame').offsetHeight - fh) / 2;
+      var s = Math.min(1, f.clientWidth / fw), dx = fw * (1 - s) / 2, L = q('.pl-scrub').offsetWidth || 1;
+      set('--s0', s.toFixed(4)); set('--c', c + 'px'); set('--r0', (14 / s).toFixed(2) + 'px');
+      set('--dx0', dx + 'px'); set('--dy0', (c + fh * (1 - s)) + 'px'); set('--dyc0', (c + fh * (1 - s) / 2) + 'px');
+      set('--sx0', Math.max(.05, (L - 2 * dx) / L).toFixed(4));
+      // a wide screen: fully grown as it reaches the top and pins. a phone: fully grown once it's mid-screen
+      var top = r.top + scrollY;
+      set('--y0', Math.max(1, cine ? top : top - Math.max(0, (innerHeight - fh) / 2)) + 'px');
+    };
+    go();
+    addEventListener('resize', go);
+    new ResizeObserver(go).observe(f.parentElement);
+    if (document.fonts) document.fonts.ready.then(go);
+  })(document.currentScript && document.currentScript.previousElementSibling);
+  </script>
+)}
+
+<script>
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  document.querySelectorAll<HTMLElement>('[data-player]').forEach((fig) => {
+    const frame = fig.querySelector<HTMLElement>('.pl-frame')!;
+    const box = fig.querySelector<HTMLElement>('.pl-box')!;
+    const v = fig.querySelector('video')!;
+    const play = fig.querySelector<HTMLButtonElement>('[data-play]')!;
+    const snd = fig.querySelector<HTMLButtonElement>('[data-snd]')!;
+    const full = fig.querySelector<HTMLButtonElement>('[data-full]')!;
+    const chs = fig.querySelector<HTMLButtonElement>('[data-chs]')!;
+    const menu = fig.querySelector<HTMLElement>('.pl-menu')!;
+    const track = fig.querySelector<HTMLElement>('[data-track]')!;
+    const rail = fig.querySelector<HTMLElement>('.pl-rail')!;
+    const tip = fig.querySelector<HTMLElement>('.pl-tip')!;
+    const now = fig.querySelector<HTMLElement>('[data-now]')!;
+    const left = fig.querySelector<HTMLElement>('[data-left]')!;
+    const chap = fig.querySelector<HTMLElement>('.pl-chap')!;
+    const segs = [...fig.querySelectorAll<HTMLElement>('.pl-seg')];
+    const chBtns = [...fig.querySelectorAll<HTMLButtonElement>('[data-ch]')];
+    const flash = fig.querySelector<HTMLElement>('.pl-flash')!;
+    const D = Number(fig.dataset.duration);
+    const ch: [number, string][] = JSON.parse(fig.dataset.chapters!);
+    const ends = ch.map(([t], i) => ch[i + 1]?.[0] ?? D);
+    // held: they paused it themselves, so scrolling past never starts it again. heard: sound has been on once
+    let held = false, heard = false, idle = 0, last = -1, chapT = 0;
+
+    const chapterAt = (t: number) => { let i = 0; ch.forEach(([s], k) => { if (t >= s) i = k; }); return i; };
+    // the chapter's name shows at the foot for a moment when it begins
+    const name = (c: number) => {
+      chap.textContent = `${String(c + 1).padStart(2, '0')}  ${ch[c][1]}`;
+      chap.classList.add('on');
+      clearTimeout(chapT);
+      chapT = window.setTimeout(() => chap.classList.remove('on'), 2400);
+    };
+    const tick = () => {
+      const t = v.currentTime, c = chapterAt(t);
+      segs.forEach((s, i) => s.style.setProperty('--p', String(Math.max(0, Math.min(1, (t - ch[i][0]) / (ends[i] - ch[i][0]))))));
+      chBtns.forEach((b, i) => (i === c ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
+      now.textContent = fmt(t);
+      left.textContent = `−${fmt(Math.max(0, D - t))}`;
+      track.setAttribute('aria-valuenow', String(Math.round(t)));
+      track.setAttribute('aria-valuetext', `${fmt(t)}, ${ch[c][1]}`);
+      if (c !== last) { if (last !== -1 && !v.paused) name(c); last = c; }
+    };
+    const sync = () => {
+      frame.classList.toggle('playing', !v.paused);
+      if (!v.paused) frame.classList.add('started');
+      play.setAttribute('aria-label', v.paused ? 'Play' : 'Pause');
+      wake();
+    };
+    // the controls go after two still seconds while it plays, and come back on any movement, focus or tap
+    const wake = () => {
+      frame.classList.add('awake');
+      clearTimeout(idle);
+      if (!v.paused) idle = window.setTimeout(() => {
+        const a = document.activeElement;
+        // a mouse click leaves focus on a button; only a visible keyboard focus keeps them up
+        if (!menu.hidden || (a && a !== frame && frame.contains(a) && a.matches(':focus-visible'))) return;
+        frame.classList.remove('awake');
+      }, 2000);
+    };
+    const pulse = (kind: string) => {
+      if (reduced) return;
+      flash.dataset.kind = kind;
+      flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+    };
+    const go = () => { held = false; v.play().catch(() => {}); };
+    const toggle = () => {
+      if (v.paused) { go(); pulse('play'); }
+      else { held = true; v.pause(); pulse('pause'); }
+    };
+    const seekTo = (t: number) => { v.currentTime = Math.max(0, Math.min(D - .1, t)); tick(); wake(); };
+    const sound = (on: boolean) => {
+      v.muted = !on;
+      frame.classList.toggle('loud', on);
+      snd.setAttribute('aria-pressed', String(on));
+      // the first time you ask for sound you get the whole story, from the top
+      if (on && !heard) { heard = true; seekTo(0); }
+      if (on) go();
+    };
+    const chapter = (d: number) => {
+      const c = chapterAt(v.currentTime);
+      // back goes to the start of this chapter first, unless you're already at its start
+      const to = d < 0 && v.currentTime - ch[c][0] > 2 ? c : Math.max(0, Math.min(ch.length - 1, c + d));
+      seekTo(ch[to][0]);
+      name(to);
+    };
+
+    // chapters: a small list on the picture. esc or a click elsewhere closes it, and focus goes back to its button
+    const open = (yes: boolean, focus = true) => {
+      menu.hidden = !yes;
+      chs.setAttribute('aria-expanded', String(yes));
+      frame.classList.toggle('menu', yes);
+      if (yes) (chBtns[chapterAt(v.currentTime)] ?? chBtns[0]).focus();
+      else if (focus) chs.focus();
+      wake();
+    };
+    chs.addEventListener('click', () => open(menu.hidden));
+    chBtns.forEach((b, i) => b.addEventListener('click', () => { seekTo(ch[i][0]); name(i); go(); open(false); }));
+    menu.addEventListener('keydown', (e) => {
+      const i = chBtns.indexOf(document.activeElement as HTMLButtonElement);
+      if (e.key === 'Escape') { e.stopPropagation(); open(false); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); chBtns[(i + (e.key === 'ArrowDown' ? 1 : -1) + chBtns.length) % chBtns.length].focus(); }
+      else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); chBtns[e.key === 'Home' ? 0 : chBtns.length - 1].focus(); }
+      // tab leaves the list from its button, so focus carries on from where the list was
+      else if (e.key === 'Tab') open(false);
+      else return;
+      e.stopPropagation();
+    });
+    document.addEventListener('pointerdown', (e) => { if (!menu.hidden && !menu.contains(e.target as Node) && !chs.contains(e.target as Node)) open(false, false); });
+
+    v.addEventListener('play', sync); v.addEventListener('pause', sync); v.addEventListener('timeupdate', tick);
+    play.addEventListener('click', toggle);
+    snd.addEventListener('click', () => sound(v.muted));
+    full.addEventListener('click', () => {
+      const vv = v as HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (frame.requestFullscreen) frame.requestFullscreen().catch(() => vv.webkitEnterFullscreen?.());
+      else vv.webkitEnterFullscreen?.();
+    });
+    document.addEventListener('fullscreenchange', () => full.setAttribute('aria-label', document.fullscreenElement === frame ? 'Exit full screen' : 'Full screen'));
+
+    // the picture: a mouse click toggles at once. a finger waits a beat to see if it's a double tap on a side
+    let lastTap = 0, tapT = 0;
+    box.addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'mouse') { toggle(); return; }
+      const r = box.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+      const t = performance.now();
+      if (t - lastTap < 280 && (x < .35 || x > .65)) {
+        clearTimeout(tapT); lastTap = 0;
+        const fwd = x > .5;
+        seekTo(v.currentTime + (fwd ? 10 : -10));
+        const s = fig.querySelector<HTMLElement>(fwd ? '.is-fwd' : '.is-back')!;
+        s.classList.remove('go'); void s.offsetWidth; s.classList.add('go');
+        return;
+      }
+      lastTap = t;
+      // the first tap on sleeping controls only wakes them, like every phone player
+      const asleep = !frame.classList.contains('awake') && !v.paused;
+      tapT = window.setTimeout(() => { if (asleep) wake(); else toggle(); }, 240);
+    });
+    frame.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') wake(); });
+    frame.addEventListener('focusin', wake);
+    frame.addEventListener('keydown', wake);
+
+    // scrubbing, with the chapter name riding above the pointer. the rail may be scaled by the expand, so
+    // positions come from its drawn box, and the tip lives outside it so its text never stretches
+    const at = (x: number) => { const r = rail.getBoundingClientRect(); return Math.max(0, Math.min(1, (x - r.left) / r.width)); };
+    const hover = (x: number) => {
+      const p = at(x), t = p * D;
+      tip.textContent = `${fmt(t)}  ${ch[chapterAt(t)][1]}`;
+      const r = rail.getBoundingClientRect(), o = track.getBoundingClientRect(), w = tip.offsetWidth / 2;
+      const px = Math.max(w - (r.left - o.left) - 8, Math.min(r.right - o.left - w + 8, r.left - o.left + p * r.width));
+      tip.style.transform = `translateX(${px.toFixed(1)}px) translateX(-50%)`;
+    };
+    track.addEventListener('pointermove', (e) => hover(e.clientX));
+    track.addEventListener('pointerdown', (e) => {
+      track.setPointerCapture(e.pointerId);
+      frame.classList.add('scrub');
+      seekTo(at(e.clientX) * D); hover(e.clientX);
+      const move = (m: PointerEvent) => { seekTo(at(m.clientX) * D); hover(m.clientX); };
+      track.addEventListener('pointermove', move);
+      const up = () => { track.removeEventListener('pointermove', move); frame.classList.remove('scrub'); };
+      track.addEventListener('pointerup', up, { once: true });
+      track.addEventListener('pointercancel', up, { once: true });
+    });
+
+    // keys, only while the player has focus, so space still scrolls the page everywhere else
+    frame.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement;
+      const k = e.key.toLowerCase();
+      if ((k === ' ' || k === 'enter') && t.tagName === 'BUTTON') return;
+      let done = true;
+      if (k === ' ' || k === 'k') toggle();
+      else if (k === 'arrowright' || k === 'l') e.shiftKey ? chapter(1) : seekTo(v.currentTime + (k === 'l' ? 10 : 5));
+      else if (k === 'arrowleft' || k === 'j') e.shiftKey ? chapter(-1) : seekTo(v.currentTime - (k === 'j' ? 10 : 5));
+      else if (k === 'm') sound(v.muted);
+      else if (k === 'f') full.click();
+      else if (k === 'p' && document.pictureInPictureEnabled) (document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture()).catch(() => {});
+      else if (k === 'home') seekTo(0);
+      else if (/^[0-9]$/.test(k)) seekTo((Number(k) / 10) * D);
+      else done = false;
+      if (done) e.preventDefault();
+    });
+
+    // on screen it plays, muted; off screen it pauses. under reduced motion it waits for play
+    let seen = false;
+    const auto = () => { if (seen && !reduced && !held && !document.hidden) v.play().catch(() => {}); };
+    const io = new IntersectionObserver(([e]) => {
+      seen = e.isIntersecting;
+      if (seen) auto();
+      else if (!v.paused) v.pause();
+    }, { threshold: .4 });
+    io.observe(box);
+    // a tab opened in the background starts it when you come to it
+    document.addEventListener('visibilitychange', auto);
+    tick(); wake();
+  });
+</script>
+
+<style>
+  /* the picture and its controls share one cell, so they line up at any size */
+  .pl-frame { --fw: 100%; position: relative; display: grid; place-items: center; outline: none; -webkit-tap-highlight-color: transparent; }
+  .pl-box, .pl-ui { grid-area: 1 / 1; width: var(--fw); aspect-ratio: 16 / 9; }
+  .pl-box { position: relative; overflow: hidden; border-radius: 8px; background: #000; cursor: pointer; isolation: isolate; }
+  .pl-box video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* focus: a ring inside the picture, so the expand's clip never cuts it off */
+  .pl-box::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px rgba(0, 0, 0, .35); opacity: 0; }
+  .pl-frame:focus-visible .pl-box::after { opacity: 1; }
+  .pl-dark { display: none; }
+
+  /* the soft shade at the foot, there only while the controls are */
+  .pl-shade { position: absolute; inset: auto 0 0; height: min(45%, 120px); pointer-events: none; background: linear-gradient(to top, rgba(0, 0, 0, .55), rgba(0, 0, 0, .22) 45%, transparent); opacity: 0; transition: opacity .3s var(--pj-ease); }
+
+  .pl-ui { position: relative; pointer-events: none; color: #fff; font: 500 12px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .pl-bar { position: absolute; inset: auto 0 0; display: flex; align-items: center; padding: 0 6px 2px; opacity: 0; transition: opacity .3s var(--pj-ease); }
+  .pl-frame:is(.awake, :not(.playing), .scrub, .menu, :has(.pl-bar :focus-visible)) :is(.pl-bar, .pl-shade) { opacity: 1; }
+  .pl-frame.playing:not(.awake) .pl-box { cursor: none; }
+  .pl-l, .pl-r { position: relative; display: flex; align-items: center; flex: none; }
+
+  /* buttons: 14px white marks in a 44px hit area that you never see */
+  .pl-btn { all: unset; box-sizing: border-box; pointer-events: auto; display: grid; place-items: center; width: 40px; height: 44px; cursor: pointer; color: rgba(255, 255, 255, .92);
+    transition: color .15s, transform .16s var(--pj-ease); touch-action: manipulation; }
+  .pl-btn svg { width: 15px; height: 15px; display: block; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
+  .pl-btn:active { transform: scale(.92); }
+  .pl-btn:focus-visible { outline: none; }
+  .pl-btn:focus-visible svg { outline: 1.5px solid #fff; outline-offset: 5px; border-radius: 3px; }
+  @media (hover: hover) and (pointer: fine) { .pl-btn:hover { color: #fff; } }
+  .pl-btn .i-pause, .playing .pl-btn .i-play { display: none; }
+  .playing .pl-btn .i-pause { display: block; }
+  [data-snd] .on, .loud [data-snd] .off { display: none; }
+  .loud [data-snd] .on { display: inline; }
+  .pl-btn[aria-expanded="true"] { color: #fff; }
+
+  .pl-time { padding: 0 6px; color: rgba(255, 255, 255, .92); white-space: nowrap; text-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+  .pl-time.is-left { color: rgba(255, 255, 255, .62); }
+
+  /* the timeline: a hairline cut into its chapters, a touch thicker under the pointer */
+  .pl-scrub { position: relative; pointer-events: auto; flex: 1; align-self: stretch; display: flex; align-items: center; min-width: 40px; margin: 0 6px; cursor: pointer; touch-action: none; }
+  .pl-scrub:focus-visible { outline: none; }
+  .pl-scrub:focus-visible .pl-rail { box-shadow: 0 0 0 3px rgba(255, 255, 255, .35); border-radius: 2px; }
+  .pl-rail { display: flex; gap: 2px; width: 100%; height: 2px; transition: scale .18s var(--pj-ease); }
+  @media (hover: hover) and (pointer: fine) { .pl-scrub:hover .pl-rail { scale: 1 1.5; } }
+  .scrub .pl-rail { scale: 1 1.5; }
+  .pl-seg { position: relative; height: 100%; border-radius: 1px; overflow: hidden; background: rgba(255, 255, 255, .3); }
+  .pl-seg i { position: absolute; inset: 0; background: #fff; transform-origin: left; scale: var(--p, 0) 1; }
+  .pl-tip { position: absolute; left: 0; bottom: calc(50% + 10px); padding: 5px 8px; border-radius: 6px; white-space: pre; background: rgba(0, 0, 0, .7); color: #fff;
+    font: 500 11px/1 var(--display); font-variant-numeric: tabular-nums; opacity: 0; pointer-events: none; transition: opacity .12s; }
+  @media (hover: hover) and (pointer: fine) { .pl-scrub:hover .pl-tip { opacity: 1; } }
+  .scrub .pl-tip { opacity: 1; }
+
+  /* a chapter's name, for a moment, at the foot-left */
+  .pl-chap { position: absolute; left: 12px; bottom: 100%; margin-bottom: 2px; white-space: pre; font: 500 12px/1.2 var(--display); color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .45);
+    opacity: 0; translate: 0 4px; transition: opacity .25s var(--pj-ease), translate .25s var(--pj-ease); }
+  .pl-chap.on { opacity: 1; translate: 0 0; }
+
+  /* the chapter list: small, on the picture, above its button */
+  .pl-menu { position: absolute; right: 4px; bottom: calc(100% + 2px); pointer-events: auto; min-width: 210px; padding: 6px; border-radius: 10px; background: rgba(18, 18, 18, .86); color: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .3), inset 0 0 0 .5px rgba(255, 255, 255, .12); transform-origin: 100% 100%; transition: opacity .16s var(--pj-ease), transform .16s var(--pj-ease); }
+  @starting-style { .pl-menu { opacity: 0; transform: translateY(4px) scale(.97); } }
+  .pl-menu-h { margin: 4px 8px 6px; font: 500 11px/1 var(--display); color: rgba(255, 255, 255, .5); }
+  .pl-menu ol { margin: 0; padding: 0; list-style: none; }
+  .pl-menu button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 34px; padding: 0 8px; border-radius: 6px; cursor: pointer;
+    font: 400 13px/1.2 var(--display); color: rgba(255, 255, 255, .78); white-space: nowrap; }
+  .pl-menu .t { width: 30px; font: 400 11px/1 var(--mono); color: rgba(255, 255, 255, .5); font-variant-numeric: tabular-nums; }
+  .pl-menu button[aria-current] { color: #fff; }
+  .pl-menu button[aria-current] .t { color: #fff; }
+  .pl-menu button:focus-visible { outline: none; background: rgba(255, 255, 255, .14); }
+  @media (hover: hover) and (pointer: fine) { .pl-menu button:hover { background: rgba(255, 255, 255, .1); color: #fff; } }
+
+  /* the middle: before it plays, one small mark and the running time. after, a mark that answers each click */
+  .pl-mid { position: absolute; inset: 0; display: grid; place-items: center; }
+  .pl-mid > * { grid-area: 1 / 1; }
+  .pl-poster { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 12px; border-radius: 99px; background: rgba(0, 0, 0, .42); font: 500 13px/1 var(--display);
+    transition: opacity .25s var(--pj-ease); }
+  .pl-poster svg { width: 13px; height: 13px; }
+  .started .pl-poster { opacity: 0; }
+  .pl-flash { width: 48px; height: 48px; border-radius: 50%; background: rgba(0, 0, 0, .4) center / 18px no-repeat; opacity: 0; }
+  .pl-flash[data-kind="play"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M4.5 2.9v10.2a.7.7 0 0 0 1.07.6l8.1-5.1a.7.7 0 0 0 0-1.2l-8.1-5.1a.7.7 0 0 0-1.07.6Z'/%3E%3C/svg%3E"); }
+  .pl-flash[data-kind="pause"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Crect x='3.5' y='2.5' width='3' height='11' rx='1'/%3E%3Crect x='9.5' y='2.5' width='3' height='11' rx='1'/%3E%3C/svg%3E"); }
+  .started .pl-flash.go { animation: pl-flash .5s var(--pj-ease); }
+  @keyframes pl-flash { 0% { opacity: 1; scale: .85; } 100% { opacity: 0; scale: 1.15; } }
+  .pl-skip { justify-self: start; margin-left: 14%; padding: 7px 11px; border-radius: 99px; background: rgba(0, 0, 0, .45); font-size: 13px; opacity: 0; }
+  .pl-skip.is-fwd { justify-self: end; margin: 0 14% 0 0; }
+  .pl-skip.go { animation: pl-skip .7s var(--pj-ease); }
+  @keyframes pl-skip { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+
+  .pl-cap { margin-top: 14px; font: 400 14px/1.5 var(--display); color: var(--pj-3, rgba(31, 29, 27, .5)); text-wrap: pretty; }
+
+  /* full screen: the picture fits, on black, whatever the scroll was doing */
+  :is(.pl, .pl.is-x, .pl.is-x.is-cine) .pl-frame:fullscreen { --fw: min(100vw, 100vh * 16 / 9); position: static; width: 100vw; height: 100vh; margin: 0; background: #000; }
+  .pl-frame:fullscreen .pl-box { border-radius: 0; }
+  .pl-frame:fullscreen, .pl-frame:fullscreen * { animation: none !important; }
+
+  @media (max-width: 640px) {
+    .pl-bar { padding: 0 2px 0; }
+    .pl-btn { width: 38px; }
+    .pl-time.is-left { display: none; }
+    .pl-scrub { margin: 0 6px 0 4px; }
+    /* on a phone the list drops under the film instead of covering it */
+    .pl-menu { top: calc(100% + 6px); bottom: auto; right: 8px; min-width: 240px; background: #fff; color: var(--pj-ink, #1f1d1b); transform-origin: 100% 0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .12), 0 0 0 1px rgba(31, 29, 27, .08); }
+    @starting-style { .pl-menu { opacity: 0; transform: translateY(-4px) scale(.97); } }
+    .pl-menu-h { color: var(--pj-3, rgba(31, 29, 27, .5)); }
+    .pl-menu button { min-height: 44px; font-size: 15px; color: var(--pj-2, rgba(31, 29, 27, .7)); }
+    .pl-menu .t { color: var(--pj-3, rgba(31, 29, 27, .5)); }
+    .pl-menu button[aria-current], .pl-menu button[aria-current] .t { color: var(--pj-ink, #1f1d1b); }
+    .pl-menu button:focus-visible { background: rgba(31, 29, 27, .06); }
+  }
+
+  /* ---- the expand (opt-in, and only where scroll timelines work and motion is welcome) ---- */
+  /* the frame breaks out to the cap's width; the picture is laid out at its full size and starts scaled down
+     to the column. it ends rounded, inset from the screen's edges */
+  .pl.is-x .pl-frame { --fw: var(--cap, 100%); width: var(--cap, 100%); margin-left: var(--bx, 0px); }
+  /* the controls are laid out wide and slid in; keep them above the timeline's hit area while they overlap it */
+  .pl.is-x :is(.pl-l, .pl-r) { z-index: 1; }
+  .pl.is-x .pl-box { border-radius: 0; transform-origin: 50% 0; will-change: transform;
+    animation: pl-grow linear both; animation-timeline: scroll(root block); animation-range: 0px var(--y0, 1px); }
+  .pl.is-x .pl-bar { animation: pl-bar linear both; animation-timeline: scroll(root block); animation-range: 0px var(--y0, 1px); }
+  .pl.is-x .pl-l { animation: pl-l linear both; animation-timeline: scroll(root block); animation-range: 0px var(--y0, 1px); }
+  .pl.is-x .pl-r { animation: pl-r linear both; animation-timeline: scroll(root block); animation-range: 0px var(--y0, 1px); }
+  .pl.is-x .pl-rail { animation: pl-rail linear both; animation-timeline: scroll(root block); animation-range: 0px var(--y0, 1px); }
+  .pl.is-x .pl-mid { animation: pl-mid linear both; animation-timeline: scroll(root block); animation-range: 0px var(--y0, 1px); }
+  /* on a wide screen it pins at the middle of the screen, holds for a while, then lets go */
+  .pl.is-x.is-cine .pl-run { height: calc(100svh + 60svh); }
+  .pl.is-x.is-cine .pl-frame { position: sticky; top: 0; height: 100svh; }
+
+  @keyframes pl-grow { from { transform: translateY(calc(var(--c) * -1)) scale(var(--s0)); clip-path: inset(0 round var(--r0)); } to { transform: none; clip-path: inset(0 round var(--r1, 20px)); } }
+  @keyframes pl-bar { from { transform: translateY(calc(var(--dy0) * -1)); } to { transform: none; } }
+  @keyframes pl-mid { from { transform: translateY(calc(var(--dyc0) * -1)); } to { transform: none; } }
+  @keyframes pl-l { from { transform: translateX(var(--dx0)); } to { transform: none; } }
+  @keyframes pl-r { from { transform: translateX(calc(var(--dx0) * -1)); } to { transform: none; } }
+  @keyframes pl-rail { from { transform: scaleX(var(--sx0)); } to { transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pl-bar, .pl-shade, .pl-chap, .pl-poster, .pl-rail, .pl-menu { transition: none; }
+    .pl-flash.go, .pl-skip.go { animation: none !important; }
+  }
+</style>

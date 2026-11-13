@@ -1,0 +1,29 @@
+---
+// down vs lift: a strip of soil to swipe across. planting the moment a finger lands leaves a trail of flowers behind
+// every swipe; planting as it lifts lets the swipe scroll and plants only on a tap. the still is the trail
+import { head, rects } from '../plant';
+const trail = ['forget', 'tulip', 'poppy', 'cosmos', 'forget', 'tulip', 'daisy'].map((k, i) => rects(head(k, k === 'forget' ? 1 : 0, i % 2), 14 + i * 16, 16 - i * 1.2)).join('');
+---
+<div class="dm-stage li" style="--dm-h: 250px; --dm-hp: 260px">
+  <div class="li-track"><svg class="li-still" viewBox="0 0 132 30" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" aria-hidden="true" set:html={trail} /></div>
+  <p class="dm-hint" aria-hidden="true">swipe sideways across the soil, then tap it</p>
+</div>
+<div class="dm-bar">
+  <div class="dm-seg" role="radiogroup" aria-label="When a finger plants" data-v="0">
+    <button type="button" role="radio" aria-checked="true" disabled>plant on touch</button>
+    <button type="button" role="radio" aria-checked="false" disabled>plant on lift</button>
+    <i aria-hidden="true"></i>
+  </div>
+  <output class="dm-read" aria-live="polite">swipes <b data-s>0</b> · flowers <b data-f>0</b></output>
+</div>
+
+<style>
+  .li { overflow: hidden; touch-action: pan-y; cursor: grab; background: linear-gradient(var(--line), var(--line)) 0 calc(100% - 44px) / 100% 1px no-repeat; }
+  .li:active { cursor: grabbing; }
+  .li-track { position: absolute; top: 0; bottom: 45px; left: 0; width: 100%; will-change: transform; }
+  .li-still { position: absolute; inset: 30px 24px 10px; width: calc(100% - 48px); height: calc(100% - 40px); }
+  .li-still { transition: opacity .25s var(--ease); }
+  .li.used .li-still { opacity: 0; }
+  /* the soil runs on past the frame in lift mode: a few ticks along the ground show it moving */
+  .li-track::after { content: ""; position: absolute; left: 0; right: 0; bottom: -45px; height: 6px; background: repeating-linear-gradient(90deg, var(--ink-3) 0 2px, transparent 2px 48px); opacity: .5; }
+</style>

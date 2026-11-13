@@ -1,0 +1,470 @@
+---
+// PROTOTYPE: the opening, after michael andreuzza's halden scroll. you land on the title with the five screens peeking
+// from the bottom; they slide up on load. on a wide screen, scrolling lines all five up whole with a line under each,
+// then four leave upward and home drops into the middle tile. on a phone the five sit tiny in a row with their names,
+// the camera zooms into home, and it becomes a reel: one screen at a time in the middle, the next one at the edge,
+// in the order you'd shop, ending on the bag. without the scene it's a plain row
+// picked from four phone takes (zoom, deck, fan, the plain reel): deck's pull-out went half off screen and read busy,
+// fan cropped its tilted edge cards, the plain reel never showed the five together. an earlier zoom that landed on
+// shop instead of home, and pulled back out to gather the five at the end, felt like it jumped; this one doesn't
+import Screen from './Screen.astro';
+interface Props { title: string; summary: string; year: number; role: string; tags: string[]; link?: string }
+const { title, summary, year, role, tags, link } = Astro.props;
+const A = '/assets/work/whyclub/';
+const domain = link && new URL(link).hostname;
+
+// left to right on a wide screen, home in the middle. `does` is the line under each screen
+const phones = [
+  { src: A + 'm-02', name: 'Shop', does: 'Two to a row. The + on each card is quick add.', alt: 'The shop on a phone: a two-column grid of tees with prices.' },
+  { src: A + 'm-04', name: 'Quick add', does: 'Photos, price and size, without leaving the shop.', alt: 'Quick add open over the shop: Inner Child photos, the price, sizes with M picked, and Add to bag.' },
+  { src: A + 'p-hero', video: true, name: 'Home', does: 'One drop per screen. Swipe for the next.', alt: 'The home page on a phone, swiping between drops.', tile: 1 },
+  { src: A + 'm-03', name: 'Product', does: 'Pick a size, or open the size guide.', alt: 'The product page on a phone for the Please, I’m a Star tee.' },
+  { src: A + 'm-cart', name: 'Bag', does: 'A free pair of socks, one tap to add.', alt: 'The bag with one Please, I’m a Star tee, a free socks offer and the order summary.' },
+];
+// each tile is a neutral surface with its screen standing in it; a faint blur of colour behind (t1..t3)
+const tiles = [
+  { title: 'The details rise over the tee', desc: 'On a product page the details come up as a sheet over the photo, so the tee stays on screen while you read.', screen: { src: A + 'm-03', alt: 'The product page on a phone for the Please, I’m a Star tee.' } },
+  { title: 'Every drop gets the whole screen', desc: 'A campaign photo per drop, with the tee’s name across it.' },
+  { title: 'The bag, kept short', desc: 'Each piece on one line, the total under it, then checkout.', screen: { src: A + 'm-cart', alt: 'The bag with one Please, I’m a Star tee, a free socks offer and the order summary.' } },
+];
+---
+<section class="open" aria-label="Overview" data-pt-lineup="whyclub">
+  <div class="stage">
+    <header class="hero">
+      <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>{year}</p>
+      <h1>{title}</h1>
+      <p class="lede">{summary}</p>
+      <dl class="facts">
+        <div><dt>Role</dt><dd>{role}</dd></div>
+        {tags.length > 0 && <div class="scope"><dt>Scope</dt><dd>{tags.join(', ')}</dd></div>}
+        {link && <div><dt>Live</dt><dd><a href={link} target="_blank" rel="noopener">{domain} <span aria-hidden="true">↗</span></a></dd></div>}
+      </dl>
+    </header>
+
+    <ol class="still" aria-label="Five screens from the store">
+      {phones.map((p) => (
+        <li class:list={{ main: p.tile !== undefined }}>
+          <Screen src={p.src} video={p.video} alt={p.alt} title={p.name} desc={p.does} class="phone" />
+          <p class="cap"><span>{p.name}</span>{p.does}</p>
+        </li>
+      ))}
+    </ol>
+
+    <div class="grid">
+      <div class="ghead">
+        <h2>A loud brand on a quiet store.</h2>
+        <p>The drops are loud. Everything you shop from sits on plain neutrals.</p>
+      </div>
+      <ol class="tiles">
+        {tiles.map((t, i) => (
+          <li class="tile">
+            <div class={`fill t${i + 1}`}>
+              <div class="slot">
+                {t.screen ? <Screen src={t.screen.src} alt={t.screen.alt} title={t.title} desc={t.desc} class="phone" /> :
+                  phones.filter((p) => p.tile === i).map(({ tile, name, does, ...p }) => <Screen {...p} title={name} desc={does} class="phone" data-at={2} />)}
+              </div>
+            </div>
+            <h3>{t.title}</h3>
+            <p>{t.desc}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="floats">
+      <div class="well t2" aria-hidden="true"></div>
+      {phones.map(({ name, does, ...p }, i) => p.tile === undefined && <Screen {...p} title={name} desc={does} class="phone" data-at={i} />)}
+    </div>
+    <div class="caps" aria-hidden="true">
+      {phones.map((p) => <p class="cap"><span>{p.name}</span>{p.does}</p>)}
+      <div class="dots">{phones.map(() => <i />)}</div>
+      <div class="names">{phones.map((p, i) => <span data-pt-nm={i}>{p.name}</span>)}</div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .open { position: relative; width: 100vw; margin: calc(clamp(48px, 9vw, 112px) * -.5) 0 0 calc(50% - 50vw); }
+  .stage { position: relative; }
+  .hero { max-width: 760px; margin: 0 auto; padding: 0 var(--gut); text-align: center; }
+  .hero h1 { font: 500 clamp(40px, 6.4vw, 72px)/1 var(--display); letter-spacing: -.03em; margin-top: 18px; text-wrap: balance; }
+  .hero .lede { font: 400 clamp(17px, 1.9vw, 20px)/1.5 var(--display); color: var(--ink-2); margin: 16px auto 0; max-width: 34em; text-wrap: balance; }
+  /* the facts a case study opens with: role, scope, the live site */
+  .facts { display: flex; justify-content: center; gap: 12px 32px; margin: 22px 0 0; font: 400 13px/1.45 var(--display); text-align: left; }
+  .facts dt { color: var(--ink-3); font-size: 12px; }
+  .facts dd { margin: 2px 0 0; color: var(--ink-2); }
+  .facts .scope dd { max-width: 22em; text-wrap: pretty; }
+  .hero .facts a { color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .eyebrow { justify-content: center; }
+  .eyebrow a, .hero .facts a { display: inline-block; padding-block: 14px; margin-block: -14px; }
+
+  /* the line under a screen: its name, then what you do there, small and quiet */
+  .cap { font: 400 12px/1.45 var(--display); color: var(--ink-3); text-align: center; text-wrap: balance; }
+  .cap span { display: block; margin-bottom: 2px; font-weight: 500; font-size: 12.5px; color: var(--ink); }
+
+  .grid { width: min(var(--wide), 100% - var(--gut) * 2); margin: clamp(56px, 9vw, 96px) auto 0; }
+  .ghead { display: flex; justify-content: space-between; align-items: end; gap: 24px; }
+  .ghead h2 { font: 500 clamp(26px, 3.2vw, 38px)/1.08 var(--display); letter-spacing: -.025em; max-width: 12em; text-wrap: balance; }
+  .ghead p { max-width: 22em; font: 400 15px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .tiles { list-style: none; margin: clamp(24px, 3vw, 36px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 1.4vw, 16px); }
+  /* the tile is a fill, never an outline; the phone is cut off by its bottom edge. the surface is a barely-there cool
+     grey (r = g = b, a few percent of gradient), so the depth comes from the glass and its shadow, not from colour */
+  .fill { position: relative; aspect-ratio: 1 / .88; border-radius: clamp(12px, 1.6vw, 18px); background: linear-gradient(180deg, #f7f7f7, #efefef); overflow: hidden; isolation: isolate; }
+  /* a faint blur of colour behind each screen, low in chroma, different per tile, for the glass to pick up */
+  .fill::before, .well::before { content: ''; position: absolute; left: 18%; right: 18%; bottom: 4%; height: 58%; border-radius: 50%; filter: blur(34px); opacity: .55; pointer-events: none; z-index: -1; }
+  .t1::before { background: #c9d2dc; }
+  .t2::before { background: #c8d8d2; }
+  .t3::before { background: #d3cfdc; }
+  .well { background: linear-gradient(180deg, #f7f7f7, #efefef); overflow: hidden; isolation: isolate; }
+  /* the screen lifts a little on hover */
+  .slot :global(.phone) { transition: transform .5s cubic-bezier(.23, 1, .32, 1); }
+  @media (hover: hover) and (pointer: fine) { .tile:hover .slot :global(.phone) { transform: translateY(-3.5%); } }
+  @media (prefers-reduced-motion: reduce) { .slot :global(.phone) { transition: none; } .tile:hover .slot :global(.phone) { transform: none; } }
+  .slot { position: absolute; left: 50%; top: 11%; width: 54%; aspect-ratio: 392 / 848; translate: -50% 0; }
+  .tile h3 { margin-top: 16px; font: 600 15px/1.3 var(--display); letter-spacing: -.005em; color: var(--ink); }
+  .tile p { margin-top: 6px; max-width: 30em; font: 400 13.5px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+  /* the phones get a bezel, drawn as rings outside the screen so they never change its size */
+  .open :global(.phone .glass) { border-radius: 12.5cqw; box-shadow: 0 0 0 2.6cqw #141414, 0 0 0 calc(2.6cqw + 1px) #3b3b3b, 0 30px 50px -28px rgba(0, 0, 0, .45); }
+  .open :global(.phone) { width: 100%; }
+
+  /* without the scene: the five in a row, home a size up, each with its line */
+  .floats, .caps { display: none; }
+  .still { list-style: none; margin: clamp(40px, 6vw, 64px) auto 0; padding: 0 var(--gut); display: flex; justify-content: center; align-items: center; gap: clamp(14px, 2vw, 28px); }
+  .still li { width: min(13vw, 190px); flex: none; }
+  .still li.main { width: min(16.5vw, 240px); }
+  .still .cap { margin-top: 18px; }
+
+  @media (max-width: 760px) {
+    .ghead { display: block; } .ghead p { margin-top: 10px; }
+    .tiles { grid-template-columns: 1fr; gap: 36px; }
+    .fill { aspect-ratio: 1 / .8; }
+    .slot { width: 46%; top: 9%; }
+  }
+
+  /* the scene: a tall section with a sticky stage; js places every phone and line from the scroll */
+  .open.scene { height: 320vh; }
+  .open.scene.reel { height: 440vh; height: 440svh; }
+  .scene .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; overflow: clip; }
+  .scene .hero { position: absolute; left: 0; right: 0; top: clamp(24px, 7vh, 72px); }
+  .scene .still { display: none; }
+  .scene .grid { position: absolute; left: 50%; translate: -50% 0; top: clamp(32px, 9vh, 96px); margin: 0; }
+  .scene .floats { display: block; position: absolute; inset: 0; pointer-events: none; }
+  .scene .floats :global(.phone) { pointer-events: auto; }
+  .scene :global(.phone.flying) { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  .scene .caps { display: block; position: absolute; inset: 0; pointer-events: none; }
+  .scene .caps .cap { position: absolute; left: 0; top: 0; translate: -50% 0; opacity: 0; will-change: opacity, transform; }
+  .dots { display: none; }
+  /* the middle tile's card, drawn on its own while home lands so its bottom edge is always where the phone is cut */
+  .well { display: none; }
+  .scene.row .well { display: block; position: absolute; left: 0; top: 0; border-radius: clamp(12px, 1.6vw, 18px); will-change: transform, clip-path, opacity; }
+  .scene.row .tile:nth-child(2) .fill { background: none; }
+  .scene.row .tile:nth-child(2) .fill::before { visibility: hidden; }
+  .scene .tile h3, .scene .tile p, .scene .fill, .scene .ghead, .scene .hero { will-change: opacity, transform; }
+
+  /* the reel (phones and narrow windows): the tiles stay out, the heading sits over the reel, dots under the line */
+  .reel .tiles { display: none; }
+  .reel .grid { top: clamp(20px, 4vh, 40px); width: calc(100% - 32px); }
+  .reel .ghead { display: block; } .reel .ghead h2 { font-size: 26px; } .reel .ghead p { margin-top: 8px; font-size: 14px; }
+  .reel .dots { position: absolute; left: 50%; top: 0; translate: -50% 0; display: flex; gap: 6px; }
+  .reel .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--ink); opacity: .16; transition: opacity 200ms cubic-bezier(.23, 1, .32, 1); }
+  .reel .dots i.on { opacity: .7; }
+  /* on phones the screens are placed by their centre, so the zoom scales them in place */
+  .reel :global(.phone.flying) { transform-origin: 50% 50%; }
+  .names { display: none; }
+  .reel .names { display: block; position: absolute; inset: 0; }
+  .names span { position: absolute; left: 0; top: 0; translate: -50% 0; font: 500 12px/1 var(--display); color: var(--ink-2); white-space: nowrap; opacity: 0; }
+
+
+  /* on landing the phones start low, only their tops showing, then slide up into place, rise a touch past it and settle */
+  @keyframes wc-rise {
+    0% { transform: translateY(var(--peek, 52%)); animation-timing-function: cubic-bezier(.22, 1, .36, 1); }
+    80% { transform: translateY(-1.2%); animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
+    100% { transform: none; }
+  }
+  @keyframes wc-up { from { opacity: 0; transform: translateY(10px); } }
+  .rise :global(.phone .glass) { animation: wc-rise 1250ms both; animation-delay: var(--d, 0ms); }
+  .rise .names span { animation: wc-fade 600ms 700ms cubic-bezier(.23, 1, .32, 1) backwards; }
+  @keyframes wc-fade { from { opacity: 0; } }
+  .rise .hero > * { animation: wc-up 600ms cubic-bezier(.23, 1, .32, 1) both; }
+  .rise .hero > :nth-child(2) { animation-delay: 50ms; } .rise .hero > :nth-child(3) { animation-delay: 100ms; } .rise .hero > :nth-child(4) { animation-delay: 150ms; }
+  @media (prefers-reduced-motion: reduce) { .rise :global(.phone .glass), .rise .hero > *, .rise .names span { animation: none; } }
+  /* opened from the home page's row (components/transitions): the screens and names arrived with the transition, only the words rise */
+  :global(html.pt-landed) .rise :global(.phone .glass), :global(html.pt-landed) .rise .names span { animation: none; }
+
+  /* phones without the scene (reduced motion): title, heading, then the five as a row you swipe, home first */
+  @media (max-width: 640px) {
+    .open { margin-top: -12px; }
+    .hero { text-align: left; padding: 0 16px; }
+    .eyebrow { justify-content: flex-start; }
+    .hero h1 { font-size: 46px; margin-top: 14px; }
+    .hero .lede { font-size: 17px; margin: 12px 0 0; text-wrap: pretty; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin-top: 20px; }
+    .facts .scope { grid-column: 1 / -1; grid-row: 2; }
+    .open:not(.scene) .stage { display: flex; flex-direction: column; }
+    .open:not(.scene) .grid { order: 1; width: 100%; margin-top: 56px; padding: 0 16px; }
+    .open:not(.scene) .tiles { display: none; }
+    .open:not(.scene) .ghead h2 { font-size: 28px; }
+    .open:not(.scene) .still { order: 2; justify-content: flex-start; align-items: flex-start; gap: 12px; margin-top: 28px; padding: 0 19vw 4px;
+      overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .still::-webkit-scrollbar { display: none; }
+    .open:not(.scene) .still li, .open:not(.scene) .still li.main { width: 62vw; scroll-snap-align: center; }
+    .still li.main { order: -1; }
+  }
+</style>
+
+<!-- inline and in place, so the scene is laid out before the first frame: the page transition from the home page
+     (components/transitions) pairs these screens with its own, and holds the first paint until #pt-ready is parsed -->
+<script is:inline>
+(function () {
+  const open = document.querySelector('.open');
+  const stage = open.querySelector('.stage');
+  const hero = open.querySelector('.hero');
+  const ghead = open.querySelector('.ghead');
+  const grid = open.querySelector('.grid');
+  const fills = [...open.querySelectorAll('.fill')];
+  const words = [...open.querySelectorAll('.tile h3, .tile p')];
+  const floats = open.querySelector('.floats');
+  const caps = [...open.querySelectorAll('.caps .cap')];
+  const dots = [...open.querySelectorAll('.dots i')];
+  const dotrow = open.querySelector('.dots');
+  const well = open.querySelector('.well');
+  const phones = [...open.querySelectorAll('.phone[data-at]')].sort((a, b) => +a.dataset.at - +b.dataset.at);
+  const homes = phones.map((p) => p.parentElement);
+  const MAIN = 2, R = 392 / 848;
+  // the reel goes in the order you'd shop: home, shop, quick add, product, bag
+  const ORDER = [1, 2, 0, 3, 4];
+  // in the tiny row home is in the middle with shop and quick add after it, so zooming into home and moving on
+  // reads as one pan to the right. product and bag start on its left and come round from the right, off screen
+  const SPOT = [1, 2, 0, -2, -1];
+
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const span = (p, a, b) => clamp((p - a) / (b - a));
+  const ease = (t) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const mix = (a, b, t) => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), w: lerp(a.w, b.w, t) });
+
+  const pick = () => {
+    // media queries, not innerWidth: on a phone a wide child can stretch innerWidth for a moment while the page loads
+    if (matchMedia('(prefers-reduced-motion: reduce), (max-height: 479px)').matches) return null;
+    return matchMedia('(min-width: 900px) and (min-height: 620px)').matches ? 'row' : 'reel';
+  };
+
+  let mode = null, W = 0, H = 0, raf = 0, base = [];
+  let peek = [], row = [], land = { x: 0, y: 0, w: 0, floor: 0 };
+  let step = 0, capW = 0, capY = 0, heroOut = 0, wellTop = 0, wellH = 0, gap = 0, cyM = 0, mwM = 0, mhM = 0;
+  let tiny = [], lowY = 0;
+  const names = [...open.querySelectorAll('.names span')];
+
+  const place = (el, b, i, floor = H) => {
+    const k = b.w / base[i], h = base[i] / R;
+    el.style.transform = `translate(${b.x}px, ${b.y}px) scale(${k})`;
+    // cut only where a floor really cuts it; otherwise leave room for the bezel's bottom ring
+    const cut = (b.y + h * k - floor) / k;
+    el.style.clipPath = `inset(-40px -40px ${cut > 0 ? cut : -40}px -40px)`;
+  };
+  const show = (el, o, dy = 0) => {
+    el.style.opacity = String(o);
+    el.style.transform = dy ? `translateY(${dy}px)` : '';
+  };
+
+  const measure = () => {
+    const s = stage.getBoundingClientRect();
+    W = s.width; H = s.height;
+    fills.forEach((f) => (f.style.transform = ''));
+    ghead.style.transform = '';
+    heroOut = hero.offsetTop + hero.offsetHeight;
+    gap = clamp(H * .045, 28, 48);
+
+    if (mode === 'row') {
+      // all five whole, on one centre line, home a size up, with room under them for the lines
+      const capH = 52;
+      let mw = Math.min(H * .62, H - capH - 2 * Math.max(40, H * .09)) * R, sw = mw * .8, g = clamp(W * .024, 20, 40);
+      let total = mw + 4 * sw + 4 * g;
+      const k = Math.min(1, W * .9 / total);
+      mw *= k; sw *= k; g *= k; total *= k;
+      // they stand on one floor, so the lines under them share a baseline
+      const floor = (H + mw / R - capH) / 2 + capH * .1, cy = floor - mw / R / 2;
+      let x = (W - total) / 2;
+      row = phones.map((_, i) => { const w = i === MAIN ? mw : sw; const b = { x, y: floor - w / R, w }; x += w + g; return b; });
+      // landing: the same row a little larger, lowered so home starts just under the title and the bottom edge cuts it
+      const kp = Math.min(1.12, W * .96 / total);
+      const big = row.map((b) => ({ x: W / 2 + (b.x - W / 2) * kp, y: cy + (b.y - cy) * kp, w: b.w * kp }));
+      const dy = Math.max(0, heroOut + gap - big[MAIN].y);
+      peek = big.map((b) => ({ ...b, y: b.y + dy }));
+      capW = sw + g * .6;
+      // home lands in the middle tile; tiles are measured settled
+      const slot = homes[MAIN].getBoundingClientRect(), fill = homes[MAIN].parentElement.getBoundingClientRect();
+      land = { x: slot.left - s.left, y: slot.top - s.top, w: slot.width, floor: fill.bottom - s.top };
+      wellTop = fill.top - s.top; wellH = H + 80 - wellTop;
+      Object.assign(well.style, { left: `${fill.left - s.left}px`, width: `${fill.width}px`, height: `${wellH}px` });
+      base = phones.map((_, i) => (i === MAIN ? land.w : row[i].w));
+      caps.forEach((c, i) => { c.style.width = `${capW}px`; c.style.left = `${row[i].x + row[i].w / 2}px`; c.style.top = `${floor + 18}px`; });
+    } else {
+      // reel: the heading on top, one screen in the middle, its neighbours smaller at the edges, the line and dots below
+      const top = ghead.getBoundingClientRect().bottom - s.top + 20;
+      const capH = 70;
+      const mh = Math.min(H - top - capH - 16, W * .62 / R);
+      const mw = mh * R;
+      const cy = top + mh / 2;
+      row = phones.map(() => ({ x: W / 2 - mw / 2, y: cy - mh / 2, w: mw }));
+      base = phones.map(() => mw);
+      cyM = cy; mwM = mw; mhM = mh;
+      // the tiny row: all five across the width, home a size up. sides are .8 of home and the reel's step is the
+      // zoomed gap, so when the zoom ends the screens are exactly where the reel puts them
+      const g = 8, hw = (W - 32 - 4 * g) / (1 + 4 * .8), sw = hw * .8;
+      tiny = phones.map((_, i) => ({ c: W / 2 + Math.sign(SPOT[i]) * ((hw + sw) / 2 + g + (Math.abs(SPOT[i]) - 1) * (sw + g)) * Math.min(1, Math.abs(SPOT[i])), w: i === MAIN ? hw : sw }));
+      step = ((hw + sw) / 2 + g) * mw / hw;
+      // on landing the row sits in the bottom quarter, just above the edge, never over the title
+      lowY = Math.max(heroOut + gap + hw / R / 2, H - 64 - hw / R / 2);
+      capW = Math.min(W - 48, 320);
+      capY = cy + mh / 2 + 16;
+      caps.forEach((c) => { c.style.width = `${capW}px`; c.style.left = `${W / 2}px`; c.style.top = `${capY}px`; });
+      dotrow.style.top = `${capY + 44}px`;
+    }
+    phones.forEach((p, i) => (p.style.width = `${base[i]}px`));
+  };
+
+  const progress = () => { const r = open.getBoundingClientRect(); return clamp(-r.top / (r.height - H)); };
+
+  const frameRow = (p) => {
+    const out = ease(span(p, 0, .14));
+    show(hero, 1 - out, -out * 60);
+    hero.inert = out > .95;
+    // the five rise from under the title into one row
+    const rise = ease(span(p, 0, .2));
+    const head = ease(span(p, .55, .7));
+    show(ghead, head, (1 - head) * 40);
+    grid.inert = head < .05;
+    fills.forEach((f, i) => { const t = ease(span(p, .54 + (i === 1 ? 0 : .03), .76)); show(f, t, (1 - t) * 60); });
+    const text = ease(span(p, .74, .88));
+    words.forEach((w) => show(w, text, (1 - text) * 10));
+    const mid = ease(span(p, .54, .76)), shift = (1 - mid) * 60;
+    // the card's bottom edge comes up from below the screen to the tile's, and home is cut along it
+    const floor = lerp(H + 80, land.floor + shift, ease(span(p, .52, .76)));
+    well.style.opacity = String(mid);
+    well.style.transform = `translateY(${wellTop + shift}px)`;
+    well.style.clipPath = `inset(0 0 ${Math.max(0, wellTop + shift + wellH - floor)}px 0 round clamp(12px, 1.6vw, 18px))`;
+
+    phones.forEach((el, i) => {
+      const at = mix(peek[i], row[i], rise), d = Math.abs(i - MAIN);
+      if (i === MAIN) {
+        // home drops into the middle tile, cut by the tile's bottom edge once it's there
+        const m = ease(span(p, .46, .78));
+        place(el, mix(at, land, m), i, floor);
+        return;
+      }
+      // the other four leave upward, the outer pair first
+      const e = ease(span(p, .42 + (d === 2 ? 0 : .04), .62 + (d === 2 ? 0 : .04)));
+      place(el, { ...at, y: at.y - e * (at.y + at.w / R + 60) }, i);
+      el.style.opacity = String(1 - span(e, .55, 1));
+      el.inert = e > .5;
+    });
+    // each line fades in under its screen once the row is up, from the middle out, and goes before the screens leave
+    caps.forEach((c, i) => {
+      const d = Math.abs(i - MAIN), t = ease(span(p, .13 + d * .015, .23 + d * .015)), o = span(p, .38, .44);
+      c.style.opacity = String(t * (1 - o));
+      c.style.transform = `translateY(${(1 - t) * 8 - o * 8}px)`;
+    });
+  };
+
+  // ---- phones: the five tiny in a row, the camera zooms into home, then a reel through the rest ----
+  const put = (el, cx, cy, k, z = 0) => {
+    el.style.transform = `translate(${cx - mwM / 2}px, ${cy - mhM / 2}px) scale(${k})`;
+    el.style.zIndex = String(z);
+  };
+  // every screen holds in the middle for a beat before the next one moves in; r runs 0..n
+  const stepped = (r, n) => { const f = Math.min(n - 1, Math.floor(r)); return f + ease(clamp((r - f - .3) / .4)); };
+
+  const framePhone = (p) => {
+    const t = ease(span(p, 0, .12));
+    show(hero, 1 - t, -t * 40);
+    hero.inert = t > .95;
+    const head = ease(span(p, .05, .14));
+    show(ghead, head, (1 - head) * 24);
+    grid.inert = head < .05;
+
+    // landing: the row sits whole under the title, then moves to the middle as the title goes
+    const rowY = lerp(lowY, cyM, t);
+    const zin = ease(span(p, .2, .32));
+    const Z = lerp(1, mwM / tiny[MAIN].w, zin);
+    const idx = stepped(span(p, .32, .94) * 4, 4);
+    const walking = zin >= 1;
+    // after the zoom: ahead of home by shopping order, unless still sliding off to the left
+    const dOf = (i) => (SPOT[i] - idx > -1.95 ? SPOT[i] - idx : ORDER[i] - idx);
+    const focus = phones.map((_, i) => (walking ? Math.max(0, 1 - Math.abs(dOf(i))) : +(i === MAIN)));
+
+    phones.forEach((el, i) => {
+      if (!walking) {
+        put(el, W / 2 + (tiny[i].c - tiny[MAIN].c) * Z, rowY, tiny[i].w * Z / mwM, 10 - Math.abs(SPOT[i]));
+        el.style.opacity = '1';
+        return;
+      }
+      const d = dOf(i), ad = Math.abs(d);
+      put(el, W / 2 + d * step, cyM, 1 - .2 * Math.min(1, ad), 10 - Math.round(ad));
+      el.style.opacity = String(1 - span(ad, 1.3, 1.8));
+    });
+
+    // the names stay under their screens the whole way; home's hands over to the line under it as the zoom lands
+    const nm = 1 - ease(span(p, .31, .35));
+    names.forEach((n, i) => {
+      n.style.opacity = String(nm);
+      // all on one line under home, the tallest
+      n.style.transform = `translate(${W / 2 + (tiny[i].c - tiny[MAIN].c) * Z}px, ${rowY + tiny[MAIN].w / R * Z / 2 + 19}px)`;
+    });
+
+    // the line under the middle screen, and the dots in shopping order
+    const capIn = ease(span(p, .31, .35)), on = focus.indexOf(Math.max(...focus));
+    caps.forEach((c, i) => { c.style.opacity = String(capIn * clamp(focus[i] * 2 - 1)); c.style.transform = ''; });
+    dotrow.style.opacity = String(capIn);
+    dots.forEach((d, k) => d.classList.toggle('on', k === ORDER[on]));
+    phones.forEach((el, i) => (el.inert = i !== on));
+  };
+
+  const frame = () => {
+    raf = 0;
+    const p = progress();
+    if (mode === 'row') frameRow(p); else framePhone(p);
+  };
+  const tick = () => { if (!raf) raf = requestAnimationFrame(frame); };
+
+  const enter = (m) => {
+    mode = m;
+    open.classList.add('scene', m);
+    phones.forEach((el) => { el.classList.add('flying'); floats.append(el); });
+    measure();
+    frame();
+    addEventListener('scroll', tick, { passive: true });
+  };
+  const leave = () => {
+    open.classList.remove('scene', 'row', 'reel');
+    mode = null;
+    removeEventListener('scroll', tick);
+    phones.forEach((el, i) => { el.classList.remove('flying'); el.removeAttribute('style'); el.inert = false; if (homes[i].classList.contains('slot')) homes[i].append(el); });
+    [hero, ghead, ...fills, ...words, ...caps, ...names, dotrow, well].forEach((el) => el.removeAttribute('style'));
+    grid.inert = hero.inert = false;
+  };
+
+  // a reload opens on the intro instead of mid-page
+  const nav = performance.getEntriesByType('navigation')[0];
+  if (!location.hash && nav?.type === 'reload') { history.scrollRestoration = 'manual'; scrollTo(0, 0); }
+  const first = pick();
+  if (first) enter(first);
+  // the entrance: the phones wait low for a beat, then slide up from the middle out
+  if (scrollY < 40 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    phones.forEach((el, i) => el.style.setProperty('--d', `${320 + Math.abs(i - MAIN) * 80}ms`));
+    open.querySelectorAll('.still .phone').forEach((el, i) => el.style.setProperty('--d', `${320 + Math.abs(i - MAIN) * 80}ms`));
+    open.classList.add('rise');
+    setTimeout(() => open.classList.remove('rise'), 2200);
+  }
+
+  // the heading's wrap moves the tiles once the fonts are in, so measure again then
+  document.fonts.ready.then(() => { if (mode) { measure(); frame(); } });
+  addEventListener('resize', () => {
+    const m = pick();
+    if (m !== mode) { if (mode) leave(); if (m) enter(m); return; }
+    if (mode) { measure(); frame(); }
+  });
+})();
+</script>
+<span id="pt-ready" hidden></span>

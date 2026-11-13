@@ -1,0 +1,19 @@
+---
+// a small live garden that fills its frame: kind "ink" is the old watercolour one (?garden=ink on the home page),
+// "pixel" is the one there now. made for the two sides of a <Compare>
+import { gardenStill, BED } from '../scene';
+interface Props { kind: string }
+const { kind } = Astro.props;
+---
+<div class="dm-stage mi" data-kind={kind} style="--dm-h: 100%">
+  {kind === 'pixel'
+    ? <svg class="mi-still dm-still" viewBox={`40 0 ${BED.w - 80} ${BED.h}`} preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" aria-hidden="true" set:html={gardenStill(16)} />
+    : <p class="mi-note dm-still">the watercolour garden paints with WebGL, so it needs the script to show</p>}
+  <p class="dm-hint" aria-hidden="true">tap to plant</p>
+</div>
+
+<style>
+  .mi { height: 100%; min-height: inherit; cursor: pointer; touch-action: manipulation; }
+  .mi-still { position: absolute; inset: 40px 10px 30px; width: calc(100% - 20px); height: calc(100% - 70px); }
+  .mi-note { position: absolute; inset: auto 24px 48%; text-align: center; font: 400 14px/1.5 var(--display); color: var(--ink-3); }
+</style>

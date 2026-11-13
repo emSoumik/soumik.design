@@ -1,0 +1,50 @@
+---
+// PROTOTYPE: one big moment per section: a soft plane with a large screen standing in it, cut off by the plane's bottom edge.
+// a solo shot is a component recorded on its own backdrop, so it sits in the plane bare, no screen around it.
+// the plane is a fill, never a border; the caption sits under it on the page. the live dock takes the section's body as its slot
+import type { Shot } from './copy';
+import Screen from './Screen.astro';
+import DockLive from './DockLive.astro';
+interface Props { shot: Shot; tall?: boolean; class?: string }
+const { shot, tall = false, class: cls } = Astro.props;
+const { caption, ...rest } = shot;
+---
+{shot.live === 'dock' ? <DockLive caption={caption}><slot /><slot name="credit" slot="credit" /></DockLive> : (
+<figure class:list={['plane', { dark: shot.dark, tall, solo: shot.solo, artful: shot.art }, cls]}>
+  <div class="fill">
+    {shot.solo ? (
+      <video class="bare" muted loop playsinline disablepictureinpicture preload="none" poster={`${shot.src}.webp`} aria-label={shot.alt}>
+        <source src={`${shot.src}.webm`} type="video/webm">
+        <source src={`${shot.src}.mp4`} type="video/mp4">
+      </video>
+    ) : <Screen {...rest} title={caption} class="big" />}
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+)}
+
+<style>
+  .plane { margin: 0; }
+  .fill { position: relative; overflow: hidden; border-radius: clamp(14px, 2vw, 24px); background: #fff; outline: 1px solid rgba(31, 29, 27, .1); outline-offset: -1px;
+    aspect-ratio: 16 / 10; display: flex; justify-content: center; padding-top: clamp(28px, 6%, 64px); }
+  .dark .fill { background: #fff; }
+  .tall .fill { aspect-ratio: 4 / 5; }
+  .fill :global(.big) { width: clamp(180px, 34%, 360px); flex: none; }
+  .tall .fill :global(.big) { width: 62%; }
+  /* the recording's backdrop is baked in at #f3f3f1; a 5% lift takes it to white so the clip has no edge on the white plane */
+  .solo .fill { background: #fff; padding: 0; align-items: center; }
+  .solo .bare { filter: brightness(1.05); }
+  .bare { display: block; height: 92%; width: auto; max-width: 100%; aspect-ratio: 392 / 480; }
+  /* a component plate is the whole plane: no screen standing in it */
+  .artful .fill { padding: 0; display: block; background: none; }
+  .artful .fill :global(.big) { width: 100%; --art-ratio: 16 / 10; }
+  .tall.artful .fill :global(.big) { --art-ratio: 4 / 5; }
+  figcaption { margin-top: 14px; font: 400 13px/1.45 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  @media (max-width: 640px) {
+    .fill { aspect-ratio: 4 / 5; }
+    .fill :global(.big) { width: 64%; }
+    .solo .fill { aspect-ratio: 392 / 480; }
+    .bare { height: 100%; }
+    figcaption { font-size: 12px; margin-top: 10px; }
+  }
+</style>

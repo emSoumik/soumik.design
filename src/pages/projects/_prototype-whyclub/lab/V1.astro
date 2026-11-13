@@ -1,0 +1,41 @@
+---
+// PROTOTYPE: 1 · stage. the title and the five beats on the left, the store running on the right in one big tile;
+// the beat that's playing lights in the list. on a phone the list folds into one line under the tile
+import Head from './Head.astro';
+import Phone from './Phone.astro';
+import Tile from './Tile.astro';
+import Hold from './Hold.astro';
+import { beats } from './data';
+const props = Astro.props as any;
+---
+<section class="v v1" data-variant="1" aria-label="Overview, stage">
+  <div class="v1-top">
+    <div class="v1-copy">
+      <Head {...props} />
+      <ol class="beats" aria-label="What the demo shows">
+        {beats.map((b) => <li data-beat-id={b.id}><span class="n">{b.n}</span><span class="t">{b.t}</span><span class="d">{b.d}</span></li>)}
+      </ol>
+    </div>
+    <div class="v1-stage fill t1">
+      <Phone class="v1-ph" />
+      <Hold />
+    </div>
+    <p class="now" aria-hidden="true">
+      <span class="dots">{beats.map((b) => <i data-beat-id={b.id}></i>)}</span>
+      {beats.map((b) => <span class="say" data-beat-id={b.id}><b>{b.t}.</b> {b.d}</span>)}
+    </p>
+  </div>
+
+  <div class="bento v1-bento">
+    <header class="bh"><h2>Inside the store</h2><p>The pieces that make it feel like WhyClub, each running as it does on a phone.</p></header>
+    <div class="grid">
+      <Tile k="dock" class="a" tint={1} />
+      <Tile k="pass" class="b" tint={2} />
+      <Tile k="safari" class="c" tint={3} />
+      <Tile k="commits" class="d" />
+      <Tile k="sheet" class="e" tint={2} />
+      <Tile k="lost" class="f" tint={1} />
+      <Tile k="quote" class="g" />
+    </div>
+  </div>
+</section>

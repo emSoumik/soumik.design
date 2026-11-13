@@ -1,0 +1,55 @@
+---
+import { getImage } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Cover from '../../components/Cover.astro';
+import { components } from '../../components/mdx';
+import { published } from '../../lib/content';
+import Prototype from './_prototype-whyclub/Prototype.astro';
+import Opening from './_prototype-whyclub/Opening.astro';
+import Details from './_prototype-whyclub/Details.astro';
+import Process from './_prototype-whyclub/Process.astro';
+import Credits from './_prototype-whyclub/Credits.astro';
+import Vayu from '../../components/vayu/Vayu.astro';
+import FontPreview from '../../components/fontpreview/FontPreview.astro';
+
+export async function getStaticPaths() {
+  return (await published('work')).map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+// link previews want a png: some scrapers won't show webp or avif
+const cover = data.cover && await getImage({ src: data.cover, format: 'png', width: 1200 });
+const card = cover && { src: cover.src, width: cover.attributes.width as number, height: cover.attributes.height as number, alt: data.coverAlt };
+const domain = data.link && new URL(data.link).hostname;
+// PROTOTYPE: in dev the whyclub case study shows three layout variants instead of its mdx
+const proto = import.meta.env.DEV && entry.id === 'whyclub';
+// some projects are built by hand, with live demos, instead of written in mdx
+const Page = ({ vayu: Vayu, 'font-preview': FontPreview } as Record<string, any>)[entry.id];
+---
+<Base title={data.title} description={data.summary} type="article" published={data.date} image={card} back={{ href: '/#projects', label: 'projects' }}>
+  {Page ? <Page /> : (
+  <article>
+    {proto ? <Opening title={data.title} summary={data.summary} year={data.date.getUTCFullYear()} role={data.role} tags={data.tags} link={data.link} /> : <Cover src={data.cover} alt={data.coverAlt} phones={data.coverPhones} link={data.link} />}
+    {!proto && <header class="article-head">
+      <p class="eyebrow"><a href="/projects/">{data.kind}</a><span aria-hidden="true">·</span>{data.date.getUTCFullYear()}{data.draft && <span class="draft">draft</span>}</p>
+      <h1>{data.title}</h1>
+      <p class="lede">{data.summary}</p>
+      <dl class="facts">
+        <div><dt>Role</dt><dd>{data.role}</dd></div>
+        {data.tags.length > 0 && <div><dt>Work</dt><dd>{data.tags.join(', ')}</dd></div>}
+        {data.link && <div><dt>{data.kind === 'concept' ? 'Link' : 'Live'}</dt><dd><a href={data.link} target="_blank" rel="noopener">{domain} <span aria-hidden="true">↗</span></a></dd></div>}
+      </dl>
+    </header>}
+    {proto ? <Prototype /> : (
+      <div class="prose">
+        <Content components={components} />
+      </div>
+    )}
+    {proto && <Details />}
+    {proto && <Process />}
+    {proto && <Credits />}
+  </article>
+  )}
+</Base>

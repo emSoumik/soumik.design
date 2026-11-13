@@ -1,0 +1,67 @@
+---
+// LAB: one screen or plate. a phone screen gets rounded corners and a hairline shadow, no bezel and no box.
+// videos stay on their poster until they're in view (Lab.astro plays and pauses them) and carry a small pause button
+interface Props {
+  src: string;
+  alt: string;
+  video?: boolean;
+  /** w / h of the media, so its box is reserved before it loads */
+  ratio?: string;
+  /** screen: a phone screen; plate: a wide picture with soft corners; bare: no rounding */
+  kind?: 'screen' | 'plate' | 'bare';
+  caption?: string;
+  eager?: boolean;
+  class?: string;
+  style?: string;
+}
+const { src, alt, video = false, ratio = '392 / 848', kind = 'screen', caption, eager = false, class: cls, style } = Astro.props;
+---
+<figure class:list={['shot', kind, cls]} style={`--ratio: ${ratio};${style ?? ''}`}>
+  <div class="media">
+    {video ? (
+      <>
+        <video muted loop playsinline disablepictureinpicture preload="none" poster={`${src}.webp`} aria-label={alt} data-lab-video>
+          <source src={`${src}.webm`} type="video/webm">
+          <source src={`${src}.mp4`} type="video/mp4">
+        </video>
+        <button type="button" class="vbtn" aria-label="Pause" data-lab-vbtn>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path class="i-pause" d="M5 3.5v9M11 3.5v9" /><path class="i-play" d="M5.5 3.2v9.6L13 8z" /></svg>
+        </button>
+      </>
+    ) : (
+      <picture>
+        <source srcset={`${src}.avif`} type="image/avif">
+        <img src={`${src}.webp`} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false">
+      </picture>
+    )}
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .shot { margin: 0; min-width: 0; container-type: inline-size; }
+  .media { position: relative; aspect-ratio: var(--ratio); overflow: hidden; background: #efede9; }
+  .screen .media { border-radius: 11.6cqw; box-shadow: 0 0 0 .5px rgba(22, 20, 15, .14), 0 18px 40px -24px rgba(40, 30, 15, .32); }
+  .plate .media { border-radius: clamp(10px, 2.2cqw, 18px); }
+  .media picture { display: contents; }
+  .media img, .media video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .plate .media img { object-position: center; }
+  figcaption { margin-top: 12px; font: 400 13px/1.45 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+  /* the pause button: quiet until you look for it, always there on touch */
+  .vbtn { all: unset; position: absolute; right: 6cqw; bottom: 6cqw; width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
+    border-radius: 50%; -webkit-tap-highlight-color: transparent; }
+  .vbtn::before { content: ''; position: absolute; inset: 9px; border-radius: 50%; background: rgba(20, 18, 16, .42);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  .vbtn svg { position: relative; width: 12px; height: 12px; fill: #fff; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+  .vbtn .i-pause { fill: none; }
+  .vbtn .i-play { stroke: none; display: none; }
+  .vbtn[data-paused] .i-pause { display: none; }
+  .vbtn[data-paused] .i-play { display: block; }
+  .vbtn:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+  .vbtn:active { scale: .94; }
+  @media (hover: hover) and (pointer: fine) {
+    .vbtn { opacity: 0; transition: opacity .2s var(--ease); }
+    .media:hover .vbtn, .vbtn:focus-visible, .vbtn[data-paused] { opacity: 1; }
+  }
+</style>

@@ -1,0 +1,32 @@
+---
+// PROTOTYPE: credits at the foot of the case study, the way design engineers sign off their pages: where the ideas came
+// from, said plainly, then the way out to the store
+const rows: [string, string][] = [
+  ['Intro', 'After a work in progress by <a href="https://x.com/Mike_Andreuzza/status/2114825408046911962" target="_blank" rel="noopener">Michael Andreuzza</a>'],
+  ['Dock', 'After <a href="https://x.com/dannyjpwilliams/status/2099861544326848811" target="_blank" rel="noopener">Danny Williams’ “A dock that unfolds”</a>'],
+  ['Photos', 'Model photos made with AI. The tees are real.'],
+  ['Type', 'Instrument Sans'],
+];
+---
+<footer class="credits" aria-label="Credits">
+  <p class="label">Credits</p>
+  <dl>{rows.map(([k, v]) => <div><dt>{k}</dt><dd set:html={v} /></div>)}</dl>
+  <a class="visit" href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub <span aria-hidden="true">↗</span></a>
+</footer>
+
+<style>
+  .credits { width: min(var(--wide), 100%); margin: clamp(112px, 15vw, 200px) auto 0; padding-top: 24px; border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: 20px clamp(28px, 5vw, 72px); align-items: start; }
+  .label { font: 500 13px/1.4 var(--display); color: var(--ink-3); }
+  dl { margin: 0; display: grid; gap: 8px; }
+  dl div { display: grid; grid-template-columns: 6em 1fr; gap: 16px; font: 400 13.5px/1.5 var(--display); }
+  dt { color: var(--ink-3); }
+  dd { margin: 0; color: var(--ink-2); }
+  dd :global(a), .visit { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: var(--line); text-underline-offset: 3px; transition: text-decoration-color .2s; }
+  @media (hover: hover) and (pointer: fine) { dd :global(a:hover), .visit:hover { text-decoration-color: currentColor; } }
+  .visit { grid-column: 2; justify-self: start; margin-top: 28px; font: 500 16px/1 var(--display); padding: 14px 0; }
+  @media (max-width: 640px) {
+    .credits { grid-template-columns: 1fr; }
+    .visit { grid-column: 1; }
+  }
+</style>

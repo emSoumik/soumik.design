@@ -1,0 +1,527 @@
+---
+// LAB direction 8, "Ask": the case study is a conversation. a hiring lead picks the questions; each answer arrives as
+// message bubbles with the thing itself inside (the live dock, the live pass, the sounds). on a phone it is a
+// messages screen with the questions in a sticky tray like a suggestion bar; on desktop the questions are a menu on
+// the left and the thread is a column on the right. every answer is real HTML in a hidden stash and is moved into
+// the thread when asked (#ask-all or "Show everything" moves them all at once)
+import Shot from './Shot.astro';
+import SoundKeys from './SoundKeys.astro';
+import { A } from './lab';
+
+const qs = [
+  ['what', 'What is it?'],
+  ['dock', 'Why a dock at the bottom?'],
+  ['pass', 'What happens after I pay?'],
+  ['tint', 'Why does Safari change colour?'],
+  ['wait', 'What does waiting look like?'],
+  ['sound', 'Does it make sounds?'],
+  ['quick', 'How do you buy without leaving the shop?'],
+  ['behind', 'What’s behind the counter?'],
+  ['thanks', 'Who else helped?'],
+];
+const stages = [
+  ['confirmed', 'You’re in'],
+  ['packed', 'All packed'],
+  ['shipped', 'On its way'],
+  ['delivered', 'It’s home'],
+];
+---
+<article class="ask">
+  <aside class="side">
+    <header class="head">
+      <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>2026</p>
+      <h1>WhyClub</h1>
+      <p class="sub">Pick a question and I’ll answer it here.</p>
+    </header>
+    <nav class="menu" aria-label="Questions">
+      <ul>
+        {qs.map(([id, q]) => (
+          <li>
+            <button type="button" class="qb" data-q={id} data-label={q}>
+              <svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" /><path d="m5.2 8.2 2 2 3.6-4" /></svg>
+              <span>{q}</span><span class="sr" data-sr></span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" class="all" data-all>Show everything</button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="thread" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation" data-thread>
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub">
+          <p>Hi. WhyClub is a streetwear label from India that sells oversized graphic tees in small drops. I designed and built all of it: the art direction, the store and the backend that runs every order.</p>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub card">
+          <dl>
+            <div><dt>Role</dt><dd>Design and engineering</dd></div>
+            <div><dt>Stack</dt><dd>Astro, React, Convex, WebGL</dd></div>
+            <div><dt>Live</dt><dd><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in <span aria-hidden="true">↗</span></a></dd></div>
+          </dl>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>Ask me anything below. Most answers have the real thing inside, so try it.</p></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="tray" role="group" aria-label="Questions">
+    <div class="row">
+      {qs.map(([id, q]) => (
+        <button type="button" class="chip" data-q={id} data-label={q}>
+          <svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.4 3 3 6-6.6" /></svg>
+          <span>{q}</span><span class="sr" data-sr></span>
+        </button>
+      ))}
+      <button type="button" class="chip all" data-all>Show everything</button>
+    </div>
+  </div>
+
+  <!-- the answers, kept as real html until they are asked -->
+  <div class="stash" hidden data-stash>
+    <div data-a="what">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>WhyClub is a streetwear label from India. It sells oversized graphic tees in small drops, and whyclub.in is the store.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>The home page shows one drop per screen: a campaign photo fills the phone, and you swipe for the next. The shopping itself happens on plain neutrals, a loud brand on a quiet store.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub media">
+          <Shot src={A + 'p-hero'} video alt="The home page on a phone, swiping from one drop’s campaign photo to the next." />
+          <p class="cap">The home page, swiping through the drops.</p>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>There are two doors in, Women and Men, one photo each. <a href="https://whyclub.in" target="_blank" rel="noopener">Open whyclub.in <span aria-hidden="true">↗</span></a></p></div>
+      </div>
+    </div>
+
+    <div data-a="dock">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>Clothes get bought on phones, so the navigation sits at the bottom, where your thumb already is.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub embed">
+          <div class="dockhold" data-dock-hold aria-label="The WhyClub dock, live"></div>
+          <div class="acts">
+            <button type="button" class="act" data-act="open" aria-pressed="false">Open Shop</button>
+            <button type="button" class="act" data-act="scroll" aria-pressed="false">Scroll</button>
+          </div>
+          <p class="cap live" aria-live="off">The real dock, running. Tap it too.</p>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>It’s one surface in three shapes. A bar of five at the top of a page. Scroll, and the labels drop away and it tucks into a pill at the left edge, out of the way of the buy button. Tap Shop, Account or More and the bar squeezes for 90ms, then springs open into a panel.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>The springs are written in Apple’s terms, response and damping, and sampled into CSS linear() easings. They’re plain transitions, so a tap halfway through a move picks up from wherever the dock is. Only opening a panel overshoots, a little. The idea of a bar that becomes the menu is Danny Williams’ “A dock that unfolds”.</p></div>
+      </div>
+    </div>
+
+    <div data-a="pass">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>The moment Razorpay confirms a payment, the bag gives way to a printer slot and a pass feeds out. From then on it only says what has happened, and the courier updates from Shiprocket move it along, by webhook.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub embed pass">
+          <div class="passhold" data-pass-hold>
+            <picture><source srcset={`${A}pass/confirmed-m.avif`} type="image/avif"><img src={`${A}pass/confirmed-m.webp`} alt="" loading="lazy" decoding="async"></picture>
+          </div>
+          <div class="acts stagebtns" role="group" aria-label="Order stage">
+            {stages.map(([k, t], i) => <button type="button" class="act" data-stage={k} aria-pressed={String(i === 0)}>{t}</button>)}
+          </div>
+          <button type="button" class="act wide" data-replay>Print it again</button>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>You’re in: a stem grows and one bloom opens. All packed: a box drops in, folds shut and gets taped. On its way: the route draws itself and light runs it to a pin. It’s home: five blooms open, one after another.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>The colour band is one fragment shader that draws a different scene for each stage. It pauses off screen and draws one still frame for reduced motion. The print is one speed curve, a nudge, a breath, three ticks and a glide, handed to the browser as one linear() easing.</p></div>
+      </div>
+    </div>
+
+    <div data-a="tint">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>Safari 26 tints its bars from the page behind them. With a white page edge every hero looked pasted in, and a free shipping bar sat on top of it. I took the bar out.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub media pair">
+          <Shot src={A + 'ios/before'} ratio="720 / 1565" alt="Before, on an iPhone: a free shipping bar above the photo, and Safari’s toolbar on white under the dock." caption="Before" />
+          <Shot src={A + 'ios/light'} ratio="720 / 1565" alt="After, on an iPhone: the status bar in a muted shade of the photo’s top edge, and the photo running under Safari’s toolbar." caption="After" />
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>Now the store reads a thin strip along the top of each photo: the top 16px, averaged on a 48 by 12 canvas, mixed 65/35 with its own luma and darkened a touch. It hands that shade to the browser 160ms after a swipe settles. Each photo is read once.</p></div>
+      </div>
+    </div>
+
+    <div data-a="wait">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>Like the page you asked for. Tap a link and the store works out from the address what kind of page is coming. Grey blocks cover the old page at once.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub media">
+          <Shot src={A + 'p-loading'} video alt="Tapping Shop, then Women, on a slow connection: grey blocks, then an outline of the grid, then the photos land in the same places." />
+          <p class="cap">Shop, then Women, on a throttled connection.</p>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>At 350ms the blocks draw themselves into an outline of that page, in reading order. The real page fades in over the same lines, so nothing jumps. Still nothing after 10 seconds and you get the old page back.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>The outlines are measured from the real pages at phone and desktop widths.</p></div>
+      </div>
+    </div>
+
+    <div data-a="sound">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>A little, and all of it is optional. The first sounds were short pitched blips and the store felt like an arcade. Now a press is a few milliseconds of soft noise over a low thump that settles in about 25ms, detuned a little at random so a run of taps never sounds stamped.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub sounds">
+          <SoundKeys keys={[
+            { name: 'tap', label: 'Tap', note: 'Any button' },
+            { name: 'dockOpen', label: 'Dock opens', note: 'Filtered air, no note' },
+            { name: 'success', label: 'Added to bag', note: 'A fourth, struck almost together' },
+            { name: 'complete', label: 'Order placed', note: 'A slow D major strum' },
+          ]} />
+          <p class="cap">Press a key. Rebuilt for this page; each waveform is drawn from the sound itself.</p>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>Only rare moments carry a note, and every note is in D. There are 24 sound cues in all, and each one has something to see as well.</p></div>
+      </div>
+    </div>
+
+    <div data-a="quick">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>Every card in the shop has a +. It opens a sheet with photos, price and size, so you never leave the grid. Add to bag and the bag in the dock counts it.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub media pair">
+          <Shot src={A + 'p-quickadd'} video alt="Tapping + on a shop card: a sheet opens with photos, price and sizes, and Add to bag." caption="Quick add" />
+          <Shot src={A + 'p-sheets'} video alt="On a product page, the details sheet rising over the tee photo." caption="The details sheet" />
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>The product page works the same way: the details sheet rises over the tee photo, so the tee stays on screen while you read.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>The bag is kept short. Each piece on one line, the total under it, a free pair of socks one tap to add, then checkout.</p></div>
+      </div>
+    </div>
+
+    <div data-a="behind">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>Astro and React on Cloudflare Workers. Convex holds the catalogue and the orders the pass reads from. Razorpay and Shiprocket each send a webhook, and each one moves an order to its next stage.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub stats">
+          <dl>
+            <div><dt>251</dt><dd>commits, from the first page in March 2026 to the store today</dd></div>
+            <div><dt>201</dt><dd>test files: unit tests in Vitest, whole flows in Playwright</dd></div>
+            <div><dt>24</dt><dd>sound cues</dd></div>
+          </dl>
+        </div>
+      </div>
+      <div class="msg mine">
+        <div class="bub"><p>Doing both halves, design and engineering, meant nothing had to be explained to anyone before it was built.</p></div>
+      </div>
+    </div>
+
+    <div data-a="thanks">
+      <div class="msg mine">
+        <span class="who">Soumik</span>
+        <div class="bub"><p>A few things here aren’t mine alone.</p></div>
+      </div>
+      <div class="msg mine">
+        <div class="bub credits">
+          <dl>
+            <div><dt>The dock</dt><dd><a href="https://x.com/dannyjpwilliams/status/2099861544326848811" target="_blank" rel="noopener">After Danny Williams’ “A dock that unfolds” <span aria-hidden="true">↗</span></a></dd></div>
+            <div><dt>Sound</dt><dd><a href="https://audio.raphaelsalaja.com/" target="_blank" rel="noopener">Played in the store with @web-kits/audio by Raphael Salaja <span aria-hidden="true">↗</span></a></dd></div>
+            <div><dt>Photos</dt><dd>Model photos are edited with AI. The tees are real.</dd></div>
+            <div><dt>Built with</dt><dd>Astro, React, Convex, Cloudflare Workers, Razorpay, Shiprocket</dd></div>
+            <div><dt>Design and code</dt><dd>Soumik Halder</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<style>
+  .ask { --tray: 72px; max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; min-height: calc(100svh - 120px); }
+
+  .head .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .head .eyebrow span { margin: 0 8px; }
+  .head h1 { margin-top: 14px; font: 500 clamp(40px, 7vw, 64px)/1 var(--display); letter-spacing: -.03em; }
+  .sub { margin-top: 12px; font: 400 15px/1.5 var(--display); color: var(--ink-2); }
+  .menu { display: none; }
+
+  /* the thread */
+  .main { flex: 1; min-width: 0; }
+  .thread { display: flex; flex-direction: column; align-items: stretch; padding: 22px 0 36svh; }
+  .msg { display: grid; justify-items: start; gap: 4px; margin-top: 6px; min-width: 0; scroll-margin-top: 76px; }
+  .msg:has(.who) { margin-top: 22px; }
+  .msg.you { justify-items: end; }
+  .who { padding-inline: 6px; font: 500 10.5px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+  .bub { max-width: 85%; min-width: 0; padding: 11px 15px; border: 1px solid var(--line); border-radius: 20px 20px 20px 6px; background: #fff; color: var(--ink);
+    font: 400 16px/1.5 var(--display); text-wrap: pretty; }
+  .bub p { margin: 0; }
+  .you .bub { border-color: var(--ink); border-radius: 20px 20px 6px 20px; background: var(--ink); color: #fff; }
+  .bub a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .bub .cap { margin-top: 8px; font: 400 12.5px/1.45 var(--display); color: var(--ink-2); }
+  .thread :global(.msg.in) { animation: ask-in .32s var(--ease) both; }
+  @keyframes ask-in { from { opacity: 0; translate: 0 8px; } }
+
+  .card dl { display: grid; gap: 10px; margin: 0; }
+  .card dl div { display: grid; grid-template-columns: 4em 1fr; gap: 10px; }
+  .card dt, .credits dt { font: 500 10.5px/1.9 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .card dd, .credits dd { margin: 0; font: 400 15px/1.45 var(--display); }
+
+  /* typing */
+  .typing { display: flex; gap: 5px; padding: 15px 16px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); animation: ask-dot 1s var(--ease) infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; }
+  .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes ask-dot { 0%, 60%, 100% { translate: 0 0; opacity: .5; } 30% { translate: 0 -4px; opacity: 1; } }
+
+  /* things inside bubbles */
+  .embed, .media, .sounds, .stats, .credits { padding: 10px; }
+  .embed { width: min(300px, 85%); }
+  .media { width: min(260px, 85%); }
+  .media.pair { width: min(440px, 85%); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .media.pair .cap { grid-column: 1 / -1; }
+  .media :global(figcaption) { margin-top: 8px; font-size: 12.5px; }
+  .sounds { width: min(460px, 85%); }
+  .sounds :global(.sk) { grid-template-columns: 1fr 1fr; }
+  .stats { width: min(420px, 85%); padding: 14px 16px; }
+  .stats dl { margin: 0; display: grid; gap: 12px; }
+  .stats dl div { display: grid; grid-template-columns: 3.1em 1fr; gap: 12px; align-items: baseline; }
+  .stats dt { font: 500 32px/1 var(--display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .stats dd { margin: 0; font: 400 14px/1.4 var(--display); color: var(--ink-2); }
+  .credits { width: min(460px, 85%); padding: 14px 16px; }
+  .credits dl { margin: 0; display: grid; gap: 12px; }
+  .credits dl div { display: grid; gap: 2px; }
+
+  .dockhold, .passhold { position: relative; width: 100%; overflow: hidden; }
+  .dockhold { aspect-ratio: 392 / 760; border-radius: 12.4%/6.4%; background: #3a2c22 url(/assets/work/whyclub/lab/hero-star.webp) center / cover; }
+  .passhold { aspect-ratio: 392 / 700; border-radius: 14px; background: #fff; }
+  .passhold picture, .passhold img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .passhold :global(iframe) { opacity: 0; transition: opacity .3s var(--ease); background: #fff; }
+  .passhold:global(.is-live) :global(iframe) { opacity: 1; }
+  .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .act { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 12px; display: grid; place-items: center; border-radius: 99px; cursor: pointer; text-align: center;
+    font: 500 13.5px/1.2 var(--display); color: var(--ink); background: #fff; box-shadow: 0 0 0 1px var(--line); -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease); }
+  .act[aria-pressed='true'] { background: var(--ink); color: #fff; box-shadow: none; }
+  .act.wide { width: 100%; margin-top: 8px; }
+  .act:active { transform: scale(.97); }
+
+  /* question controls */
+  .qb, .chip, .all { all: unset; box-sizing: border-box; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .tick { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* the tray: questions as a suggestion bar above the safe area */
+  .tray { position: sticky; bottom: 0; z-index: 20; margin-inline: calc(var(--gut) * -1); background: #fff; box-shadow: 0 -1px 0 var(--line); }
+  .row { display: flex; gap: 8px; padding: 10px var(--gut) calc(10px + env(safe-area-inset-bottom)); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-padding-inline: var(--gut); }
+  .row::-webkit-scrollbar { display: none; }
+  .chip { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 1px var(--ink-3);
+    font: 500 14px/1 var(--display); color: var(--ink); white-space: nowrap; transition: transform .16s var(--ease); }
+  .chip .tick { display: none; }
+  .chip[data-asked] { box-shadow: 0 0 0 1px var(--line); color: var(--ink-3); }
+  .chip[data-asked] .tick { display: block; }
+  .chip.all { box-shadow: none; background: var(--ink); color: #fff; }
+  .chip:active { transform: scale(.97); }
+  .ask :is(.chip, .act, .qb, .all):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* bubbles on a phone: a little wider, and the tray rides above the safe area */
+  @media (max-width: 899px) {
+    .head h1 { margin-top: 10px; font-size: 36px; }
+    .sub { display: none; }
+  }
+  @media (max-width: 640px) {
+    .bub { max-width: 88%; }
+    .embed { width: min(300px, 88%); }
+    .media { width: min(260px, 88%); }
+    .media.pair, .sounds, .credits, .stats { width: 88%; }
+  }
+
+  /* desktop: questions are a menu on the left, the thread is a column on the right */
+  @media (min-width: 900px) {
+    .ask { display: grid; grid-template-columns: 320px minmax(0, 620px); gap: 0 72px; justify-content: center; align-items: start; min-height: 0; }
+    .tray { display: none; }
+    .side { position: sticky; top: 76px; }
+    .sub { display: block; }
+    .menu { display: block; margin-top: 28px; }
+    .menu ul { list-style: none; margin: 0; padding: 0; }
+    .qb { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 8px 4px; box-shadow: inset 0 1px 0 var(--line);
+      font: 400 15.5px/1.3 var(--display); color: var(--ink); }
+    .menu li:last-child .qb { box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line); }
+    .qb .tick { stroke: var(--ink-3); }
+    .qb .tick path { opacity: 0; }
+    .qb[data-asked] { color: var(--ink-3); }
+    .qb[data-asked] .tick { stroke: var(--ink); }
+    .qb[data-asked] .tick path { opacity: 1; }
+    .all { display: inline-flex; align-items: center; min-height: 44px; margin-top: 18px; padding: 0 18px; border-radius: 99px; background: var(--ink); color: #fff; font: 500 14px/1 var(--display); }
+    .all[hidden] { display: none; }
+    .thread { padding: 0 0 30svh; }
+    .msg { scroll-margin-top: 72px; }
+    .bub { max-width: 86%; }
+    .embed, .media { width: min(var(--w, 300px), 86%); }
+    .media { --w: 260px; }
+    .media.pair, .sounds, .credits, .stats { width: min(460px, 86%); }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .qb:hover { color: var(--ink-2); }
+    .chip:hover { box-shadow: 0 0 0 1px var(--ink); }
+    .act:hover:not([aria-pressed='true']) { box-shadow: 0 0 0 1px var(--ink-3); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chip, .act, .passhold :global(iframe) { transition: none; }
+    .chip:active, .act:active { transform: none; }
+    .thread :global(.msg.in) { animation: none; }
+  }
+
+  /* the switcher moves to the top here: the tray owns the bottom */
+  :global(body:has([data-dir='8']:not([hidden]))) :global(.switch) { bottom: auto; top: calc(10px + env(safe-area-inset-top)); }
+</style>
+
+<script>
+  import { frame, reduced } from './lab';
+
+  const root = document.querySelector<HTMLElement>('.ask')!;
+  const thread = root.querySelector<HTMLElement>('[data-thread]')!;
+  const stash = root.querySelector<HTMLElement>('[data-stash]')!;
+  const asked = new Set<string>();
+  const total = root.querySelectorAll('.menu [data-q]').length;
+  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+  const behavior = (): ScrollBehavior => (reduced() ? 'auto' : 'smooth');
+
+  const mark = (id: string) => {
+    asked.add(id);
+    root.querySelectorAll<HTMLElement>(`[data-q="${id}"]`).forEach((b) => {
+      b.dataset.asked = '';
+      b.querySelector('[data-sr]')!.textContent = ', asked, jump to the answer';
+    });
+    root.querySelectorAll<HTMLElement>('[data-all]').forEach((b) => (b.hidden = asked.size >= total));
+  };
+
+  const put = (el: HTMLElement, animate: boolean) => {
+    if (animate) el.classList.add('in');
+    thread.append(el);
+  };
+
+  // astro scopes the css with an attribute, so elements built here need it too
+  const cid = root.getAttributeNames().find((n) => n.startsWith('data-astro-cid'))!;
+  const scope = (el: HTMLElement) => { [el, ...el.querySelectorAll('*')].forEach((n) => n.setAttribute(cid, '')); return el; };
+
+  const question = (id: string, label: string) => {
+    const el = document.createElement('div');
+    el.className = 'msg you';
+    el.id = `ask-q-${id}`;
+    el.innerHTML = '<span class="who">You</span><div class="bub"><p></p></div>';
+    el.querySelector('p')!.textContent = label;
+    return scope(el);
+  };
+  const typing = () => {
+    const el = document.createElement('div');
+    el.className = 'msg mine';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<div class="bub typing"><i></i><i></i><i></i></div>';
+    return scope(el);
+  };
+
+  const ask = async (id: string, label: string, instant = false) => {
+    const answer = stash.querySelector<HTMLElement>(`[data-a="${id}"]`);
+    if (!answer) return;
+    const calm = instant || reduced();
+    const q = question(id, label);
+    put(q, !calm);
+    if (!instant) q.scrollIntoView({ block: 'start', behavior: behavior() });
+    let dots: HTMLElement | null = null;
+    if (!calm) { dots = typing(); put(dots, true); await sleep(500 + Math.random() * 200); dots.remove(); }
+    const bubbles = [...answer.children] as HTMLElement[];
+    for (let i = 0; i < bubbles.length; i++) {
+      put(bubbles[i], !calm);
+      if (!calm && i < bubbles.length - 1) await sleep(380);
+    }
+    answer.remove();
+  };
+
+  // questions go one at a time, so a second tap waits for the first answer
+  let chain: Promise<void> = Promise.resolve();
+  const labelOf = (id: string) => root.querySelector<HTMLElement>(`[data-q="${id}"]`)!.dataset.label!;
+  const enqueue = (id: string) => {
+    mark(id);
+    chain = chain.then(() => ask(id, labelOf(id)));
+  };
+  const everything = (scroll: boolean) => {
+    const ids = [...root.querySelectorAll<HTMLElement>('.menu [data-q]')].map((b) => b.dataset.q!).filter((id) => !asked.has(id));
+    ids.forEach((id) => {
+      mark(id);
+      chain = chain.then(() => ask(id, labelOf(id), true));
+    });
+    if (scroll && ids.length) chain = chain.then(() => document.getElementById(`ask-q-${ids[0]}`)?.scrollIntoView({ block: 'start', behavior: behavior() }));
+  };
+
+  root.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const b = t.closest<HTMLElement>('[data-q]');
+    if (b) {
+      const id = b.dataset.q!;
+      if (asked.has(id)) document.getElementById(`ask-q-${id}`)?.scrollIntoView({ block: 'start', behavior: behavior() });
+      else enqueue(id);
+      return;
+    }
+    if (t.closest('[data-all]')) everything(true);
+  });
+
+  // the dock: two buttons under it, and it reports which shape it took
+  const dock = frame(root.querySelector<HTMLElement>('[data-dock-hold]')!, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  const scrollB = root.querySelector<HTMLButtonElement>('[data-act=scroll]')!;
+  let panelOpen = false, scrolled = false;
+  const sync = () => {
+    openB.setAttribute('aria-pressed', String(panelOpen));
+    openB.textContent = panelOpen ? 'Close Shop' : 'Open Shop';
+    scrollB.setAttribute('aria-pressed', String(scrolled));
+    scrollB.textContent = scrolled ? 'Back to top' : 'Scroll';
+  };
+  dock.on((d) => { if (!d.moving && d.shape) { panelOpen = d.shape === 'panel'; sync(); } });
+  openB.addEventListener('click', () => { panelOpen = !panelOpen; dock.send(panelOpen ? { open: 'shop' } : { close: true }); sync(); });
+  scrollB.addEventListener('click', () => {
+    scrolled = !scrolled;
+    if (panelOpen) { panelOpen = false; dock.send({ close: true }); }
+    dock.send({ scroll: scrolled ? 'down' : 'top' });
+    sync();
+  });
+
+  // the pass: a stage restyles it, replay prints it again
+  const pass = frame(root.querySelector<HTMLElement>('[data-pass-hold]')!, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  const stageBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-stage]')];
+  stageBtns.forEach((b) => b.addEventListener('click', () => {
+    stageBtns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    pass.send({ stage: b.dataset.stage });
+  }));
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+
+  if (location.hash === '#ask-all') everything(false);
+</script>

@@ -1,0 +1,156 @@
+---
+// PROTOTYPE: the editorial layout, metalab-like. a label column on the left, a one-line headline beside it,
+// then the visual full width and the body in the right column.
+import { intro, sections } from './copy';
+import Plane from './Plane.astro';
+import Screen from './Screen.astro';
+import PassStages from './PassStages.astro';
+
+// phones show the first paragraph and tuck the rest behind "Read more"; above 640px the wrapper is display: contents
+const chev = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6l4.5 4.5L12.5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+---
+<div class="va">
+  <section class="intro">
+    <p class="label">The idea</p>
+    <div class="lead">
+      <p>{intro[0]}</p>
+      {intro.length > 1 && (
+        <div class="fold">
+          <div class="clip" id="more-intro"><div class="in">{intro.slice(1).map((p) => <p>{p}</p>)}</div></div>
+          <button type="button" class="rm" aria-expanded="false" aria-controls="more-intro"><span class="lb">Read more</span><Fragment set:html={chev} /></button>
+        </div>
+      )}
+    </div>
+  </section>
+
+  {sections.map((s, i) => {
+    // the live dock carries its own words: the body goes into the figure, beside the dock on a laptop and under it on a phone
+    const inside = s.plane?.live === 'dock';
+    const body = (
+      <div class:list={['body', { inside }]}>
+        <p set:html={s.body[0]} />
+        {(s.body.length > 1 || s.credit) && (
+          <div class="fold">
+            <div class="clip" id={`more-${s.id}`}>
+              <div class="in">
+                {s.body.slice(1).map((p) => <p set:html={p} />)}
+                {s.credit && <p class:list={['credit', { folded: inside }]} set:html={s.credit} />}
+                {s.sheet && <button type="button" class="xd" data-sheet={s.sheet} aria-haspopup="dialog">Expand details<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>}
+              </div>
+            </div>
+            <button type="button" class="rm" aria-expanded="false" aria-controls={`more-${s.id}`}><span class="lb">Read more</span><Fragment set:html={chev} /></button>
+          </div>
+        )}
+      </div>
+    );
+    return (
+    <section class="sec" id={`a-${s.id}`}>
+      <header class="head">
+        <p class="label"><span class="n">{String(i + 1).padStart(2, '0')}</span>{s.label}</p>
+        <h2>{s.headline}</h2>
+      </header>
+      {s.plane && (inside ? <Plane shot={s.plane}>{body}{s.credit && <p class="credit inside" slot="credit" set:html={s.credit} />}</Plane> : <Plane shot={s.plane} />)}
+      {!inside && body}
+      {s.crops && <div class="crops">{s.crops.map((c) => <Screen {...c} crop />)}</div>}
+      {s.row && <div class:list={['row', `n${s.row.length}`]}>{s.row.map((r) => <Screen {...r} />)}</div>}
+      {s.pass && <div class="pass"><PassStages caption="The real drop pass, running here on a sample order. Move through the stages, switch between phone and desktop, or replay the print." /></div>}
+    </section>
+    );
+  })}
+</div>
+
+<script>
+  // collapsed only on phones: inert while closed so the hidden links can't take focus, and nothing is inert on desktop
+  const mq = matchMedia('(max-width: 640px)');
+  const folds = [...document.querySelectorAll<HTMLElement>('.va .fold')];
+  const sync = () => folds.forEach((f) => {
+    const open = f.dataset.open === 'true';
+    f.querySelector('.clip')!.toggleAttribute('inert', mq.matches && !open);
+  });
+  folds.forEach((f) => {
+    f.dataset.open = 'false';
+    const b = f.querySelector<HTMLButtonElement>('.rm')!;
+    b.addEventListener('click', () => {
+      const open = f.dataset.open !== 'true';
+      f.dataset.open = String(open);
+      b.setAttribute('aria-expanded', String(open));
+      b.querySelector('.lb')!.textContent = open ? 'Show less' : 'Read more';
+      sync();
+    });
+  });
+  document.querySelector('.va')?.setAttribute('data-js', '');
+  mq.addEventListener('change', sync);
+  sync();
+</script>
+
+<style>
+  .va { width: min(var(--wide), 100%); margin: 0 auto; --col: clamp(140px, 20%, 220px); }
+  .label { font: 500 13px/1.4 var(--display); color: var(--ink-2); display: flex; gap: 10px; }
+  .label .n { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .intro { display: grid; grid-template-columns: var(--col) 1fr; gap: 0 32px; margin-bottom: clamp(72px, 12vw, 140px); }
+  .lead p { font: 400 clamp(22px, 2.6vw, 30px)/1.38 var(--display); letter-spacing: -.012em; color: var(--ink); text-wrap: pretty; max-width: 46ch; }
+  .lead p + p, .lead .fold p { margin-top: .7em; color: var(--ink-2); }
+  .sec { margin-top: clamp(96px, 14vw, 180px); }
+  .head { display: grid; grid-template-columns: var(--col) 1fr; gap: 0 32px; align-items: baseline; margin-bottom: clamp(28px, 4vw, 48px); }
+  .head h2 { font: 500 clamp(28px, 4.2vw, 48px)/1.08 var(--display); letter-spacing: -.026em; color: var(--ink); text-wrap: balance; max-width: 18ch; }
+  .body { margin: clamp(36px, 5vw, 56px) 0 0 calc(var(--col) + 32px); max-width: 560px; font: 400 17px/1.65 var(--display); color: var(--body); }
+  .body p + p, .body .fold p { margin-top: 1em; }
+  /* inside the dock's figure the column already places it */
+  .body.inside { margin: 0; max-width: 56ch; }
+  /* the dock's credit sits under the whole row, centred, never folded away; on a phone it folds with the words instead */
+  .credit.inside { margin: 0 auto !important; max-width: 62ch; text-align: center; text-wrap: balance; }
+  .credit.folded { display: none; }
+  .body p, .credit { text-wrap: pretty; }
+  .body :global(a) { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-decoration-color: rgba(31, 29, 27, .28); text-underline-offset: 3px; }
+  .credit { margin-top: 1.6em !important; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+  .row, .crops, .pass, .sec > :global(.desk) { margin-top: clamp(48px, 7vw, 88px); }
+  .row { display: grid; gap: clamp(12px, 3vw, 40px); }
+  .row.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .row.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 66%; margin-left: auto; margin-right: auto; }
+  .crops { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: clamp(12px, 3vw, 40px); align-items: end; }
+  .visit { margin: clamp(72px, 10vw, 120px) 0 0 calc(var(--col) + 32px); font: 500 17px/1 var(--display); }
+  .visit a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+  /* the fold: invisible above 640px */
+  .fold, .clip, .in { display: contents; }
+  /* opens a sheet with the full write-up instead of linking out */
+  .xd { margin-top: 1.2em; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 99px; background: #fff; box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .14);
+    font: 500 14px/1 var(--display); color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: background-color 150ms var(--ease), scale 120ms var(--ease); }
+  .xd:active { scale: .96; }
+  .xd:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  @media (hover: hover) and (pointer: fine) { .xd:hover { background: #f7f7f7; } }
+  @media (prefers-reduced-motion: reduce) { .xd { transition: none; } }
+  .rm { display: none; }
+  @media (max-width: 760px) {
+    .intro, .head { grid-template-columns: 1fr; gap: 10px; }
+    .body, .visit { margin-left: 0; }
+    .body.inside { margin: 0; }
+    .credit.inside { text-align: left; margin: 0 !important; }
+    .row.n3 { gap: 10px; }
+    .row.n2 { max-width: none; }
+    .crops { grid-template-columns: 1fr 1fr; }
+    .crops > :global(:last-child) { grid-column: 1 / -1; }
+  }
+  @media (max-width: 640px) {
+    .lead p { font-size: 20px; line-height: 1.4; }
+    .sec { margin-top: 88px; }
+    .head h2 { font-size: 30px; }
+    .body { font-size: 17px; line-height: 1.6; }
+    .fold { display: block; }
+    .credit.folded { display: block; }
+    :global(.dk) .credit.inside { display: none; }
+    /* beside the live dock the first paragraph shows four lines until it is opened */
+    .va[data-js] .body.inside:has(> .fold[data-open='false']) > p:first-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+    .va[data-js] .clip { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 320ms var(--ease); }
+    .va[data-js] .fold[data-open='false'] .clip { grid-template-rows: 0fr; }
+    .va[data-js] .in { display: block; min-height: 0; overflow: hidden; transition: opacity 320ms var(--ease); }
+    .va[data-js] .fold[data-open='false'] .in { opacity: 0; }
+    .va[data-js] .rm { display: flex; align-items: center; gap: 6px; min-height: 44px; margin: 4px 0 0; padding: 0; border: 0; background: none; cursor: pointer; color: var(--ink-2);
+      font: 500 15px/1 var(--display); -webkit-tap-highlight-color: transparent; }
+    .rm svg { transition: transform 240ms var(--ease); }
+    .rm[aria-expanded='true'] svg { transform: rotate(180deg); }
+    .rm:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+  }
+  @media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+    .va[data-js] .clip, .va[data-js] .in, .rm svg { transition: none; }
+  }
+</style>

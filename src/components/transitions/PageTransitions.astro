@@ -1,0 +1,413 @@
+---
+// page transitions between documents (cross-document view transitions). each kind of trip has its own:
+//   seam    home <-> blog, blog <-> post: the garden's stitched border runs down the screen and stitches the new page
+//           in above it; going back towards the garden it runs up and unpicks the page
+//   window  a case study opens out of its live product, like an app opening, and closes back into it
+//   lineup  window's take when both pages show the same row of screens (data-pt-lineup="<slug>", each screen data-at,
+//           each name data-pt-nm): the screens and their names slide across as themselves, the rest rises in under them
+//   wake    a watch taps twice, its black screen grows to fill the view, then the page wakes out of it
+//   type    the page zooms out of a quick look window like pressing space, its title flicking through typefaces
+//   quiet   everything else: the masthead stays, the page fades and rises 8px
+// a case study picks window, wake or type with `transition` in its frontmatter; the element it opens out of carries
+// data-pt-src="<slug>" (home: js/work/work.js, the projects list: pages/projects/index.astro).
+// browsers without cross-document view transitions just navigate. reduced motion gets a 120ms crossfade.
+// this renders in <head> so the pagereveal listener is in place before the first frame
+import { published } from '../../lib/content';
+
+const kinds = Object.fromEntries((await published('work')).flatMap((e) => (e.data.transition ? [[e.id, e.data.transition]] : [])));
+// a case study that opens out of a row of screens lays its own row out in an inline script; the first frame (the one the
+// transition captures) waits until that has run. pages without #pt-ready just wait for the end of parsing
+const slug = /^\/projects\/([^/]+)\/?$/.exec(Astro.url.pathname)?.[1];
+const expect = slug && kinds[slug] === 'window';
+
+// the garden's seam (as in site.css), and a 24 x 5 fringe of 7px cells that thins out away from it (bayer order)
+const SEAM = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 3' shape-rendering='crispEdges'><rect x='1' y='0' width='1' height='1' fill='%23e8412f'/><rect x='0' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='2' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='2' width='1' height='1' fill='%23e8412f'/><rect x='4' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='7' y='0' width='1' height='1' fill='%232447d8'/><rect x='6' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='8' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='2' width='1' height='1' fill='%232447d8'/><rect x='10' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='13' y='0' width='1' height='1' fill='%23f594b8'/><rect x='12' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='1' width='1' height='1' fill='%23e3a21a'/><rect x='14' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='2' width='1' height='1' fill='%23f594b8'/><rect x='16' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='19' y='0' width='1' height='1' fill='%23ffc93c'/><rect x='18' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='1' width='1' height='1' fill='%23e2562b'/><rect x='20' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='2' width='1' height='1' fill='%23ffc93c'/><rect x='22' y='1' width='1' height='1' fill='%231f8a3a'/></svg>")`;
+const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+const DENSITY = [13, 9, 6, 3, 1];
+const cells = DENSITY.flatMap((d, y) => Array.from({ length: 24 }, (_, x) => (BAYER[y % 4][x % 4] < d ? `<rect x='${x}' y='${y}' width='1' height='1'/>` : ''))).join('');
+const FRINGE = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 5' shape-rendering='crispEdges'>${cells}</svg>`)}")`;
+
+const css = `
+@view-transition { navigation: auto; }
+:root { --pt-ios: cubic-bezier(.32, .72, 0, 1); --pt-out: cubic-bezier(.23, 1, .32, 1); --pt-inout: cubic-bezier(.65, 0, .35, 1); }
+
+/* the overlays that exist only for the length of a transition */
+.pt-seam, .pt-veil, .pt-frame { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; contain: strict; }
+.pt-seam { view-transition-name: pt-seam; }
+.pt-seam i { position: absolute; left: 0; right: 0; top: 0; height: 56px; display: block;
+  background: ${SEAM} 0 0 / 168px 21px repeat-x, linear-gradient(var(--pt-paper, #fff), var(--pt-paper, #fff)) 0 0 / 100% 21px no-repeat; image-rendering: pixelated; }
+.pt-seam i::after { content: ""; position: absolute; left: 0; right: 0; top: 21px; height: 35px; background: var(--pt-paper, #fff);
+  -webkit-mask: ${FRINGE} 0 0 / 168px 35px repeat-x; mask: ${FRINGE} 0 0 / 168px 35px repeat-x; }
+.pt-seam[data-dir="up"] i { transform: scaleY(-1); }
+.pt-veil { view-transition-name: pt-veil; background: #000; }
+.pt-frame { view-transition-name: pt-src; }
+.pt-flick { position: absolute; z-index: 1; pointer-events: none; white-space: nowrap; }
+.pt-flick span { position: absolute; left: 0; top: 0; opacity: 0; animation: pt-on 80ms linear calc(140ms + var(--i) * 80ms); }
+
+@keyframes pt-on { from, to { opacity: 1; } }
+@keyframes pt-fade-out { to { opacity: 0; } }
+@keyframes pt-rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes pt-fade-in { from { opacity: 0; } }
+/* hidden, then shown in one step at the end: the new page waits under a cover */
+@keyframes pt-wait { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pt-recede { to { transform: scale(.97); opacity: .7; } }
+@keyframes pt-lift { from { opacity: 0; transform: translateY(28px); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-pt]::view-transition-old(root), html[data-pt]::view-transition-new(root) { mix-blend-mode: normal; }
+
+  /* ---- quiet */
+  html[data-pt="quiet"]::view-transition-old(root) { animation: 140ms var(--pt-out) both pt-fade-out; }
+  html[data-pt="quiet"]::view-transition-new(root) { animation: 280ms var(--pt-out) 60ms both pt-rise; }
+  html[data-pt]::view-transition-group(pt-mast), html[data-pt]::view-transition-new(pt-mast) { animation: none; }
+  html[data-pt]::view-transition-old(pt-mast) { display: none; }
+
+  /* ---- seam. the band's top is p; the reveal edge sits under the seam row, at p + 10 going down, p + 45 going up
+     (the band is flipped, fringe above). same curve and length on both, so the edge never leaves the seam */
+  @keyframes pt-seam-down { from { transform: translateY(-56px); } to { transform: translateY(100%); } }
+  @keyframes pt-stitch-in { from { clip-path: inset(0 0 calc(100% + 46px) 0); } to { clip-path: inset(0 0 -10px 0); } }
+  @keyframes pt-seam-up { from { transform: translateY(100%); } to { transform: translateY(-56px); } }
+  @keyframes pt-unpick { from { clip-path: inset(0 0 -45px 0); } to { clip-path: inset(0 0 calc(100% + 11px) 0); } }
+  html[data-pt="seam"]::view-transition-group(pt-seam) { animation: none; }
+  html[data-pt="seam"]::view-transition-new(pt-seam) { animation: 640ms var(--pt-inout) both pt-seam-down; }
+  html[data-pt="seam"]::view-transition-old(root) { animation: none; }
+  html[data-pt="seam"]::view-transition-new(root) { animation: 640ms var(--pt-inout) both pt-stitch-in; }
+  html[data-pt="seam"][data-pt-dir="up"]::view-transition-new(pt-seam) { animation: 560ms var(--pt-inout) both pt-seam-up; }
+  html[data-pt="seam"][data-pt-dir="up"]::view-transition-old(root) { z-index: 1; animation: 560ms var(--pt-inout) both pt-unpick; }
+  html[data-pt="seam"][data-pt-dir="up"]::view-transition-new(root) { animation: none; }
+
+  /* ---- window. --pt-t/r/b/l is the source's rect as an inset of the screen, --pt-rad its corner. the page itself is
+     scaled to cover that rect (--pt-cx/cy/cs) and clipped to it in its own coordinates (--pt-ix/iy/irad), so it opens out
+     of the product and closes back into it like an app into its icon */
+  @keyframes pt-window-open {
+    from { transform: translate(var(--pt-cx), var(--pt-cy)) scale(var(--pt-cs)); clip-path: inset(var(--pt-iy) var(--pt-ix) round var(--pt-irad)); }
+    to { transform: none; clip-path: inset(0 0 round 0); }
+  }
+  @keyframes pt-window-close {
+    from { transform: none; clip-path: inset(0 0 round 0); }
+    70% { opacity: 1; }
+    to { transform: translate(var(--pt-cx), var(--pt-cy)) scale(var(--pt-cs)); clip-path: inset(var(--pt-iy) var(--pt-ix) round var(--pt-irad)); opacity: 0; }
+  }
+  @keyframes pt-corner { from { clip-path: inset(0 round var(--pt-rad)); } to { clip-path: inset(0 round 0); } }
+  @keyframes pt-shot-out { 0%, 15% { opacity: 1; } to { opacity: 0; } }
+  html[data-pt="window"]::view-transition-old(root) { animation: 620ms var(--pt-ios) both pt-recede; }
+  html[data-pt="window"]::view-transition-new(root) { transform-origin: 0 0; animation: 620ms var(--pt-ios) both pt-window-open; }
+  /* the product's screen grows with the window and fades into the page it opens onto */
+  html[data-pt="window"]::view-transition-group(pt-src) { animation-duration: 620ms; animation-timing-function: var(--pt-ios); }
+  html[data-pt="window"]::view-transition-image-pair(pt-src) { animation: 620ms var(--pt-ios) both pt-corner; }
+  html[data-pt="window"]::view-transition-old(pt-src) { height: 100%; object-fit: cover; mix-blend-mode: normal; animation: 300ms ease-out both pt-shot-out; }
+  html[data-pt="window"]::view-transition-new(pt-src) { animation: none; opacity: 0; }
+  html[data-pt="window"][data-pt-dir="close"]::view-transition-old(root) { z-index: 1; transform-origin: 0 0; animation: 480ms var(--pt-ios) both pt-window-close; }
+  html[data-pt="window"][data-pt-dir="close"]::view-transition-new(root) { animation: none; }
+  /* a row of screens that found no partner here: the screen that holds the product grows like pt-src, the rest fade */
+  html[data-pt="window"]::view-transition-group(*.pt-main) { animation-duration: 620ms; animation-timing-function: var(--pt-ios); }
+  html[data-pt="window"]::view-transition-image-pair(*.pt-main) { animation: 620ms var(--pt-ios) both pt-corner; }
+  html[data-pt="window"]::view-transition-old(*.pt-main) { height: 100%; object-fit: cover; mix-blend-mode: normal; animation: 300ms ease-out both pt-shot-out; }
+  html[data-pt="window"]::view-transition-new(*.pt-main) { animation: none; opacity: 0; }
+  html[data-pt="window"]::view-transition-old(*.pt-ph), html[data-pt="window"]::view-transition-old(*.pt-nm) { animation: 160ms ease-out both pt-fade-out; }
+
+  /* ---- lineup. each screen's group is moved by js (fly() below), at the new screen's size the whole way, so a screen
+     drawn scaled on one page and at size on the other never swells mid-flight. names slide on the browser's own */
+  html[data-pt="lineup"]::view-transition-old(root) { animation: 220ms var(--pt-out) both pt-fade-out; }
+  html[data-pt="lineup"]::view-transition-new(root) { animation: 560ms var(--pt-ios) 60ms both pt-lift; }
+  html[data-pt="lineup"]::view-transition-group(*.pt-ph) { animation: none; transform-origin: 0 0; }
+  html[data-pt="lineup"]::view-transition-group(*.pt-nm) { animation-duration: 640ms; animation-timing-function: var(--pt-ios); }
+  /* the same screenshot on both sides: the arriving one settles over the leaving one, no dip in between */
+  html[data-pt="lineup"]::view-transition-old(*.pt-ph), html[data-pt="lineup"]::view-transition-old(*.pt-nm) { mix-blend-mode: normal; animation: none; }
+  html[data-pt="lineup"]::view-transition-new(*.pt-ph), html[data-pt="lineup"]::view-transition-new(*.pt-nm) { mix-blend-mode: normal; animation: 640ms ease-in-out both pt-fade-in; }
+  /* one that's off screen or hidden on the other page has nothing to settle into: it goes with its page */
+  html[data-pt="lineup"]::view-transition-old(*.pt-ph):only-child, html[data-pt="lineup"]::view-transition-old(*.pt-nm):only-child { animation: 220ms var(--pt-out) both pt-fade-out; }
+
+  /* ---- wake. the source's two taps, then its screen. one keyframe list each, eased per step */
+  @keyframes pt-tap {
+    0% { transform: none; animation-timing-function: var(--pt-out); }
+    22% { transform: scale(.93); } 44% { transform: none; } 66% { transform: scale(.93); } 88% { transform: none; opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes pt-wake-open {
+    0% { opacity: 0; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); }
+    10% { opacity: 1; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); animation-timing-function: var(--pt-ios); }
+    55% { opacity: 1; clip-path: inset(0 round 0); animation-timing-function: ease-out; }
+    100% { opacity: 0; clip-path: inset(0 round 0); }
+  }
+  @keyframes pt-wake-page { from { transform: scale(1.035); } }
+  @keyframes pt-sleep {
+    0% { opacity: 0; clip-path: inset(0 round 0); animation-timing-function: ease-out; }
+    24% { opacity: 1; clip-path: inset(0 round 0); animation-timing-function: var(--pt-ios); }
+    78% { opacity: 1; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); animation-timing-function: ease-out; }
+    100% { opacity: 0; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); }
+  }
+  html[data-pt="wake"]::view-transition-group(pt-src), html[data-pt="wake"]::view-transition-group(pt-veil) { animation: none; }
+  html[data-pt="wake"]::view-transition-old(pt-src) { animation: 260ms linear both pt-tap; }
+  html[data-pt="wake"]::view-transition-new(pt-veil) { animation: 600ms linear 100ms both pt-wake-open; }
+  html[data-pt="wake"]::view-transition-old(root) { animation: 430ms var(--pt-ios) both pt-recede; }
+  html[data-pt="wake"]::view-transition-new(root) { animation: 430ms step-end both pt-wait, 340ms var(--pt-out) 430ms both pt-wake-page; }
+  html[data-pt="wake"][data-pt-dir="close"]::view-transition-new(pt-veil) { animation: 760ms linear both pt-sleep; }
+  html[data-pt="wake"][data-pt-dir="close"]::view-transition-old(root) { animation: none; }
+  html[data-pt="wake"][data-pt-dir="close"]::view-transition-new(root) { animation: 190ms step-end both pt-wait; }
+
+  /* ---- type. --pt-x/y/s map the screen onto the source window (origin top left) */
+  @keyframes pt-ql-open { from { transform: translate(var(--pt-x), var(--pt-y)) scale(var(--pt-s)); clip-path: inset(0 round calc(12px / var(--pt-s))); } to { transform: none; clip-path: inset(0 round 0); } }
+  @keyframes pt-ql-close {
+    from { transform: none; clip-path: inset(0 round 0); }
+    45% { opacity: 1; }
+    to { transform: translate(var(--pt-x), var(--pt-y)) scale(var(--pt-s)); clip-path: inset(0 round calc(12px / var(--pt-s))); opacity: 0; }
+  }
+  html[data-pt="type"]::view-transition-old(root) { animation: none; }
+  html[data-pt="type"]::view-transition-new(root) { transform-origin: 0 0; animation: 440ms cubic-bezier(.2, .9, .25, 1) both pt-ql-open, 110ms ease-out both pt-fade-in; }
+  html[data-pt="type"]::view-transition-group(pt-src) { animation: none; }
+  html[data-pt="type"]::view-transition-old(pt-src) { animation: 160ms ease-out both pt-fade-out; }
+  html[data-pt="type"][data-pt-dir="close"]::view-transition-old(root) { z-index: 1; transform-origin: 0 0; animation: 340ms cubic-bezier(.4, 0, .2, 1) both pt-ql-close; }
+  html[data-pt="type"][data-pt-dir="close"]::view-transition-new(root) { animation: none; }
+  /* the title waits under its flicking copies, then takes over in one step */
+  .pt-flicking { animation: 460ms step-end both pt-wait; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none; }
+  ::view-transition-old(root) { animation: 120ms linear both pt-fade-out; }
+  ::view-transition-new(root) { animation: 120ms linear both pt-fade-in; }
+  .pt-flick { display: none; }
+}
+`;
+---
+<style is:inline set:html={css}></style>
+{expect && <link rel="expect" href="#pt-ready" blocking="render">}
+<script is:inline define:vars={{ KINDS: kinds }}>
+(function () {
+  var root = document.documentElement;
+  var KEY = 'pt.trip';
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  // the faces a title flicks through on its way in, the way font preview steps through a folder
+  var FACES = [['"Pixelify Sans", monospace', 'normal', '500'], ['"Instrument Serif", Georgia, serif', 'italic', '400'], ['ui-monospace, "SF Mono", Menlo, monospace', 'normal', '400'], ['Georgia, "Times New Roman", serif', 'normal', '700']];
+
+  function path(url) {
+    try { var p = new URL(url, location.href).pathname; return p.slice(-1) === '/' ? p : p + '/'; } catch (e) { return null; }
+  }
+  function slugOf(p) { var m = /^\/projects\/([^/]+)\/$/.exec(p || ''); return m ? m[1] : null; }
+  function depth(p) { return p === '/' ? 0 : p === '/blog/' ? 1 : 2; }
+  function inGarden(p) { return p === '/' || p.indexOf('/blog/') === 0; }
+  function isList(p) { return p === '/' || p === '/projects/'; }
+
+  // which transition a trip gets, worked out the same way on both pages
+  function trip(from, to) {
+    var s;
+    if (!from || !to || from === to) return { kind: 'quiet' };
+    if ((s = slugOf(to)) && isList(from) && KINDS[s]) return { kind: KINDS[s], dir: 'open', slug: s };
+    if ((s = slugOf(from)) && isList(to) && KINDS[s]) return { kind: KINDS[s], dir: 'close', slug: s };
+    if (inGarden(from) && inGarden(to)) return { kind: 'seam', dir: depth(to) >= depth(from) ? 'down' : 'up' };
+    return { kind: 'quiet', mast: from !== '/' && to !== '/' };
+  }
+
+  // the element a project opens out of (and closes into), if it's on screen
+  function source(slug) {
+    var el = slug && document.querySelector('[data-pt-src="' + slug + '"]');
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    if (r.width < 8 || r.bottom <= 0 || r.top >= innerHeight || r.right <= 0 || r.left >= innerWidth) return null;
+    var media = el.querySelector('img, video');
+    var rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || (media ? parseFloat(getComputedStyle(media).borderTopLeftRadius) : 0) || 0;
+    return { el: el, media: media || el, rect: { x: r.left, y: r.top, w: r.width, h: r.height }, rad: rad };
+  }
+
+  // the row of screens a project shares between pages, as far as it's on screen: its screens by data-at, its names by
+  // data-pt-nm. a screen or name that's hidden, faded out or off screen stays out
+  function shown(el) {
+    var r = el.getBoundingClientRect();
+    if (r.width < 8 || r.bottom <= 0 || r.top >= innerHeight || r.right <= 0 || r.left >= innerWidth) return null;
+    if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return null;
+    return { x: r.left, y: r.top, w: r.width, h: r.height };
+  }
+  function lineup(slug) {
+    var box = slug && document.querySelector('[data-pt-lineup="' + slug + '"]');
+    if (!box) return null;
+    var ph = {}, nm = {}, any = false;
+    box.querySelectorAll('[data-at]').forEach(function (el) { var r = shown(el); if (r) { ph[el.dataset.at] = { el: el, r: r }; any = true; } });
+    box.querySelectorAll('[data-pt-nm]').forEach(function (el) { var r = shown(el); if (r) nm[el.dataset.ptNm] = { el: el, r: r }; });
+    return any ? { ph: ph, nm: nm } : null;
+  }
+  function rects(m) { var o = {}; for (var k in m) o[k] = m[k].r; return o; }
+
+  var named = [], added = [];
+  function name(el, n, cls) { if (el) { el.style.viewTransitionName = n; if (cls) el.style.viewTransitionClass = cls; named.push(el); } }
+  function add(cls, attrs) {
+    var el = document.createElement('div');
+    el.className = cls; el.setAttribute('aria-hidden', 'true');
+    for (var k in attrs || {}) el.setAttribute(k, attrs[k]);
+    if (cls === 'pt-seam') el.appendChild(document.createElement('i'));
+    document.body.appendChild(el); added.push(el);
+    return el;
+  }
+  function cleanup() {
+    named.forEach(function (el) { el.style.viewTransitionName = ''; el.style.viewTransitionClass = ''; });
+    added.forEach(function (el) { el.remove(); });
+    named = []; added = [];
+    ['pt', 'ptDir'].forEach(function (k) { delete root.dataset[k]; });
+    ['--pt-t', '--pt-r', '--pt-b', '--pt-l', '--pt-rad', '--pt-x', '--pt-y', '--pt-s', '--pt-cx', '--pt-cy', '--pt-cs', '--pt-ix', '--pt-iy', '--pt-irad', '--pt-paper'].forEach(function (p) { root.style.removeProperty(p); });
+  }
+  function done(vt) { vt.finished.then(cleanup, cleanup); }
+  function set(t) { root.dataset.pt = t.kind; if (t.dir) root.dataset.ptDir = t.dir; }
+  function inset(r, rad) {
+    var s = root.style;
+    s.setProperty('--pt-t', r.y + 'px'); s.setProperty('--pt-l', r.x + 'px');
+    s.setProperty('--pt-r', (innerWidth - r.x - r.w) + 'px'); s.setProperty('--pt-b', (innerHeight - r.y - r.h) + 'px');
+    s.setProperty('--pt-rad', (rad || 0) + 'px');
+  }
+  // the screen scaled to the source's width, centred on it
+  function fit(r) {
+    var s = Math.max(.05, r.w / innerWidth);
+    root.style.setProperty('--pt-s', s);
+    root.style.setProperty('--pt-x', r.x + 'px');
+    root.style.setProperty('--pt-y', (r.y + (r.h - innerHeight * s) / 2) + 'px');
+  }
+  // the screen scaled to cover the source, and the source's rect in the scaled page's own coordinates
+  function cover(r, rad) {
+    var vw = innerWidth, vh = innerHeight, s = Math.max(.05, r.w / vw, r.h / vh), st = root.style;
+    st.setProperty('--pt-cs', s);
+    st.setProperty('--pt-cx', (r.x + r.w / 2 - vw * s / 2) + 'px');
+    st.setProperty('--pt-cy', (r.y + r.h / 2 - vh * s / 2) + 'px');
+    st.setProperty('--pt-ix', Math.max(0, (vw - r.w / s) / 2) + 'px');
+    st.setProperty('--pt-iy', Math.max(0, (vh - r.h / s) / 2) + 'px');
+    st.setProperty('--pt-irad', (rad || 0) / s + 'px');
+  }
+  // no source on screen: a small window in the middle stands in for it
+  function middle() { var w = Math.min(320, innerWidth * .4), h = w * 1.2; return { x: (innerWidth - w) / 2, y: (innerHeight - h) / 2, w: w, h: h }; }
+
+  // the last link pressed, for browsers whose pageswap doesn't say where it's going
+  var pressed = null;
+  addEventListener('click', function (e) {
+    var a = e.target && e.target.closest && e.target.closest('a[href]');
+    pressed = a ? { href: a.href, t: Date.now() } : null;
+    // a case study's way back to the page it was opened from goes back in history instead: that page comes back as it
+    // was left (scrolled to the row, its screens mounted), so the screens can slide home. a fresh load mounts them too late
+    var nav = window.navigation, here = path(location.href), prev;
+    if (!a || !nav || !nav.canGoBack || !slugOf(here) || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || a.target) return;
+    try { prev = nav.entries()[nav.currentEntry.index - 1]; } catch (err) { return; }
+    if (prev && path(prev.url) === path(a.href) && isList(path(a.href))) { e.preventDefault(); nav.back(); }
+  }, true);
+
+  // ---- the page being left: name what travels, and leave a note for the next page
+  addEventListener('pageswap', function (e) {
+    var vt = e.viewTransition;
+    if (!vt) return;
+    var act = e.activation;
+    var to = act && act.entry ? path(act.entry.url) : (pressed && Date.now() - pressed.t < 3000 ? path(pressed.href) : null);
+    if (!to) return;
+    var from = path(location.href);
+    var t = reduced.matches ? { kind: 'quiet' } : trip(from, to);
+    var note = { from: from, to: to, t: Date.now() };
+    if (t.mast) name(document.querySelector('.mast'), 'pt-mast');
+    // a row of screens travels as itself, if the next page has the same row (it decides; see pagereveal)
+    var row = t.kind === 'window' && t.dir ? lineup(t.slug) : null;
+    if (row) {
+      for (var i in row.ph) name(row.ph[i].el, 'pt-ph-' + i, 'pt-ph');
+      for (var j in row.nm) name(row.nm[j].el, 'pt-nm-' + j, 'pt-nm');
+      note.ph = rects(row.ph); note.nm = rects(row.nm);
+    }
+    if (t.dir === 'open') {
+      var src = source(t.slug);
+      if (src) {
+        note.rect = src.rect; note.rad = src.rad;
+        // the window carries the product's screen itself; wake and type keep the whole thing (bezel, window).
+        // with a row named, the screen holding the product is already pt-ph-<n>; the fallback grows that one
+        var held = row && src.el.closest('[data-at]');
+        if (held && row.ph[held.dataset.at]) note.main = 'pt-ph-' + held.dataset.at;
+        else if (!row) name(t.kind === 'window' ? src.media : src.el, 'pt-src');
+      }
+    }
+    try { sessionStorage.setItem(KEY, JSON.stringify(note)); } catch (err) {}
+    done(vt);
+  });
+  // back from the bfcache: nothing of the last trip may linger
+  addEventListener('pageshow', function (e) { if (e.persisted) cleanup(); });
+
+  // ---- the page arriving
+  addEventListener('pagereveal', function (e) {
+    cleanup();
+    var vt = e.viewTransition;
+    if (!vt) return;
+    var here = path(location.href), note = null;
+    try { note = JSON.parse(sessionStorage.getItem(KEY) || 'null'); sessionStorage.removeItem(KEY); } catch (err) {}
+    if (note && (note.to !== here || Date.now() - note.t > 5000)) note = null;
+    var act = window.navigation && navigation.activation;
+    var from = note ? note.from : act && act.from && act.from.url ? path(act.from.url) : null;
+    var t = reduced.matches ? { kind: 'quiet' } : trip(from, here);
+    set(t);
+    done(vt);
+    if (reduced.matches) return;
+
+    if (t.mast) name(document.querySelector('.mast'), 'pt-mast');
+    if (t.kind === 'seam') {
+      root.style.setProperty('--pt-paper', getComputedStyle(document.body).backgroundColor);
+      add('pt-seam', { 'data-dir': t.dir });
+      return;
+    }
+    if (t.kind === 'quiet') return;
+
+    // the same row on both pages: pair what's on screen here with what was there, and fly each screen across
+    // the opening's own rise would run inside the arriving screens (and hide its names from lineup()); pt-landed tells
+    // it they've arrived (Opening.astro). taken back if nothing pairs
+    var landing = t.kind === 'window' && t.dir === 'open' && note && note.ph;
+    if (landing) root.classList.add('pt-landed');
+    var row = t.kind === 'window' && note && note.ph ? lineup(t.slug) : null;
+    var pairs = [];
+    if (row) for (var i in row.ph) if (note.ph[i]) pairs.push({ el: row.ph[i].el, from: note.ph[i], n: 'pt-ph-' + i });
+    if (landing && !pairs.length) root.classList.remove('pt-landed');
+    if (pairs.length) {
+      root.dataset.pt = 'lineup';
+      pairs.forEach(function (p) { name(p.el, p.n, 'pt-ph'); });
+      for (var j in row.nm) if (note.nm && note.nm[j]) name(row.nm[j].el, 'pt-nm-' + j, 'pt-nm');
+      vt.ready.then(function () { fly(pairs); }, function () {});
+      return;
+    }
+
+    if (t.dir === 'open') {
+      var r = note && note.rect || middle();
+      inset(r, note && note.rad || 16);
+      fit(r);
+      cover(r, note && note.rad || 16);
+      if (t.kind === 'window' && note && note.rect) {
+        var frame = add('pt-frame');
+        if (note.main) { frame.style.viewTransitionName = note.main; frame.style.viewTransitionClass = 'pt-main'; }
+      }
+      if (t.kind === 'wake') add('pt-veil');
+      if (t.kind === 'type') flick(document.querySelector('main h1'));
+    } else {
+      var src = source(t.slug);
+      var b = src ? src.rect : middle();
+      inset(b, src ? src.rad : 16);
+      fit(b);
+      cover(b, src ? src.rad : 16);
+      if (t.kind === 'wake') add('pt-veil');
+    }
+  });
+
+  // each screen's group stays the arriving screen's size; a transform carries it from the old rect to the new one
+  function fly(pairs) {
+    pairs.forEach(function (p) {
+      var w = p.el.offsetWidth, h = p.el.offsetHeight, r = p.el.getBoundingClientRect(), a = p.from;
+      if (!w || !h) return;
+      var m = function (x, y, rw, rh) { return 'matrix(' + rw / w + ', 0, 0, ' + rh / h + ', ' + x + ', ' + y + ')'; };
+      root.animate({ transform: [m(a.x, a.y, a.w, a.h), m(r.left, r.top, r.width, r.height)] },
+        { duration: 640, easing: 'cubic-bezier(.32, .72, 0, 1)', fill: 'both', pseudoElement: '::view-transition-group(' + p.n + ')' });
+    });
+  }
+
+  function flick(h1) {
+    if (!h1) return;
+    var r = h1.getBoundingClientRect(), cs = getComputedStyle(h1);
+    var box = document.createElement('div');
+    box.className = 'pt-flick'; box.setAttribute('aria-hidden', 'true');
+    box.style.cssText = 'left:' + (r.left + scrollX) + 'px;top:' + (r.top + scrollY) + 'px;font-size:' + cs.fontSize + ';line-height:' + cs.lineHeight + ';letter-spacing:' + cs.letterSpacing + ';color:' + cs.color;
+    FACES.forEach(function (f, i) {
+      var s = document.createElement('span');
+      s.textContent = h1.textContent.trim();
+      s.style.cssText = 'font-family:' + f[0] + ';font-style:' + f[1] + ';font-weight:' + f[2] + ';--i:' + i;
+      box.appendChild(s);
+    });
+    document.body.appendChild(box);
+    h1.classList.add('pt-flicking');
+    setTimeout(function () { box.remove(); h1.classList.remove('pt-flicking'); }, 700);
+  }
+})();
+</script>

@@ -1,0 +1,228 @@
+---
+// a post's header, made of the garden's own stitches instead of a picture. every kind has a still, drawn here at build
+// time, so it looks right before the script, without it, and as the small picture on the blog's list. the live part
+// loads only when the header is near the screen.
+//   garden: a small pixel garden, the real one from js/garden/pixels.js. tap to plant
+//   xray:   one rose as its grid of stitches, numbered in the order they go in, replaying; scrub through it
+//   scale:  the garden's five notes as pads you can play
+// mini renders the still alone, for the list of posts
+import { gardenStill, BED, MINI_XS, xrayPlant, seedOf, type HeaderKind } from './scene';
+import { rects, head } from './plant';
+
+interface Props { kind: HeaderKind; slug: string; mini?: boolean }
+const { kind, slug, mini = false } = Astro.props;
+
+// x-ray: the rose centred on a sheet of graph paper, 40 by 22 stitches
+const XR = { w: 40, h: 22 };
+const rose = kind === 'xray' ? xrayPlant() : null;
+const xr = rose && (() => {
+  const [x0, y0, x1, y1] = rose.box;
+  const dx = Math.round(XR.w / 2 - (x0 + x1 + 1) / 2), dy = Math.round((XR.h - (y1 - y0 + 1)) / 2) - y0;
+  // pale petals take ink numbers, dark ones white
+  const lum = (h: string) => { const n = parseInt(h.slice(1), 16); return (.299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255)) / 255; };
+  return { dx, dy, cells: rose.cells.map((c, i) => ({ x: c.x + dx, y: c.y + dy, col: c.col, o: c.o, i, ink: lum(c.col) > .62 })) };
+})();
+const parts = rose ? rose.cells.map((c) => c.o).join('') : '';
+
+// scale: five pads, one per note of the scale, each wearing a flower from the garden
+const NOTES = [
+  { n: 'D', midi: 74, kind: 'tulip', pal: 0 }, { n: 'E', midi: 76, kind: 'daffodil', pal: 1 }, { n: 'F♯', midi: 78, kind: 'forget', pal: 0, form: 1 },
+  { n: 'A', midi: 81, kind: 'poppy', pal: 1 }, { n: 'B', midi: 83, kind: 'iris', pal: 0 },
+];
+const hz = (midi: number) => Math.round(440 * 2 ** ((midi - 69) / 12));
+// each head's own box, so it fills its pad whatever its size
+const box = (cells: { x: number; y: number }[]) => {
+  const xs = cells.map((c) => c.x), ys = cells.map((c) => c.y);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0 + 1, h = Math.max(...ys) - y0 + 1, s = Math.max(w, h);
+  return `${x0 - (s - w) / 2} ${y0 - (s - h) / 2} ${s} ${s}`;
+};
+const id = `ph-${slug}`;
+---
+{kind === 'garden' && (
+  mini
+    ? <svg class="ph-mini ph-mini-garden" viewBox="52 4 104 54" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" aria-hidden="true" set:html={gardenStill(seedOf(slug), MINI_XS)} />
+    : <figure class="ph ph-garden" data-ph="garden" aria-labelledby={`${id}-cap`}>
+        <div class="ph-stage">
+          <svg class="ph-still" viewBox={`0 0 ${BED.w} ${BED.h}`} preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" aria-hidden="true" set:html={gardenStill(seedOf(slug))} />
+        </div>
+        <figcaption class="ph-bar">
+          <span class="ph-cap" id={`${id}-cap`}><span class="px">fig. 0</span> a live corner of the garden. <span class="ph-how">tap the soil to plant.</span></span>
+          <span class="ph-tools">
+            <button class="ph-btn" type="button" data-plant disabled><span class="px">plant one</span></button>
+            <button class="ph-btn ph-snd" type="button" data-sound aria-pressed="true" disabled><span class="px">sound</span><i aria-hidden="true"></i></button>
+          </span>
+        </figcaption>
+      </figure>
+)}
+
+{kind === 'xray' && xr && (
+  <figure class:list={['ph ph-xray', { 'ph-mini': mini }]} data-ph={mini ? undefined : 'xray'} data-parts={parts} aria-labelledby={mini ? undefined : `${id}-cap`}>
+    <div class="ph-stage xr-sheet">
+      <svg class="xr" viewBox={`0 0 ${XR.w} ${XR.h}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`A rose drawn as ${xr.cells.length} numbered stitches on graph paper.`}>
+        <defs>
+          <pattern id={`${id}-g`} width="5" height="5" patternUnits="userSpaceOnUse">
+            <path d="M0 1H5M0 2H5M0 3H5M0 4H5M1 0V5M2 0V5M3 0V5M4 0V5" class="xr-fine" />
+            <path d="M0 0H5M0 0V5" class="xr-bold" />
+          </pattern>
+        </defs>
+        <rect x="-.5" y="-.5" width={XR.w + 1} height={XR.h + 1} fill={`url(#${id}-g)`} />
+        <g class="xr-pattern" aria-hidden="true">
+          {xr.cells.map((c) => <text x={c.x + .5} y={c.y + .54}>{c.i + 1}</text>)}
+        </g>
+        <g class="xr-cells" aria-hidden="true">
+          {xr.cells.map((c) => (
+            <g style={`--i:${c.i}`}>
+              <rect x={c.x} y={c.y} width="1" height="1" fill={c.col} />
+              {!mini && <text x={c.x + .5} y={c.y + .54} class:list={{ ink: c.ink }}>{c.i + 1}</text>}
+            </g>
+          ))}
+        </g>
+        {!mini && <rect class="xr-now" width="1" height="1" x="-2" y="-2" />}
+      </svg>
+    </div>
+    {!mini && (
+      <figcaption class="ph-bar xr-bar">
+        <button class="ph-btn xr-play" type="button" data-play aria-pressed="false" disabled><span class="px">play</span></button>
+        <label class="xr-scrub">
+          <span class="sr">stitch</span>
+          <input type="range" min="0" max={xr.cells.length} value={xr.cells.length} step="1" disabled />
+        </label>
+        <output class="xr-read px" aria-live="off"><b>{String(xr.cells.length).padStart(3, '0')}</b> / {xr.cells.length}<span>petal</span></output>
+        <span class="ph-cap xr-cap" id={`${id}-cap`}><span class="px">fig. 0</span> one rose, stitch by stitch: the stem from the ground up, its leaves, then the petals from the middle out. replayed at a third of the garden’s speed.</span>
+      </figcaption>
+    )}
+  </figure>
+)}
+
+{kind === 'scale' && (
+  mini
+    ? <svg class="ph-mini" viewBox="0 0 120 40" preserveAspectRatio="xMidYMid meet" shape-rendering="crispEdges" aria-hidden="true" set:html={NOTES.map((p, i) => `<g style="--i:${i}">${rects(head(p.kind, p.form ?? 0, p.pal), 16 + i * 22, 20)}</g>`).join('')} />
+    : <figure class="ph ph-scale" data-ph="scale" aria-labelledby={`${id}-cap`}>
+        <div class="ph-stage sc-pads">
+          {NOTES.map((p, i) => {
+            const cells = head(p.kind, p.form ?? 0, p.pal);
+            return (
+              <button class="sc-pad" type="button" data-midi={p.midi} data-deg={i} aria-label={`Play ${p.n}`} disabled>
+                <svg viewBox={box(cells)} shape-rendering="crispEdges" aria-hidden="true" set:html={rects(cells)} />
+                <span class="sc-note"><span class="px">{p.n}</span><small>{hz(p.midi)} Hz</small></span>
+              </button>
+            );
+          })}
+        </div>
+        <figcaption class="ph-bar">
+          <span class="ph-cap" id={`${id}-cap`}><span class="px">fig. 0</span> the five notes every sound on the site is made of. play them in any order. none of them clash.</span>
+          <span class="ph-tools">
+            <button class="ph-btn ph-snd" type="button" data-sound aria-pressed="true" disabled><span class="px">sound</span><i aria-hidden="true"></i></button>
+          </span>
+        </figcaption>
+      </figure>
+)}
+
+<script>
+  // the live part of a header loads only once it's near the screen
+  const LIVE: Record<string, () => Promise<{ mount: (el: HTMLElement) => void }>> = {
+    garden: () => import('./live/garden'),
+    xray: () => import('./live/xray'),
+    scale: () => import('./live/scale'),
+  };
+  const io = new IntersectionObserver((es) => {
+    for (const e of es) {
+      if (!e.isIntersecting) continue;
+      io.unobserve(e.target);
+      const el = e.target as HTMLElement;
+      LIVE[el.dataset.ph!]?.().then((m) => m.mount(el)).catch((err) => console.warn('header unavailable', err));
+    }
+  }, { rootMargin: '300px 0px' });
+  document.querySelectorAll<HTMLElement>('[data-ph]').forEach((el) => io.observe(el));
+</script>
+
+<style>
+  .ph { position: relative; margin: 0 auto clamp(40px, 6vw, 64px); }
+  .ph-stage { position: relative; height: clamp(220px, 30vw, 300px); overflow: hidden; }
+  .ph-still, .ph-mini { display: block; width: 100%; height: 100%; }
+  .ph-stage :global(canvas) { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; cursor: pointer; }
+  /* with the script on, the garden stitches itself in, so the still stays out of the way. if the script never makes
+     it, the still comes back after a few seconds */
+  :global(.js) .ph-garden:not(.live) .ph-still { opacity: 0; animation: ph-back .3s 4s var(--ease) forwards; }
+  :global(.js) .ph-garden.live .ph-still { display: none; }
+  @keyframes ph-back { to { opacity: 1; } }
+  /* with no script at all, the still is the whole header: no controls that can't do anything */
+  :global(html:not(.js)) .ph-tools, :global(html:not(.js)) .ph-how, :global(html:not(.js)) .xr-play, :global(html:not(.js)) .xr-scrub { display: none; }
+
+  .ph-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .ph-cap { flex: 1 1 280px; font: 400 13px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .ph-cap .px { color: var(--ink); margin-right: 6px; }
+  .ph-tools { display: flex; gap: 4px; margin-right: -12px; }
+  .ph-btn { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 0; background: none; color: var(--ink); font: 500 13px/1 var(--pixel); cursor: pointer; border-radius: 8px; transition: transform .16s var(--ease), opacity .2s var(--ease); }
+  .ph-btn:disabled { opacity: .35; cursor: default; }
+  .ph-btn:not(:disabled):active { transform: scale(.97); }
+  .ph-btn .px { background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat; padding-bottom: 3px; }
+  .ph-snd i { width: 12px; height: 10px; background: currentColor; clip-path: polygon(0 30%, 30% 30%, 60% 0, 60% 100%, 30% 70%, 0 70%); position: relative; }
+  .ph-snd[aria-pressed=false] { color: var(--ink-3); }
+  .ph-snd[aria-pressed=false] .px { background-size: 0 1px; }
+  @media (hover: hover) and (pointer: fine) { .ph-btn:not(:disabled):hover { opacity: .7; } }
+
+  /* ---- x-ray: graph paper, a faint pattern of numbers, the stitches filling it in */
+  .xr-sheet { height: auto; aspect-ratio: 40 / 22; }
+  .xr { display: block; width: 100%; height: 100%; --k: 9999; }
+  :global(.js) .ph-xray:not(.ph-mini) .xr { --k: 0; }
+  .xr-fine { stroke: rgba(36, 71, 216, .09); stroke-width: .04; fill: none; }
+  .xr-bold { stroke: rgba(36, 71, 216, .2); stroke-width: .06; fill: none; }
+  .xr text { font: 500 .34px/1 var(--mono); text-anchor: middle; dominant-baseline: middle; font-variant-numeric: tabular-nums; }
+  .xr-pattern text { fill: rgba(31, 29, 27, .3); }
+  .xr-cells g { opacity: clamp(0, var(--k) - var(--i), 1); }
+  .xr-cells text { fill: rgba(255, 255, 255, .92); }
+  .xr-cells text.ink { fill: rgba(31, 29, 27, .72); }
+  .xr-now { fill: none; stroke: var(--ink); stroke-width: .12; }
+  .ph-mini.ph-xray { margin: 0; height: 100%; }
+  .ph-mini.ph-xray .xr-sheet { height: 100%; }
+  .xr-bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 16px; }
+  .xr-play { margin-left: -12px; min-width: 76px; }
+  .xr-cap { grid-column: 1 / -1; padding-top: 2px; }
+  .xr-read { font: 500 13px/1 var(--pixel); color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 15ch; text-align: right; }
+  .xr-read :global(b) { font-weight: 500; color: var(--ink); }
+  .xr-read :global(span) { display: inline-block; margin-left: 10px; padding: 3px 6px 4px; color: #fff; background: var(--ink); min-width: 6ch; text-align: center; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* the scrubber: a hairline track and a square pixel thumb, 44px to grab */
+  .xr-scrub { display: flex; align-items: center; min-height: 44px; }
+  .xr-scrub input { appearance: none; -webkit-appearance: none; width: 100%; height: 44px; margin: 0; background: linear-gradient(var(--ink), var(--ink)) 0 50% / 100% 1px no-repeat; cursor: pointer; }
+  .xr-scrub input:disabled { opacity: .35; cursor: default; }
+  .xr-scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--ink); border: 0; border-radius: 0; box-shadow: 0 0 0 3px #fff; transition: transform .16s var(--ease); }
+  .xr-scrub input::-moz-range-thumb { width: 14px; height: 14px; background: var(--ink); border: 0; border-radius: 0; box-shadow: 0 0 0 3px #fff; }
+  .xr-scrub input:active::-webkit-slider-thumb { transform: scale(1.2); }
+  .xr-scrub input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* ---- scale: five pads, a flower head each, the note and its pitch in the corner */
+  .sc-pads { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; height: auto; padding-bottom: 16px; }
+  .sc-pad { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; aspect-ratio: 4 / 5; padding: 0; border: 0; background: #fff; color: var(--ink); border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; transition: transform .16s var(--ease), box-shadow .2s var(--ease); }
+  .sc-pad svg { width: 44%; height: auto; margin-top: -12%; }
+  .sc-note { position: absolute; left: 14px; right: 14px; bottom: 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+  .sc-note .px { font-size: 16px; color: var(--ink); }
+  .sc-note small { font: 400 11px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sc-pad:disabled { cursor: default; }
+  .sc-pad:not(:disabled):active, .sc-pad.hit { transform: scale(.97); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  /* a played note: its flower hops, in the garden's stepped frames */
+  .sc-pad.hit svg { animation: sc-hop .36s steps(1) both; }
+  @keyframes sc-hop { 0% { translate: 0 -8%; } 45% { translate: 0 -3%; } 70%, 100% { translate: none; } }
+  @media (hover: hover) and (pointer: fine) { .sc-pad:not(:disabled):hover { box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .4); } }
+
+  @media (max-width: 640px) {
+    .ph { width: calc(100% + var(--gut) * 2); margin-inline: calc(var(--gut) * -1); }
+    .ph-bar { padding-inline: var(--gut); }
+    .ph-mini { width: 100%; margin: 0; }
+    .xr-sheet { aspect-ratio: auto; height: 400px; }
+    .xr-bar { grid-template-columns: auto minmax(0, 1fr); }
+    .xr-read { grid-column: 1 / -1; grid-row: 1; text-align: left; padding-top: 6px; }
+    .ph-tools { margin-right: -12px; margin-left: auto; }
+    .sc-pads { gap: 6px; padding-inline: var(--gut); }
+    .sc-pad { aspect-ratio: 1 / 2; border-radius: 10px; }
+    .sc-pad svg { width: 70%; margin-top: -30%; }
+    .sc-note { left: 0; right: 0; bottom: 10px; flex-direction: column; align-items: center; gap: 5px; }
+    .sc-note small { font-size: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ph-btn, .sc-pad { transition: none; }
+    .sc-pad.hit svg { animation: none; }
+  }
+</style>

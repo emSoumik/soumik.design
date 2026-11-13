@@ -1,0 +1,62 @@
+---
+// in tune: eight pads, played in the garden's scale (D major pentatonic) or in eight plain semitones from the same D.
+// a strip of piano keys above shows which notes each one has
+import { head, rects } from '../plant';
+const FLOWERS = [['tulip', 0, 0], ['daffodil', 0, 1], ['forget', 1, 0], ['poppy', 0, 1], ['iris', 0, 0], ['cosmos', 1, 0], ['blossom', 0, 3], ['pansy', 0, 0]] as const;
+// D5 up to F#6: 17 keys
+const KEYS = Array.from({ length: 17 }, (_, i) => ({ m: 74 + i, black: [1, 3, 6, 8, 10].includes((i + 2) % 12) }));
+const PENTA = [74, 76, 78, 81, 83, 86, 88, 90];
+---
+<div class="dm-stage tu" style="--dm-h: 300px; --dm-hp: 330px">
+  <div class="tu-keys" aria-hidden="true">
+    {KEYS.map((k) => <i class:list={[{ b: k.black, on: PENTA.includes(k.m) }]} data-m={k.m}></i>)}
+  </div>
+  <div class="tu-pads">
+    {FLOWERS.map(([kind, form, pal], i) => (
+      <button class="tu-pad" type="button" data-i={i} disabled>
+        <svg viewBox="-7 -7 14 14" shape-rendering="crispEdges" aria-hidden="true" set:html={rects(head(kind, form, pal))} />
+        <span class="px">{['D', 'E', 'F♯', 'A', 'B', 'D', 'E', 'F♯'][i]}</span>
+      </button>
+    ))}
+  </div>
+</div>
+<div class="dm-bar">
+  <div class="dm-seg" role="radiogroup" aria-label="Which notes" data-v="0">
+    <button type="button" role="radio" aria-checked="true" disabled>the garden’s five</button>
+    <button type="button" role="radio" aria-checked="false" disabled>all twelve</button>
+    <i aria-hidden="true"></i>
+  </div>
+  <button class="dm-btn" type="button" data-rand disabled><span>play twelve at random</span></button>
+  <output class="dm-read" aria-live="polite">tap the pads</output>
+</div>
+
+<style>
+  .tu { display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 44px 24px 20px; }
+  .tu-keys { position: relative; display: flex; height: 44px; margin: 0 auto; width: min(100%, 540px); padding-inline: 10px; box-sizing: border-box; }
+  .tu-keys i { position: relative; flex: 1; border: 1px solid var(--line); border-right: 0; background: #fff; transition: background-color .25s var(--ease); }
+  .tu-keys i:last-child { border-right: 1px solid var(--line); }
+  .tu-keys i.b { flex: 0 0 0; z-index: 1; border: 0; }
+  .tu-keys i.b::before { content: ""; position: absolute; top: 0; left: -9px; width: 18px; height: 60%; background: var(--ink); }
+  .tu-keys i.on { background: #ffe680; }
+  .tu-keys i.b.on::before { background: #e3a21a; }
+  .tu-keys i.hit { background: #f56f2a; transition: none; }
+  .tu-keys i.b.hit::before { background: #f56f2a; }
+  .tu-pads { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; width: min(100%, 720px); margin: 0 auto; }
+  .tu-pad { display: grid; place-items: center; align-content: center; gap: 8px; aspect-ratio: 1; min-height: 64px; padding: 8px; border: 0; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; touch-action: manipulation;
+    transition: transform .16s var(--ease), box-shadow .2s var(--ease); }
+  .tu-pad svg { width: 52%; height: auto; transition: transform .2s var(--ease); }
+  .tu-pad .px { font: 500 13px/1 var(--pixel); color: var(--ink); }
+  .tu-pad:disabled { cursor: default; }
+  .tu-pad:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .tu-pad.hit { transform: scale(.95); box-shadow: inset 0 0 0 2px var(--ink); transition: none; }
+  .tu-pad.hit svg { transform: translateY(-2px); transition: none; }
+  .tu-pad.out .px { color: #c8301e; }
+  @media (hover: hover) and (pointer: fine) { .tu-pad:not(:disabled):hover { box-shadow: inset 0 0 0 1px var(--ink-3); } }
+  @media (max-width: 640px) {
+    .tu { padding: 40px var(--gut) 16px; gap: 18px; }
+    .tu-pads { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .tu-pad { aspect-ratio: auto; height: 76px; }
+    .tu-pad svg { width: 30px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tu-pad, .tu-pad svg { transition: none; } .tu-pad.hit { transform: none; } .tu-pad.hit svg { transform: none; } }
+</style>

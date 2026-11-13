@@ -1,0 +1,595 @@
+---
+// PROTOTYPE: the small things, as cards. each opens into a sheet that grows out of its card and is a little page of its own:
+// a hero stage on the card's own fill (the same composition, larger), then the headline, copy and specs
+import Screen from './Screen.astro';
+import DetailFoot from './DetailFoot.astro';
+const A = '/assets/work/whyclub/';
+
+// copy checked against why-club: mobile-hero-carousel.ts (sampled once per photo, settle timer, safari 26 tints from the
+// html background, android from theme-color), morph-dock.css (dark glass only on iOS in dark mode), pageLoadingModel.ts
+// (350 / 120 / 10000ms, nine page kinds) and EntranceGate.astro (sessionStorage whyclub_entered, 1.55s opening, 8s cap)
+// the safari card and sheet: the bottom of each screenshot, where the toolbar and the dock sit on the photo. the lines
+// come from the copy below and the screenshots' own captions (the toolbar on white before; the photo's colour after; dark
+// glass only in dark mode, from morph-dock.css)
+const crops = [
+  ['before', 'Before', 'the toolbar sits on white, so the photo looks pasted in'],
+  ['light', 'Light', 'the bars tint from the photo, the dock is light glass'],
+  ['dark', 'Dark', 'the same tint, and the dock turns to dark glass'],
+];
+const items = [
+  {
+    id: 'safari', title: 'Safari takes the photo’s colour', line: 'The toolbar follows the hero, in light and dark.',
+    credit: 'iOS 26 changed how Safari sits around a page, and I wanted the store to feel like it belonged on an iPhone. The approach comes from Josh Puckett’s write-up on <a href="https://joshpuckett.me/seamless-mobile-safari" target="_blank" rel="noopener">seamless mobile Safari</a>, and the credit belongs there.',
+    paras: [
+      'On iOS 26 Safari’s bars are glass, and they tint from the page. At first the top of the home page showed a white strip and the bottom toolbar sat on white, so the hero photo looked like it had been pasted in.',
+      'Now each hero photo’s top edge is sampled once and handed to the browser as the colour to tint from, after the carousel settles so a swipe never waits on it.',
+    ],
+    specs: [['Sampled', 'once per photo, then reused'], ['Safari', 'tints from the page background'], ['Android Chrome', 'tints its URL bar from the theme colour']],
+  },
+  {
+    id: 'loading', title: 'Waiting looks like where you’re going', line: 'A wireframe of the page you tapped, not a spinner.',
+    paras: [
+      'Tap a link and WhyClub works out what kind of page you asked for from its address: the shop, a product, a policy, your account. If it isn’t ready in 350ms, a wireframe of that page fades in, with the product’s name already there if you tapped a card.',
+      'The wireframe is drawn in the page’s own layout, so the real photos have somewhere to land. If a page hangs for ten seconds, the browser’s own load takes over instead of leaving you on a stuck screen.',
+    ],
+    specs: [['Wireframe after', '350ms'], ['Fade in', '120ms'], ['Gives up after', '10 seconds'], ['Page kinds', 'home, shop, product, policy, contact, story, account, track order, other']],
+  },
+  {
+    id: 'entrance', title: 'The entrance', line: 'Black, the wordmark, then the hero comes up.',
+    paras: [
+      'The first visit opens on black with the wordmark, then the hero comes up behind it. It plays once per visit, never on every page.',
+      'It waits for the hero image to decode before it opens, and a safety timer clears it after 8 seconds either way, so a slow connection never leaves you behind black.',
+    ],
+    specs: [['Opening', '1.55 seconds'], ['Plays', 'once per browser session'], ['Clears itself after', '8 seconds at most']],
+  },
+  {
+    id: 'footer', title: 'A footer with an index', line: 'Point at a link and its number slides in.',
+    paras: [
+      'Every link in the footer carries a running number across all three columns. Point at one and its number slides in, the label steps right and everything else steps back. It’s the kind of thing you find by accident.',
+      'Try it below. This is the same CSS. On a phone, tap a link.',
+    ],
+    specs: [],
+  },
+] as const;
+
+// the pass write-up. every line is from this repo: copy.ts (after you order), PassStages.astro (the scenes per stage, the
+// progress, up next and barcode notes, PRINT_MS 1700), lab V1Exhibit (one fragment shader, paused off screen, a still frame
+// for reduced motion, the print as one linear() easing, Razorpay and Shiprocket moving the stages) and whyclub/index.mdx
+const passStages = [
+  ['confirmed', 'You’re in', 'a stem grows and one bloom opens'],
+  ['packed', 'All packed', 'a box drops in, folds shut and gets taped'],
+  ['shipped', 'On its way', 'a route draws itself to a pin'],
+  ['delivered', 'It’s home', 'five blooms breathing at their own pace'],
+];
+const passSections = [
+  ['The print', 'When Razorpay confirms a payment, the bag gives way to a printer slot and the pass feeds out of it. The print is one speed curve, a nudge, a breath, three ticks and a glide, handed to the browser as a single linear() easing, so the paper never jumps between steps.'],
+  ['One shader, four scenes', 'The colour band at the top is one fragment shader, written by hand in WebGL, that draws a different scene for each stage. It’s live light, not a video. It pauses when it’s off screen and draws a single still frame for reduced motion.'],
+  ['What moves it', 'Courier updates from Shiprocket and payments from Razorpay arrive by webhook, and each one moves the order to its next stage. The pass only says what has happened: the progress fill ends at the stop your order is on, never ahead of it, and eases on to the next one instead of jumping.'],
+  ['The rest of the card', 'Up next is written in the future tense, so the pass never says packed before it is. With nothing left to come, it says Complete. The barcode is just for looks: it’s drawn from the pass number, so every pass gets its own.'],
+  ['Around the store', 'The same hand-written shaders turn up elsewhere: riso-style badges for the beta pass, a dithered asterisk, and a 404 page where a prism splits the light.'],
+];
+const passSpecs = [
+  ['Stages', 'Confirmed, Packed, Shipped, Delivered'],
+  ['Drawn with', 'one WebGL fragment shader'],
+  ['Print', '1.7 seconds, one linear() curve'],
+  ['Off screen', 'paused'],
+  ['Reduced motion', 'a single still frame'],
+  ['Moved by', 'Razorpay and Shiprocket webhooks'],
+];
+---
+<section class="details" aria-labelledby="details-h" data-details>
+  <header class="head">
+    <p class="label">Details</p>
+    <h2 id="details-h">The parts nobody asks for.</h2>
+    <p class="lede">Most of the work was in things people only notice when they’re missing. A few of them, up close.</p>
+  </header>
+
+  <ul class="grid">
+    {items.map((it) => (
+      <li>
+        <button type="button" class="dcard" data-card={it.id} aria-haspopup="dialog">
+          <span class="vis">
+            {it.id === 'safari' && (
+              <span class="crops" data-comp>
+                {crops.map(([k, name, line]) => (
+                  <span class="crop"><span class="cimg"><picture><source srcset={`${A}ios/${k}.avif`} type="image/avif"><img src={`${A}ios/${k}.webp`} alt="" loading="lazy" decoding="async" draggable="false"></picture></span>
+                    <span class="cl"><b>{name}</b>{line}</span></span>
+                ))}
+              </span>
+            )}
+            {it.id === 'loading' && <span class="ph solo" data-comp><picture><source srcset={`${A}p-loading.avif`} type="image/avif"><img src={`${A}p-loading.webp`} alt="" loading="lazy" decoding="async" draggable="false"></picture></span>}
+            {it.id === 'entrance' && <span class="ph solo" data-comp><picture><source srcset={`${A}p-splash.avif`} type="image/avif"><img src={`${A}p-splash.webp`} alt="" loading="lazy" decoding="async" draggable="false"></picture></span>}
+            {it.id === 'footer' && <DetailFoot card />}
+          </span>
+          <span class="t">{it.title}</span>
+          <span class="l">{it.line}</span>
+        </button>
+      </li>
+    ))}
+  </ul>
+
+  {items.map((it, i) => {
+    const next = items[(i + 1) % items.length];
+    return (
+      <div class="layer" data-layer={it.id} hidden>
+        <div class="scrim" data-close></div>
+        <section class="panel" role="dialog" aria-modal="true" aria-labelledby={`dt-${it.id}`} tabindex="-1">
+          <div class="ghost vis" aria-hidden="true"></div>
+          <button type="button" class="close" data-close aria-label="Close"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
+          <div class="scroller" data-scroller>
+            <div class="hero" data-hero={it.id}>
+              <div class="hv" data-hv>
+                {it.id === 'safari' && (
+                  <div class="crops">
+                    {crops.map(([k, name, line], i) => (
+                      <figure class="crop"><span class="cimg"><picture><source srcset={`${A}ios/${k}.avif`} type="image/avif"><img src={`${A}ios/${k}.webp`} alt={[
+                        'Before, 24 Oct 2026: Safari’s toolbar sitting on white under the dock, under the hero photo.',
+                        'After, light mode: Safari’s toolbar takes the photo’s colour and the dock is light glass.',
+                        'After, dark mode: the same toolbar tint with the dock in dark glass.'][i]} loading="lazy" decoding="async" draggable="false"></picture></span>
+                        <figcaption class="cl"><b>{name}</b>{line}</figcaption></figure>
+                    ))}
+                  </div>
+                )}
+                {it.id === 'loading' && <Screen view={false} src={A + 'p-loading'} video alt="Tapping Women on a slow connection: a page-shaped wireframe of the grid shows, then the photos fill in." caption="Shop, then Women, on a slow connection" />}
+                {it.id === 'entrance' && <Screen view={false} src={A + 'p-splash'} video alt="The first visit: the wordmark on black, then the hero photo opens up behind it." caption="The first visit, from black to the hero" />}
+                {it.id === 'footer' && <DetailFoot />}
+              </div>
+            </div>
+            <div class="rest" data-rest>
+              <div class="body">
+                <p class="kicker">Detail {i + 1} of {items.length}</p>
+                <h3 id={`dt-${it.id}`}>{it.title}</h3>
+                <div class="top">
+                  <div class="prose">{it.paras.map((p) => <p>{p}</p>)}{'credit' in it && <p class="credit" set:html={it.credit} />}</div>
+                  {it.specs.length > 0 && (
+                    <dl class="spec">{it.specs.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+                  )}
+                </div>
+                <button type="button" class="next" data-next={next.id}><span>Next: {next.title}</span><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  })}
+
+  <!-- the pass write-up: the same sheet, opened from "Expand details" in After you order instead of from a card -->
+  <div class="layer" data-layer="pass" hidden>
+    <div class="scrim" data-close></div>
+    <section class="panel" role="dialog" aria-modal="true" aria-labelledby="dt-pass" tabindex="-1">
+      <div class="ghost vis" aria-hidden="true"></div>
+      <button type="button" class="close" data-close aria-label="Close"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
+      <div class="scroller" data-scroller>
+        <div class="hero passhero" data-hero="pass">
+          <div class="hv" data-hv>
+            {passStages.map(([k, label, scene]) => (
+              <figure class="stagecard">
+                <picture><source srcset={`${A}pass/${k}-m.avif`} type="image/avif"><img src={`${A}pass/${k}-m.webp`} alt={`The pass at ${label}: ${scene}`} loading="lazy" decoding="async" draggable="false"></picture>
+                <figcaption><b>{label}</b><span>{scene}</span></figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+        <div class="rest" data-rest>
+          <div class="body">
+            <p class="kicker">How it’s built</p>
+            <h3 id="dt-pass">The pass, and the shaders around it</h3>
+            <div class="top">
+              <div class="prose">
+                {passSections.map(([label, text]) => (<section class="ps-sec"><h4>{label}</h4><p>{text}</p></section>))}
+              </div>
+              <dl class="spec">{passSpecs.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
+
+<style>
+  .details { width: min(var(--wide), 100%); margin: clamp(96px, 14vw, 180px) auto 0; }
+  /* the sheets live on body, so the tokens sit on both */
+  .details, .layer { --soft: #fff; --out: cubic-bezier(.23, 1, .32, 1); }
+  .head { max-width: 640px; }
+  .label { font: 500 13px/1.4 var(--display); color: var(--ink-3); }
+  .head h2 { margin-top: 8px; font: 500 clamp(28px, 3.6vw, 42px)/1.08 var(--display); letter-spacing: -.025em; text-wrap: balance; }
+  .lede { margin-top: 14px; font: 400 17px/1.55 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+  /* the cards */
+  .grid { list-style: none; margin: clamp(40px, 6vw, 72px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(28px, 4vw, 48px) clamp(16px, 2.4vw, 28px); }
+  .dcard { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; border-radius: 22px; }
+  .dcard:focus-visible { outline: 2px solid var(--ink); outline-offset: 6px; }
+  .vis { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 20px; background: var(--soft); box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .1); container-type: inline-size; transition: transform 200ms var(--out); }
+  .vis picture { display: contents; }
+  .ph { position: absolute; display: block; aspect-ratio: 392 / 848; overflow: hidden; border-radius: calc(var(--w) * .13) calc(var(--w) * .13) 0 0; box-shadow: 0 0 0 .5px rgba(22, 20, 15, .14), 0 10px 30px -16px rgba(40, 30, 15, .28); transition: transform 420ms var(--out); }
+  .ph img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  /* the corner radius follows the phone's own width, about an iPhone screen's 13% */
+  .ph { --w: 27cqw; top: 13%; width: 27%; }
+  .p0 { left: 6.5%; } .p1 { left: 36.5%; } .p2 { left: 66.5%; }
+  .solo { --w: 34cqw; left: 33%; width: 34%; top: 11%; }
+  /* the safari crops: the bottom 48% of each screenshot, cut square across the top and round at the bottom like the phone,
+     so the toolbar and the dock are what you see. a line under each says what that one does */
+  .crops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 4cqw; container-type: inline-size; }
+  .vis > .crops { position: absolute; left: 7%; right: 7%; top: 50%; translate: 0 -50%; }
+  .crop { display: grid; gap: clamp(8px, 3cqw, 14px); align-content: start; margin: 0; }
+  .cimg { display: block; aspect-ratio: 720 / 751; overflow: hidden; border-radius: 0 0 4.2cqw 4.2cqw; box-shadow: 0 0 0 .5px rgba(22, 20, 15, .16), 0 14px 28px -18px rgba(20, 18, 15, .4); }
+  .cimg img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%; }
+  .cl { display: grid; gap: 2px; font: 400 clamp(11px, 2.9cqw, 14px)/1.35 var(--display); color: var(--ink-2); text-wrap: pretty; text-align: left; }
+  .cl b { font: 500 clamp(10px, 2.3cqw, 12px)/1.3 var(--mono); letter-spacing: .02em; color: var(--ink); text-transform: lowercase; }
+  @media (hover: hover) and (pointer: fine) { .cimg { transition: transform 420ms var(--out); } .dcard:hover .cimg { transform: translateY(-2%); } }
+  .hero[data-hero='safari'] .hv { display: block; width: min(860px, 86cqw, (100cqh - 150px) * 2.9); }
+  .hero .crops .cl { text-align: left; }
+  .t { display: block; margin-top: 16px; font: 500 18px/1.25 var(--display); letter-spacing: -.012em; color: var(--ink); text-wrap: balance; }
+  .l { display: block; margin-top: 6px; font: 400 14.5px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  @media (hover: hover) and (pointer: fine) { .dcard:hover .ph { transform: translateY(-1.5%); } }
+  .dcard:active .vis { transform: scale(.985); }
+
+  /* the sheet */
+  .layer { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; }
+  .layer[hidden] { display: none; }
+  .scrim { position: absolute; inset: 0; background: rgba(20, 18, 15, .42); }
+  .panel { position: relative; width: min(1080px, 92vw); height: calc(100dvh - 48px); border-radius: 28px; background: #fff; overflow: hidden; outline: none; will-change: clip-path; }
+  .scroller { height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  .ghost { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; aspect-ratio: auto; transform-origin: 0 0; display: none; }
+  .ghost.on { display: block; }
+  .close { position: absolute; z-index: 4; top: 14px; right: 14px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .92); color: var(--ink);
+    box-shadow: 0 0 0 .5px rgba(22, 20, 15, .14); cursor: pointer; transition: background-color 150ms var(--out), transform 150ms var(--out); -webkit-tap-highlight-color: transparent; }
+  .layer :global(.vplay) { position: absolute; z-index: 2; left: 10px; bottom: 10px; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 22px; padding: 0;
+    background: rgba(20, 18, 15, .72); color: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 150ms var(--out); }
+  .layer :global(.vplay:active) { transform: scale(.92); }
+  .layer :global(.vplay:focus-visible) { outline: 2px solid #fff; outline-offset: 2px; }
+  .close:active { transform: scale(.92); }
+  .close:focus-visible, .next:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  @media (hover: hover) { .close:hover { background: #fff; } }
+
+  /* the hero stage: the card's fill and composition, larger. phones hang from the top and show whole with their caption */
+  .hero { position: relative; height: min(58vh, 560px); min-height: 400px; background: var(--soft); container-type: size; display: grid; place-items: center; }
+  .hv { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 3cqw, 40px); }
+  .hero :global(.scr) { flex: none; width: calc((100cqh - 104px) * 392 / 848); }
+  .hero :global(figcaption) { text-align: center; }
+  .hero[data-hero='footer'] { height: auto; min-height: 0; container-type: normal; padding: 56px 40px; }
+  .hero[data-hero='footer'] .hv { display: block; width: 100%; }
+
+  .body { padding: clamp(28px, 4vw, 48px) clamp(32px, 5vw, 64px) clamp(32px, 5vw, 64px); }
+  .kicker { font: 500 13px/1.4 var(--display); color: var(--ink-3); }
+  .body h3 { margin-top: 10px; max-width: 22ch; font: 500 clamp(28px, 3.6vw, 40px)/1.08 var(--display); letter-spacing: -.028em; text-wrap: balance; }
+  .top { margin-top: clamp(20px, 2.6vw, 28px); display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 64px); align-items: start; }
+  .prose p { font: 400 16px/1.62 var(--display); color: var(--body); text-wrap: pretty; max-width: 56ch; }
+  .prose p + p { margin-top: 14px; }
+  /* the credit for the idea, quieter than the copy */
+  .prose .credit { margin-top: 20px; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+  .prose .credit a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .spec { margin: 0; display: grid; }
+  .spec div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); font: 400 14px/1.45 var(--display); }
+  .spec div:last-child { border-bottom: 1px solid var(--line); }
+  .spec dt { color: var(--ink-2); }
+  .spec dd { margin: 0; color: var(--ink); }
+
+  .next { margin-top: clamp(32px, 4vw, 48px); width: 100%; min-height: 64px; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 0; border-radius: 18px; background: var(--soft); box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .1); color: var(--ink); cursor: pointer;
+    font: 500 16px/1.3 var(--display); text-align: left; transition: background-color 150ms var(--out), transform 150ms var(--out); -webkit-tap-highlight-color: transparent; }
+  .next:active { transform: scale(.99); }
+  @media (hover: hover) { .next:hover { background: #f7f7f7; } }
+
+  @media (max-width: 860px) {
+    .top { grid-template-columns: 1fr; gap: 28px; }
+  }
+
+  /* the pass sheet: the four stages as a strip of posters, then short labelled sections beside the spec */
+  .passhero { height: auto; min-height: 0; container-type: normal; padding: clamp(56px, 6vw, 72px) clamp(24px, 4vw, 48px) 8px; border-bottom: 1px solid rgba(31, 29, 27, .1); }
+  .passhero .hv { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 2vw, 24px); align-items: start; }
+  .stagecard { margin: 0; display: grid; gap: 12px; }
+  .stagecard picture { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 16px; box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .1); }
+  .stagecard img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
+  .stagecard figcaption { display: grid; gap: 2px; padding-bottom: 20px; font: 400 13px/1.4 var(--display); color: var(--ink-2); text-align: left; }
+  .stagecard b { font-weight: 600; color: var(--ink); }
+  .ps-sec + .ps-sec { margin-top: 22px; }
+  .ps-sec h4 { margin: 0 0 6px; font: 500 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .ps-sec p { margin: 0; }
+  [data-layer='pass'] .spec { position: sticky; top: 24px; }
+  @media (max-width: 640px) {
+    /* the cards are one row you swipe, each snapping to the left edge */
+    .grid { display: flex; gap: 10px; overflow-x: auto; margin: 32px -16px 0; padding: 0 16px; scroll-padding: 0 16px; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+    .grid::-webkit-scrollbar { display: none; }
+    .grid li { flex: 0 0 82%; scroll-snap-align: start; }
+    .vis { aspect-ratio: 5 / 4; }
+    .t { font-size: 17px; }
+    /* the sheet is the whole screen */
+    .panel { width: 100%; height: 100dvh; border-radius: 0; }
+    .close { top: max(12px, env(safe-area-inset-top)); right: 12px; }
+    .hero { height: auto; min-height: 0; container-type: normal; padding: calc(68px + env(safe-area-inset-top)) 0 28px; display: block; }
+    .hv { width: 100%; box-sizing: border-box; overflow-x: auto; justify-content: flex-start; scroll-snap-type: x mandatory; scrollbar-width: none; padding-inline: 16px; scroll-padding-inline: 16px; gap: 14px; }
+    .hv::-webkit-scrollbar { display: none; }
+    .hero :global(.scr) { flex: 0 0 64%; width: auto; scroll-snap-align: start; }
+    .hero :global(.scr):last-child { margin-right: 2px; }
+    .hero[data-hero='loading'] .hv, .hero[data-hero='entrance'] .hv { justify-content: center; overflow: visible; }
+    .hero[data-hero='loading'] :global(.scr), .hero[data-hero='entrance'] :global(.scr) { flex: 0 0 auto; width: min(280px, 72%); }
+    .hero[data-hero='footer'] { padding: calc(68px + env(safe-area-inset-top)) 16px 28px; }
+    .body { padding: 28px 16px calc(32px + env(safe-area-inset-bottom)); }
+    .body h3 { max-width: none; font-size: 30px; }
+    .spec div { grid-template-columns: 1fr; gap: 2px; }
+    /* a phone: the stage posters become a row you swipe */
+    .passhero { padding: calc(68px + env(safe-area-inset-top)) 0 4px; }
+    .passhero .hv { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-inline: 16px; gap: 12px; }
+    .stagecard { flex: 0 0 58%; scroll-snap-align: start; }
+    [data-layer='pass'] .spec { position: static; }
+  }
+  @media (max-width: 640px) {
+    /* the card on a phone: crops a little wider, the lines under them small but whole */
+    .vis > .crops { left: 5%; right: 5%; gap: 0 3.5cqw; }
+    .hero[data-hero='safari'] .hv { width: 100%; padding: 0 16px; overflow: visible; }
+  }
+  @media (prefers-reduced-motion: reduce) { .ph, .vis, .close, .next, .cimg { transition: none; } }
+</style>
+
+<script>
+  // each card grows into a sheet: the sheet's clip-path opens from the card's visual to the sheet's own box while a copy of the
+  // card's composition scales onto the hero stage and hands over to the real one, so it reads as one object growing.
+  // back, esc, the scrim and (on phones) a pull down all close it; a tap during the close brings it back
+  const root = document.querySelector<HTMLElement>('[data-details]');
+  if (root) {
+    const EASE = 'cubic-bezier(.32,.72,0,1)';
+    const MS = 520;
+    const cards = new Map<string, HTMLElement>();
+    root.querySelectorAll<HTMLElement>('[data-card]').forEach((c) => cards.set(c.dataset.card!, c));
+    const layers = new Map<string, HTMLElement>();
+    root.querySelectorAll<HTMLElement>('[data-layer]').forEach((l) => { layers.set(l.dataset.layer!, l); document.body.append(l); });
+    const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const phone = () => matchMedia('(max-width: 640px)').matches;
+
+    // the card's footer copy is the demo at 720px wide, scaled to fit the card
+    // on a phone it's cropped to Shop and Help (56 + 2 columns + the gap between them = 445px of the 720) at a readable size
+    const fit = (vis: HTMLElement) => vis.style.setProperty('--fs', String(phone() ? (vis.clientWidth * .94) / 445 : (vis.clientWidth * .88) / 720));
+    const ro = new ResizeObserver((es) => es.forEach((e) => fit(e.target as HTMLElement)));
+    root.querySelectorAll<HTMLElement>('.vis:has(.fd-card)').forEach((v) => { fit(v); ro.observe(v); });
+
+    type Cur = { id: string; layer: HTMLElement; panel: HTMLElement; scroller: HTMLElement; anims: Animation[]; io?: IntersectionObserver; closing: boolean; fast: boolean };
+    let cur: Cur | null = null;
+    const inerted: Element[] = [];
+
+    const setInert = (on: boolean) => {
+      if (on) [...document.body.children].forEach((el) => { if (!el.matches('[data-layer]') && !el.hasAttribute('inert') && el.tagName !== 'SCRIPT') { el.setAttribute('inert', ''); inerted.push(el); } });
+      else inerted.splice(0).forEach((el) => el.removeAttribute('inert'));
+    };
+    const lock = (on: boolean) => {
+      const de = document.documentElement;
+      if (on) { const sb = innerWidth - de.clientWidth; de.style.overflow = 'hidden'; if (sb > 0) de.style.paddingRight = sb + 'px'; }
+      else { de.style.overflow = ''; de.style.paddingRight = ''; }
+    };
+    const watchVideos = (c: Cur) => {
+      const vids = c.layer.querySelectorAll('video');
+      if (!vids.length || reduced()) return;
+      c.io = new IntersectionObserver((es) => es.forEach((e) => {
+        const v = e.target as HTMLVideoElement;
+        if (e.isIntersecting) v.play().catch(() => {}); else v.pause();
+      }), { root: c.scroller, threshold: 0.35 });
+      vids.forEach((v) => c.io!.observe(v));
+    };
+    // reduced motion: recordings stay on their poster until the reader asks, with a small play / pause pill on each
+    const PLAY = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5 3.2v9.6L13 8z" fill="currentColor"/></svg>';
+    const PAUSE = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4.5 3h2.6v10H4.5zM8.9 3h2.6v10H8.9z" fill="currentColor"/></svg>';
+    const addPlayers = (c: Cur) => {
+      if (!reduced()) return;
+      c.layer.querySelectorAll('video').forEach((v) => {
+        if (v.parentElement?.querySelector('.vplay')) return;
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'vplay';
+        const sync = () => { const on = !v.paused; b.setAttribute('aria-label', on ? 'Pause recording' : 'Play recording'); b.innerHTML = on ? PAUSE : PLAY; };
+        b.addEventListener('click', (e) => { e.stopPropagation(); if (v.paused) v.play().catch(() => {}); else v.pause(); });
+        v.addEventListener('play', sync); v.addEventListener('pause', sync);
+        sync(); v.parentElement!.append(b);
+      });
+    };
+    const stopVideos = (c: Cur) => { c.io?.disconnect(); c.io = undefined; c.layer.querySelectorAll('video').forEach((v) => v.pause()); };
+
+    const radiusOf = (el: HTMLElement) => parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+    // the box around the pieces of a composition (phones, or the footer demo)
+    const union = (els: Element[]) => {
+      const rs = els.map((e) => e.getBoundingClientRect());
+      const l = Math.min(...rs.map((r) => r.left)), t = Math.min(...rs.map((r) => r.top));
+      return { left: l, top: t, width: Math.max(...rs.map((r) => r.right)) - l };
+    };
+
+    const open = (id: string, mode: 'grow' | 'fade' | 'swap' = 'grow') => {
+      const layer = layers.get(id)!;
+      const panel = layer.querySelector<HTMLElement>('.panel')!;
+      const scroller = layer.querySelector<HTMLElement>('[data-scroller]')!;
+      const ghost = layer.querySelector<HTMLElement>('.ghost')!;
+      const scrim = layer.querySelector<HTMLElement>('.scrim')!;
+      const rest = layer.querySelector<HTMLElement>('[data-rest]')!;
+      const hv = layer.querySelector<HTMLElement>('[data-hv]')!;
+      const closeBtn = panel.querySelector<HTMLElement>('.close')!;
+      const card = cards.get(id)!;
+      if (mode !== 'swap') { lock(true); setInert(true); }
+      layer.hidden = false;
+      panel.style.translate = ''; scrim.style.opacity = '';
+      scroller.scrollTop = 0;
+      const anims: Animation[] = [];
+      const fast = reduced() || mode !== 'grow';
+      if (fast) {
+        anims.push(panel.animate({ opacity: [0, 1] }, { duration: mode === 'swap' ? 200 : 140, easing: 'ease-out', fill: 'both' }));
+        if (mode !== 'swap') anims.push(scrim.animate({ opacity: [0, 1] }, { duration: 140, fill: 'both' }));
+        ghost.classList.remove('on');
+      } else {
+        const vis = card.querySelector<HTMLElement>('.vis')!;
+        const vr = vis.getBoundingClientRect();
+        const pr = panel.getBoundingClientRect();
+        const hero = layer.querySelector<HTMLElement>('.hero')!.getBoundingClientRect();
+        // card composition -> hero composition: scale by width, land the top-left corners together
+        const cc = union([...vis.querySelectorAll('[data-comp], .fdemo')]);
+        const hc = union([...layer.querySelectorAll('.hero .glass, .hero .fdemo, .hero .crops')]);
+        const s = hc.width / cc.width;
+        const cx = cc.left - vr.left, cy = cc.top - vr.top;
+        const tx = hc.left - pr.left - s * cx, ty = hc.top - pr.top - s * cy;
+        ghost.innerHTML = vis.innerHTML;
+        ghost.style.setProperty('--fs', vis.style.getPropertyValue('--fs'));
+        Object.assign(ghost.style, { width: vr.width + 'px', height: vr.height + 'px' });
+        ghost.classList.add('on');
+        const hr = { w: hero.width, h: hero.height };
+        // crop the scaled copy to the hero's box (in the copy's own units)
+        const crop = `inset(${Math.max(0, -ty / s)}px ${Math.max(0, vr.width - (hr.w - tx) / s)}px ${Math.max(0, vr.height - (hr.h - ty) / s)}px ${Math.max(0, -tx / s)}px round 0px)`;
+        const o = { duration: MS, fill: 'both' as const };
+        anims.push(panel.animate({ clipPath: [
+          `inset(${vr.top - pr.top}px ${pr.right - vr.right}px ${pr.bottom - vr.bottom}px ${vr.left - pr.left}px round ${radiusOf(vis)}px)`,
+          `inset(0px round ${radiusOf(panel)}px)`] }, { ...o, easing: EASE }));
+        anims.push(ghost.animate({
+          transform: [`translate(${vr.left - pr.left}px, ${vr.top - pr.top}px) scale(1)`, `translate(${tx}px, ${ty}px) scale(${s})`],
+          clipPath: [`inset(0px round ${radiusOf(vis)}px)`, crop],
+        }, { ...o, easing: EASE }));
+        anims.push(ghost.animate([{ opacity: 1, offset: 0 }, { opacity: 1, offset: .6 }, { opacity: 0, offset: .9 }, { opacity: 0, offset: 1 }], { ...o, easing: 'linear' }));
+        // the real hero composition takes over as the copy lands; the text follows a beat later
+        anims.push(hv.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: .55 }, { opacity: 1, offset: .9 }, { opacity: 1, offset: 1 }], { ...o, easing: 'linear' }));
+        anims.push(rest.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: .23 }, { opacity: 1, offset: .62 }, { opacity: 1, offset: 1 }], { ...o, easing: 'linear' }));
+        anims.push(closeBtn.animate([{ opacity: 0, offset: 0 }, { opacity: 0, offset: .3 }, { opacity: 1, offset: .7 }, { opacity: 1, offset: 1 }], { ...o, easing: 'linear' }));
+        anims.push(scrim.animate({ opacity: [0, 1] }, { ...o, easing: 'ease-out' }));
+      }
+      cur = { id, layer, panel, scroller, anims, closing: false, fast };
+      watchVideos(cur); addPlayers(cur);
+      panel.focus({ preventScroll: true });
+    };
+
+    const finish = (c: Cur, to?: HTMLElement) => {
+      c.anims.forEach((a) => a.cancel());
+      stopVideos(c);
+      c.layer.hidden = true;
+      c.panel.style.translate = '';
+      if (cur === c) cur = null;
+      if (!to) return;
+      lock(false); setInert(false);
+      to.focus({ preventScroll: true });
+    };
+
+    const close = () => {
+      const c = cur;
+      if (!c || c.closing) return;
+      c.closing = true;
+      stopVideos(c);
+      if (c.fast) {
+        const a = c.panel.animate({ opacity: [1, 0] }, { duration: 120, fill: 'both' });
+        a.onfinish = () => finish(c, cards.get(c.id));
+        return;
+      }
+      c.anims.forEach((a) => a.reverse());
+      c.anims[0].onfinish = () => { if (c.closing) finish(c, cards.get(c.id)); };
+    };
+
+    // a tap on the sheet while it's closing turns it around mid-flight
+    const reopen = (c: Cur) => {
+      c.closing = false;
+      c.anims.forEach((a) => a.reverse());
+      watchVideos(c);
+      history.pushState({ details: c.id }, '', '#details-' + c.id);
+    };
+
+    // ui close goes through history so the pushed #details-<id> entry never lingers
+    const closeUi = () => {
+      if (history.state?.entry) { history.replaceState(null, '', location.pathname + location.search); close(); }
+      else if (history.state?.details) history.back();
+      else close();
+    };
+
+    const openFromCard = (id: string) => {
+      history.pushState({ details: id }, '', '#details-' + id);
+      open(id);
+    };
+
+    root.addEventListener('click', (e) => {
+      const card = (e.target as HTMLElement).closest<HTMLElement>('[data-card]');
+      if (card && !cur) openFromCard(card.dataset.card!);
+    });
+    // a sheet with no card (the pass write-up) opens from any [data-sheet] button on the page, fading in, and gives focus back to it
+    document.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-sheet]');
+      if (!b || cur || !layers.has(b.dataset.sheet!)) return;
+      cards.set(b.dataset.sheet!, b);
+      history.pushState({ details: b.dataset.sheet }, '', '#details-' + b.dataset.sheet);
+      open(b.dataset.sheet!, 'fade');
+    });
+    layers.forEach((layer) => layer.addEventListener('click', (e) => {
+      if (cur?.closing && !cur.fast) return reopen(cur);
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-close]')) return closeUi();
+      const nx = t.closest<HTMLElement>('[data-next]');
+      if (nx && cur) {
+        const prev = cur;
+        const id = nx.dataset.next!;
+        history.replaceState({ details: id }, '', '#details-' + id);
+        stopVideos(prev); prev.anims.forEach((a) => a.cancel()); prev.layer.hidden = true; cur = null;
+        open(id, 'swap');
+      }
+    }));
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && cur && !cur.closing) { e.preventDefault(); closeUi(); } });
+    addEventListener('popstate', () => { if (cur && !history.state?.details) close(); });
+
+    // a link to #details-<id> opens that sheet once the page has laid out, without the growing animation
+    const fromHash = () => {
+      const id = location.hash.startsWith('#details-') ? location.hash.slice(9) : '';
+      if (!id || !layers.has(id) || cur) return;
+      const from = cards.get(id) ?? document.querySelector<HTMLElement>(`[data-sheet="${id}"]`);
+      if (!from) return;
+      cards.set(id, from);
+      from.scrollIntoView({ block: 'center' });
+      history.replaceState({ details: id, entry: true }, '', location.hash);
+      open(id, 'fade');
+    };
+    const later = () => requestAnimationFrame(() => requestAnimationFrame(fromHash));
+    if (document.readyState === 'complete') later(); else addEventListener('load', later, { once: true });
+
+    // phones: pull the sheet down from the top. it follows the finger, then closes past 120px or on a quick flick
+    layers.forEach((layer) => {
+      const panel = layer.querySelector<HTMLElement>('.panel')!;
+      const scroller = layer.querySelector<HTMLElement>('[data-scroller]')!;
+      const scrim = layer.querySelector<HTMLElement>('.scrim')!;
+      let y0 = 0, x0 = 0, t0 = 0, dy = 0, on = false, armed = false;
+      scroller.addEventListener('touchstart', (e) => {
+        if (!phone() || !cur) return;
+        armed = scroller.scrollTop <= 0; on = false; dy = 0;
+        y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; t0 = e.timeStamp;
+      }, { passive: true });
+      scroller.addEventListener('touchmove', (e) => {
+        if (!armed || !cur) return;
+        const d = e.touches[0].clientY - y0;
+        if (!on) {
+          if (scroller.scrollTop > 0 || d < 0) { armed = false; return; }
+          if (d < 8 || Math.abs(e.touches[0].clientX - x0) > d) return;
+          on = true;
+        }
+        e.preventDefault();
+        dy = Math.max(0, d);
+        panel.style.translate = `0 ${dy}px`;
+        scrim.style.opacity = String(Math.max(0, 1 - dy / (innerHeight * .8)));
+      }, { passive: false });
+      const end = (e: TouchEvent) => {
+        if (!on || !cur) { armed = false; return; }
+        on = false; armed = false;
+        const c = cur;
+        const v = dy / Math.max(1, e.timeStamp - t0);
+        if (dy > 120 || v > .6) {
+          c.closing = true; stopVideos(c);
+          const a = panel.animate({ translate: [`0 ${dy}px`, `0 ${innerHeight}px`] }, { duration: 260, easing: EASE, fill: 'forwards' });
+          scrim.animate({ opacity: [scrim.style.opacity || '1', '0'] }, { duration: 260, fill: 'forwards' });
+          a.onfinish = () => { a.cancel(); finish(c, cards.get(c.id)); if (history.state?.entry) history.replaceState(null, '', location.pathname + location.search); else if (history.state?.details) history.back(); };
+        } else {
+          panel.style.translate = '';
+          scrim.style.opacity = '';
+          panel.animate({ translate: [`0 ${dy}px`, '0 0'] }, { duration: 320, easing: EASE });
+          scrim.animate({ opacity: [String(1 - dy / (innerHeight * .8)), '1'] }, { duration: 320 });
+        }
+      };
+      scroller.addEventListener('touchend', end);
+      scroller.addEventListener('touchcancel', end);
+    });
+  }
+
+  // on touch there's no hover: a tap lights a link the way a pointer would, without leaving the page
+  document.querySelectorAll<HTMLElement>('[data-foot]').forEach((foot) => {
+    foot.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest('a');
+      if (!a) return;
+      e.preventDefault();
+      foot.querySelectorAll('a.on').forEach((x) => x !== a && x.classList.remove('on'));
+      a.classList.toggle('on');
+    });
+  });
+</script>

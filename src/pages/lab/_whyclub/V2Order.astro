@@ -1,0 +1,279 @@
+---
+// LAB direction 2, "One order": the case study follows one sample order, WC-1182, from the home page to the door.
+// desktop: the stops scroll past on the left while one sticky screen on the right changes with them, and the last
+// two stops hand that screen to the live pass, which prints and then moves through its stages as you read.
+// phone: no sticky stage; each stop carries its own screen, and the pass is one live block with stage chips
+import Shot from './Shot.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+type Stop = { id: string; label: string; title: string; body: string; detail?: string; media?: { src: string; video?: boolean; alt: string } };
+const stops: Stop[] = [
+  { id: 'land', label: 'Land', title: 'Every drop gets the whole screen',
+    body: 'The home page is one campaign photo per drop, with the tee’s name set across it. Swipe and the next drop slides in. It’s the loudest thing in the store, on purpose: everything after it is quiet.',
+    detail: 'Safari’s bars take a muted shade of each photo’s top edge, so the photo runs to the edges of the phone.',
+    media: { src: A + 'p-hero', video: true, alt: 'The home page on a phone, swiping from one drop’s campaign photo to the next.' } },
+  { id: 'find', label: 'Find', title: 'Shop is a panel, not a page',
+    body: 'Tap Shop in the dock and the bar grows into a panel: Women and Men as photos, Sale and My collection below. Back folds it away. Nothing reloads just to show you a menu.',
+    detail: 'A tap that lands before the page has finished loading still opens the panel once the dock is ready, instead of following the fallback link.',
+    media: { src: A + 'p-nav', video: true, alt: 'Tapping Shop in the dock grows it into a panel with Women, Men, Sale and My collection, then Women opens.' } },
+  { id: 'choose', label: 'Choose', title: 'Add it without leaving the grid',
+    body: 'Quick add on a card opens a sheet with the photos, the price and the sizes. Pick a size, add it, and a note at the bottom says it’s in the bag. Add another and the same note updates in place.',
+    media: { src: A + 'p-quickadd', video: true, alt: 'Quick add on a product card opens a sheet; choosing M and Add to bag shows a note that it’s in the bag.' } },
+  { id: 'read', label: 'Read', title: 'The tee stays on screen while you read',
+    body: 'On the product page the details rise over the photo as a sheet. Details, Size & fit and Delivery are tabs in that one sheet, so reading never takes you away from the tee.',
+    detail: 'Scroll down and the dock tucks into a pill at the left edge.',
+    media: { src: A + 'p-sheets', video: true, alt: 'The product sheet rises over the photo, then switches between Details, Size & fit and Delivery.' } },
+  { id: 'bag', label: 'Bag', title: 'One line per piece',
+    body: 'The bag is one line per piece, a free pair of socks you can add, and the total. Remove a line and it fades, then closes up. The totals stay on screen, dimmed, while they update.',
+    detail: 'Checkout goes through Razorpay.',
+    media: { src: A + 'm-cart', alt: 'The bag with one Please, I’m a Star tee, a free pair of socks to add, and the order summary.' } },
+  { id: 'pay', label: 'Pay', title: 'Paying turns into the pass',
+    body: 'The moment Razorpay reports the payment, the bag gives way to a printer slot and the order’s pass feeds out of it, so paying flows straight into the order.',
+    detail: 'The print is one speed curve, a nudge, a breath, three ticks and a glide, handed to the browser as a single linear() easing so the paper never jumps between steps.' },
+  { id: 'track', label: 'Track', title: 'It changes when the parcel does',
+    body: 'From here the pass only says what has happened. Courier scans from Shiprocket move the order on, and the pass moves with it.',
+    detail: 'Each stage is its own scene in one WebGL shader. It pauses off screen and draws a single still frame for reduced motion.' },
+];
+const stages = [
+  ['confirmed', 'You’re in.', 'Payment’s in and your pieces are set aside for you.', 'A stem grows and one bloom opens.'],
+  ['packed', 'All packed.', 'Folded, checked and sealed. Waiting on the courier.', 'A box drops in, folds shut and gets taped.'],
+  ['shipped', 'On its way.', 'With the courier now. New scans land on this pass.', 'The route draws itself and light runs it to a pin.'],
+  ['delivered', 'It’s home.', 'Delivered. Go wear it loud.', 'Five blooms open, one after another.'],
+];
+const n = (i: number) => String(i + 1).padStart(2, '0');
+---
+<article class="oo" data-oo>
+  <header class="head">
+    <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>2026</p>
+    <h1>WhyClub</h1>
+    <p class="lede">A streetwear label from India that sells oversized graphic tees in small drops. I designed and built the store: the art direction, the design system, the frontend, and the backend that runs every order.</p>
+    <p class="frame">This is one order, WC-1182, a sample, followed from the home page to the door. Each stop is a decision I made, shown where a customer runs into it.</p>
+  </header>
+
+  <div class="route">
+    <div class="rail" aria-hidden="true"><i class="fill"></i></div>
+
+    <ol class="stops">
+      {stops.map((s, i) => (
+        <li class:list={['stop', `s-${s.id}`]} data-stop={i} id={`oo-${s.id}`}>
+          <p class="label"><span class="dot" aria-hidden="true"></span><span class="num">{n(i)}</span>{s.label}</p>
+          <h2>{s.title}</h2>
+          {s.media && <div class="inline"><Shot src={s.media.src} video={s.media.video} alt={s.media.alt} /></div>}
+          {s.id === 'pay' && (
+            <div class="inline passinline">
+              <div class="chips" role="radiogroup" aria-label="Order stage">
+                {stages.map(([k, t], j) => <button type="button" role="radio" aria-checked={String(j === 0)} tabindex={j === 0 ? 0 : -1} data-stage={k}>{t.replace('.', '')}</button>)}
+              </div>
+              <button type="button" class="again" data-replay>Print it again</button>
+              <div class="passhold" data-pass-hold="inline"></div>
+            </div>
+          )}
+          <p class="body">{s.body}</p>
+          {s.detail && <p class="detail">{s.detail}</p>}
+          {s.id === 'track' && (
+            <ol class="subs">
+              {stages.map(([k, t, line, scene]) => (
+                <li class="sub" data-sub={k}>
+                  <p class="st">{t}</p>
+                  <p class="sl">“{line}”</p>
+                  <p class="sc">{scene}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </li>
+      ))}
+    </ol>
+
+    <div class="stage" data-own-video>
+      <div class="screen">
+        {stops.map((s, i) => s.media && (
+          <div class="layer" data-layer={i} inert><Shot src={s.media.src} video={s.media.video} alt={s.media.alt} /></div>
+        ))}
+        <div class="layer passlayer" data-layer="pass" inert>
+          <div class="passhold" data-pass-hold="stage"></div>
+        </div>
+      </div>
+      <p class="where" aria-hidden="true"><span class="num"></span><span class="txt"></span></p>
+    </div>
+  </div>
+
+  <section class="counter" aria-labelledby="oo-counter-h">
+    <h2 id="oo-counter-h">Behind the counter</h2>
+    <p>Every stop above is backed by the half you don’t see. The catalogue and the orders live in Convex. Razorpay confirms payments and Shiprocket reports courier scans, both by webhook, and each one moves an order to its next stage, which is what the pass shows. I built that half too, so nothing on the route had to be explained to anyone before it was made.</p>
+    <p class="visit"><a href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub <span aria-hidden="true">↗</span></a></p>
+  </section>
+
+  <Credits class="credits" items={['dock', 'photos', 'stack']} />
+</article>
+
+<style>
+  .oo { --plane: #fff; --rail: 44px; max-width: 1160px; margin: 0 auto; }
+  .head { max-width: 720px; }
+  .head h1 { margin-top: 18px; font: 500 clamp(44px, 7vw, 76px)/1 var(--display); letter-spacing: -.03em; }
+  .lede { margin-top: 18px; font: 400 clamp(18px, 2vw, 21px)/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .frame { margin-top: clamp(40px, 6vw, 72px); font: 400 clamp(20px, 2.4vw, 26px)/1.4 var(--display); letter-spacing: -.012em; color: var(--ink); text-wrap: pretty; }
+
+  .route { position: relative; display: grid; grid-template-columns: var(--rail) minmax(0, 1fr) minmax(0, 1fr); column-gap: clamp(24px, 4vw, 64px); margin-top: clamp(48px, 7vw, 88px); }
+  /* the rail: a hairline with a fill that follows the reader, and one dot per stop */
+  .rail { position: absolute; left: calc(var(--rail) / 2); top: 12px; bottom: 40vh; width: 1px; background: var(--line); }
+  .fill { position: absolute; inset: 0; background: var(--ink); transform-origin: top; transform: scaleY(var(--p, 0)); }
+  .stops { grid-column: 1 / 3; list-style: none; margin: 0; padding: 0; }
+  .stop { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); column-gap: clamp(24px, 4vw, 64px); align-content: center; min-height: 86vh; padding: 8vh 0; }
+  .stop > * { grid-column: 2; }
+  .label { grid-column: 1 / -1 !important; display: grid; grid-template-columns: var(--rail) auto 1fr; column-gap: clamp(24px, 4vw, 64px); align-items: center;
+    font: 500 13px/1 var(--display); color: var(--ink-2); }
+  .dot { position: relative; justify-self: center; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
+  .dot::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--ink); opacity: 0; transform: scale(.5); transition: opacity .3s var(--ease), transform .3s var(--ease); }
+  .label .num { display: none; }
+  .stop.past .dot::after, .stop.on .dot::after { opacity: 1; transform: none; }
+  .stop h2 { margin-top: 14px; font: 500 clamp(28px, 3.4vw, 40px)/1.1 var(--display); letter-spacing: -.024em; text-wrap: balance; max-width: 15em; }
+  .body { margin-top: 18px; max-width: 30em; font: 400 17px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .detail { margin-top: 14px; max-width: 32em; font: 400 14.5px/1.55 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  /* reading focus: the stop you're on is in ink, the rest step back */
+  .stop :is(h2, .body, .detail, .subs) { transition: opacity .35s var(--ease); }
+  .stop:not(.on) :is(h2, .body, .detail, .subs) { opacity: .28; }
+  .subs { list-style: none; margin: 26px 0 0; padding: 0; display: grid; gap: 0; max-width: 30em; }
+  .sub { padding: 16px 0; box-shadow: inset 0 1px 0 var(--line); transition: opacity .3s var(--ease); }
+  .s-track.on .sub:not(.on) { opacity: .38; }
+  .st { font: 500 18px/1.3 var(--display); color: var(--ink); }
+  .sl { margin-top: 4px; font: 400 15px/1.5 var(--display); color: var(--body); }
+  .sc { margin-top: 2px; font: 400 13.5px/1.5 var(--display); color: var(--ink-2); }
+  .s-track { min-height: 150vh; align-content: start; }
+
+  /* the sticky stage: one screen that changes with the stop */
+  .stage { grid-column: 3; grid-row: 1; position: sticky; top: 0; height: 100vh; height: 100svh; display: grid; place-items: center; align-content: center; gap: 16px; }
+  .screen { position: relative; width: min(330px, 26vw, (100svh - 150px) * 392 / 890); aspect-ratio: 392 / 890; }
+  .layer { position: absolute; inset: 0; display: grid; align-items: center; opacity: 0; transform: translateY(14px); transition: opacity .38s var(--ease), transform .5s var(--ease); pointer-events: none; }
+  .layer.on { opacity: 1; transform: none; pointer-events: auto; }
+  /* the holder clips to the height the pass reports for its stage, so there's no empty plate under a short pass */
+  .passhold { position: relative; width: 100%; aspect-ratio: 392 / var(--ph, 672); overflow: hidden; border-radius: 18px; background: #fff; }
+  .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; background: #fff; }
+  .passlayer { align-items: start !important; }
+  .where { display: flex; gap: 10px; font: 500 12px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; min-height: 12px; }
+  .inline { display: none; }
+
+  .counter { margin-top: clamp(64px, 8vw, 110px); max-width: 640px; }
+  .counter h2 { font: 500 clamp(26px, 3vw, 34px)/1.1 var(--display); letter-spacing: -.02em; }
+  .counter p { margin-top: 14px; font: 400 17px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .counter .visit { margin-top: 22px; font-weight: 500; }
+  .counter a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .oo :global(.credits) { margin-top: clamp(64px, 8vw, 96px); }
+
+  /* phones and narrow windows: no sticky stage. each stop shows its own screen, edge to edge on a plane */
+  @media (max-width: 900px) {
+    .route { grid-template-columns: 28px minmax(0, 1fr); column-gap: 14px; }
+    .rail { left: 14px; bottom: 0; }
+    .stops { grid-column: 1 / -1; }
+    .stop { grid-template-columns: 28px minmax(0, 1fr); column-gap: 14px; min-height: 0; padding: 0 0 72px; }
+    .label { grid-template-columns: 28px auto 1fr; column-gap: 14px; }
+    .stop h2 { margin-top: 10px; font-size: 28px; }
+    .stop:not(.on) :is(h2, .body, .detail, .subs) { opacity: 1; }
+    .s-track { min-height: 0; }
+    .s-track .sub { opacity: 1 !important; }
+    .stage { display: none; }
+    .inline { display: grid; justify-items: center; margin: 22px 0 4px calc(-28px - 14px - var(--gut)); width: 100vw; padding: 32px 0 0; height: 118vw; overflow: hidden;
+      background: var(--plane); }
+    .inline :global(.shot) { width: 64vw; }
+    .passinline { height: auto; padding: 22px 0 28px; gap: 10px; background: #fff; }
+    .passinline .again { margin-bottom: 8px; }
+    .passinline .passhold { width: 70vw; }
+    .chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: min(100% - 32px, 320px); }
+    .chips button, .again { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 14px; border-radius: 99px; display: inline-grid; place-items: center;
+      font: 500 13px/1 var(--display); color: var(--ink-2); background: rgba(31, 29, 27, .05); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .chips button[aria-checked='true'] { background: var(--ink); color: #fff; }
+    .again { background: #fff; color: var(--ink); box-shadow: 0 0 0 .5px rgba(31, 29, 27, .14); }
+    .chips button:focus-visible, .again:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .chips button, .again { transition: transform .16s var(--ease); }
+    .chips button:active, .again:active { transform: scale(.96); }
+    .body { font-size: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .layer { transform: none; transition: opacity .2s linear; }
+    .dot::after, .stop :is(h2, .body, .detail, .subs), .sub { transition: none; }
+  }
+</style>
+
+<script>
+  import { frame, reduced, whenShown } from './lab';
+
+  const root = document.querySelector<HTMLElement>('[data-oo]')!;
+  const route = root.querySelector<HTMLElement>('.route')!;
+  const stops = [...root.querySelectorAll<HTMLElement>('.stop')];
+  const subs = [...root.querySelectorAll<HTMLElement>('.sub')];
+  const layers = [...root.querySelectorAll<HTMLElement>('.layer')];
+  const where = root.querySelector<HTMLElement>('.where')!;
+  const fill = root.querySelector<HTMLElement>('.fill')!;
+  const wide = () => matchMedia('(min-width: 901px)').matches;
+  const PAY = stops.findIndex((s) => s.id === 'oo-pay'), TRACK = stops.findIndex((s) => s.id === 'oo-track');
+
+  // one live pass for each layout; only the visible holder ever loads
+  const passes = [...root.querySelectorAll<HTMLElement>('[data-pass-hold]')].map((h) => ({
+    kind: h.dataset.passHold, h, f: frame(h, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass'),
+  }));
+  passes.forEach(({ h, f }) => f.on((d) => { if (d.height) h.style.setProperty('--ph', String(Math.min(890, Math.ceil(d.height)))); }));
+  const pass = (msg: object, kind = wide() ? 'stage' : 'inline') => passes.find((p) => p.kind === kind)?.f.send(msg);
+
+  let cur = -1, sub = '';
+  const setStage = (k: string) => { if (k === sub) return; sub = k; subs.forEach((s) => s.classList.toggle('on', s.dataset.sub === k)); pass({ stage: k }); };
+  const activate = (i: number) => {
+    if (i === cur) return;
+    const prev = cur;
+    cur = i;
+    stops.forEach((s, k) => { s.classList.toggle('on', k === i); s.classList.toggle('past', k < i); });
+    if (!wide()) return;
+    const usePass = i >= PAY;
+    layers.forEach((l) => {
+      const on = usePass ? l.dataset.layer === 'pass' : l.dataset.layer === String(i);
+      l.classList.toggle('on', on);
+      l.inert = !on;
+      const v = l.querySelector('video');
+      if (!v) return;
+      if (on && !reduced()) { v.preload = 'auto'; v.currentTime = 0; v.play().catch(() => {}); } else v.pause();
+    });
+    where.querySelector('.num')!.textContent = String(i + 1).padStart(2, '0');
+    where.querySelector('.txt')!.textContent = stops[i].querySelector('.label')!.textContent!.replace(/^\d+/, '').trim();
+    // arriving at pay from above prints the pass again; tracking picks its stage from the reading position
+    if (i === PAY && prev < PAY) { sub = ''; setStage('confirmed'); pass({ replay: true }); }
+  };
+
+  // the stop whose block crosses the middle of the window is the one you're reading
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) activate(stops.indexOf(e.target as HTMLElement));
+  }, { rootMargin: '-48% 0px -48% 0px' });
+  stops.forEach((s) => io.observe(s));
+  const subIo = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting && wide()) setStage((e.target as HTMLElement).dataset.sub!);
+  }, { rootMargin: '-45% 0px -45% 0px' });
+  subs.forEach((s) => subIo.observe(s));
+
+  // the rail fills as you read down the route
+  let raf = 0;
+  const progress = () => {
+    raf = 0;
+    const r = route.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (innerHeight / 2 - r.top) / Math.max(1, r.height - innerHeight * .4)));
+    fill.style.setProperty('--p', p.toFixed(4));
+  };
+  addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(progress); }, { passive: true });
+  whenShown(root, () => { cur = -1; progress(); activate(Math.max(0, stops.findIndex((s) => { const r = s.getBoundingClientRect(); return r.bottom > innerHeight / 2; }))); });
+
+  // phone: chips under the inline pass pick its stage
+  const chips = root.querySelector<HTMLElement>('.chips')!;
+  const radios = [...chips.querySelectorAll<HTMLButtonElement>('[role=radio]')];
+  const pick = (b: HTMLButtonElement, focus = false) => {
+    radios.forEach((r) => { r.setAttribute('aria-checked', String(r === b)); r.tabIndex = r === b ? 0 : -1; });
+    if (focus) b.focus();
+    pass({ stage: b.dataset.stage }, 'inline');
+  };
+  chips.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=radio]'); if (b) pick(b); });
+  chips.addEventListener('keydown', (e) => {
+    const k = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (!k) return;
+    e.preventDefault();
+    const i = radios.findIndex((r) => r.getAttribute('aria-checked') === 'true');
+    pick(radios[(i + k + radios.length) % radios.length], true);
+  });
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass({ replay: true }, 'inline'));
+</script>

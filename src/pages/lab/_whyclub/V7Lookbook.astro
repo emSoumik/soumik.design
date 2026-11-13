@@ -1,0 +1,371 @@
+---
+// LAB direction 7, "Lookbook": the case study shot like a fashion drop's lookbook. each look pairs a campaign photo with
+// the piece of UI it wears, credited like garments (wearing, fabric, fit, detail).
+// phone: each look is one screen of photo (title over a bottom scrim, vertical scroll-snap proximity like the store's home),
+// then the UI piece, credits and a short story on white, with a sticky "03 / 06" counter.
+// desktop: a two-page spread per look, photo on one page and the piece on the other, a hairline fold between,
+// sides alternating, page numbers in the corners. as a look enters, the photo wipes in and the credits type in
+import Shot from './Shot.astro';
+import SoundKeys from './SoundKeys.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+type Cred = [string, string];
+const looks: { id: string; title: string; photo: string; pos: string; alt: string; cred: Cred[]; story: string }[] = [
+  { id: 'hero', title: 'One drop per screen', photo: 'lab/hero-star', pos: 'center top',
+    alt: 'A campaign photo for the Please, I’m a Star drop, filling the screen.',
+    cred: [['Wearing', 'The home page'], ['Fabric', 'One campaign photo per drop'], ['Fit', 'Full screen, swipe for the next'], ['Detail', 'Two doors in, Women and Men, one photo each']],
+    story: 'Each drop gets a campaign photo that fills the phone, and you swipe for the next. The shopping itself happens on plain neutrals, so the brand can be as loud as it likes on a quiet store.' },
+  { id: 'dock', title: 'The dock', photo: 'cover/please-im-a-star-landscape-v2', pos: '62% center',
+    alt: 'Campaign photo: a model in the black Please, I’m a Star tee.',
+    cred: [['Wearing', 'The dock'], ['Fabric', 'CSS linear() springs, response and damping'], ['Fit', 'Bar, pill, panel'], ['Detail', 'Squeezes 90ms before it opens']],
+    story: 'Navigation sits at the bottom, where the thumb is. Scroll and the labels drop away, then the bar tucks into a pill at the left edge, out of the way of the buy button. Only opening a panel overshoots, a little.' },
+  { id: 'sheet', title: 'Quick add and the sheet', photo: 'lab/hero-cupid', pos: 'center top',
+    alt: 'A campaign photo for the Cupid drop.',
+    cred: [['Wearing', 'Quick add, and the details sheet'], ['Fabric', 'Photos, price and size in one sheet'], ['Fit', 'A + on every shop card'], ['Detail', 'Add to bag and the bag in the dock counts it']],
+    story: 'The + on a shop card opens a sheet, so you can pick a size without leaving the shop. On a product page the details sheet rises over the tee photo, so the tee stays on screen while you read.' },
+  { id: 'tint', title: 'Safari’s colour', photo: 'lab/hero-inner', pos: 'center top',
+    alt: 'A campaign photo for the Inner drop, with a thin strip along its top edge.',
+    cred: [['Wearing', 'The top edge of each photo'], ['Fabric', 'Top 16px, averaged on a 48×12 canvas'], ['Fit', 'Mixed 65/35 with its own luma, darkened a touch'], ['Detail', 'Handed over 160ms after a swipe settles']],
+    story: 'Safari 26 tints its bars from the page behind them. With a white page edge every hero looked pasted in, and a free shipping bar sat on top of it. I took the bar out and let the photo set the colour. Each photo is read once.' },
+  { id: 'pass', title: 'The pass', photo: 'cover/please-im-a-star-wall-back-v2', pos: 'center',
+    alt: 'The back of the Please, I’m a Star tee against a wall.',
+    cred: [['Wearing', 'The drop pass'], ['Fabric', 'One fragment shader, a scene per stage'], ['Fit', 'You’re in, All packed, On its way, It’s home'], ['Detail', 'A nudge, a breath, three ticks and a glide']],
+    story: 'The moment Razorpay confirms a payment, the bag gives way to a printer slot and a pass feeds out. Shiprocket updates move it along by webhook. The shader pauses off screen and draws one still frame for reduced motion.' },
+  { id: 'sound', title: 'Sound', photo: 'lab/wide-rugby', pos: '88% center',
+    alt: 'A wide campaign photo of a rugby shirt.',
+    cred: [['Wearing', 'Every press'], ['Fabric', 'Soft noise over a low thump, settled in about 25ms'], ['Fit', 'Detuned a little at random'], ['Detail', 'Every note is in D']],
+    story: 'The first sounds were short pitched blips and the store felt like an arcade. Now only rare moments carry a note, and an order placed gets a slow D major strum. Every sound is optional and has something to see as well.' },
+];
+const stages = [['confirmed', 'You’re in'], ['packed', 'All packed'], ['shipped', 'On its way'], ['delivered', 'It’s home']];
+const pad = (n: number) => String(n).padStart(2, '0');
+const folio = (i: number, side: 'ph' | 'pg') => pad(i % 2 === 0 ? (side === 'ph' ? 2 * (i + 1) : 2 * (i + 1) + 1) : (side === 'pg' ? 2 * (i + 1) : 2 * (i + 1) + 1));
+---
+<article class="lb" data-lookbook>
+  <header class="title">
+    <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>2026 · the lookbook</p>
+    <h1>WhyClub,<br>the store</h1>
+    <div class="intro">
+      <p class="thesis">WhyClub is a streetwear label from India that sells oversized graphic tees in small drops. The brand is loud and the store is quiet: campaign photos fill the screen, and everything you shop on is plain neutrals. I made every part of it, the art direction, the store and the backend that runs each order.</p>
+      <nav class="book" aria-label="In this book">
+        <h2>In this book</h2>
+        <ol>{looks.map((l, i) => <li><a href={`#lb-${i + 1}`}><span class="no">{pad(i + 1)}</span>{l.title}</a></li>)}</ol>
+      </nav>
+    </div>
+  </header>
+
+  <div class="looks">
+    <div class="counter" aria-hidden="true"><span data-cur>01</span> / {pad(looks.length)}</div>
+
+    {looks.map((l, i) => (
+      <section class:list={['look', { flip: i % 2 === 1 }]} id={`lb-${i + 1}`} data-look={i + 1} aria-labelledby={`lb-${i + 1}-h`}>
+        <div class="spread">
+          <figure class="ph">
+            <div class="pic"><picture>
+              <source srcset={`${A}${l.photo}.avif`} type="image/avif">
+              <img src={`${A}${l.photo}.webp`} alt={l.alt} style={`object-position: ${l.pos}`} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" draggable="false">
+            </picture></div>
+            <figcaption>
+              <span class="num">{pad(i + 1)}</span>
+              <h2 id={`lb-${i + 1}-h`}>{l.title}</h2>
+            </figcaption>
+            <span class="folio">p. {folio(i, 'ph')}</span>
+          </figure>
+
+          <div class="pg">
+            <div class="stage">
+              <div class={`area a-${l.id}`}>
+                {l.id === 'hero' && <Shot class="one" src={A + 'p-hero'} video alt="The home page on a phone, swiping from one drop’s campaign photo to the next." />}
+                {l.id === 'dock' && <div class="dockhold" data-dock-hold aria-label="The WhyClub dock, live"></div>}
+                {l.id === 'sheet' && <>
+                  <Shot class="two" src={A + 'p-quickadd'} video alt="Tapping + on a shop card: a sheet opens with photos, price and size." />
+                  <Shot class="two" src={A + 'p-sheets'} video alt="A product page: the details sheet rises over the tee photo." />
+                </>}
+                {l.id === 'tint' && <>
+                  <figure class="ba">
+                    <Shot class="two" src={A + 'ios/before'} ratio="720 / 1565" alt="Before, on an iPhone: a free shipping bar above the photo, and Safari’s toolbar on white under the dock." eager />
+                    <figcaption>Before</figcaption>
+                  </figure>
+                  <figure class="ba">
+                    <Shot class="two" src={A + 'ios/light'} ratio="720 / 1565" alt="After: the same photo, with the status bar in a muted shade of its top edge and the photo running under Safari’s toolbar." eager />
+                    <figcaption>After</figcaption>
+                  </figure>
+                </>}
+                {l.id === 'pass' && <div class="passhold" data-pass-hold aria-label="The WhyClub drop pass, live">
+                  <picture><source srcset={`${A}pass/confirmed-m.avif`} type="image/avif"><img src={`${A}pass/confirmed-m.webp`} alt="" loading="lazy" decoding="async"></picture>
+                </div>}
+                {l.id === 'sound' && <SoundKeys keys={[
+                  { name: 'tap', label: 'Tap', note: 'Any button' },
+                  { name: 'dockOpen', label: 'Dock opens', note: 'Filtered air, no note' },
+                  { name: 'success', label: 'Added to bag', note: 'A fourth, struck almost together' },
+                  { name: 'complete', label: 'Order placed', note: 'A slow D major strum' },
+                ]} />}
+              </div>
+              <div class="ctrls">
+                {l.id === 'hero' && <p class="hint">Recorded: swipe for the next drop.</p>}
+                {l.id === 'dock' && <>
+                  <button type="button" class="pill" data-act="open" aria-pressed="false">Open Shop</button>
+                  <button type="button" class="pill" data-act="scroll" aria-pressed="false">Scroll the page</button>
+                </>}
+                {l.id === 'sheet' && <p class="hint">Recorded: quick add, then the details sheet.</p>}
+                {l.id === 'tint' && <p class="hint">On an iPhone with Safari 26.</p>}
+                {l.id === 'pass' && <>
+                  <div class="chips" role="radiogroup" aria-label="Order stage" data-own-keys>
+                    {stages.map(([k, t], j) => <button type="button" role="radio" aria-checked={String(j === 0)} tabindex={j === 0 ? 0 : -1} data-stage={k}>{t}</button>)}
+                  </div>
+                  <button type="button" class="pill replay" data-replay>Print it again</button>
+                </>}
+                {l.id === 'sound' && <p class="hint">Press a key to hear it.</p>}
+              </div>
+            </div>
+
+            <div class="under">
+              <dl class="cred">
+                {l.cred.map(([k, v], j) => <div style={`--i: ${j}`}><dt>{k}</dt><dd>{v}</dd></div>)}
+              </dl>
+              <p class="story" style="--i: 4">{l.story}</p>
+            </div>
+            <span class="folio">p. {folio(i, 'pg')}</span>
+          </div>
+        </div>
+      </section>
+    ))}
+  </div>
+
+  <section class="colophon" aria-labelledby="lb-col-h">
+    <h2 id="lb-col-h">Behind the counter</h2>
+    <p>The store runs on Astro and React on Cloudflare Workers. Convex holds the catalogue and the orders the pass reads from. Razorpay and Shiprocket report payments and courier scans by webhook, and each one moves an order to its next stage. Doing both halves meant nothing had to be explained to anyone before it was built.</p>
+    <dl class="nums">
+      <div><dt>commits, March 2026 to today</dt><dd>251</dd></div>
+      <div><dt>test files, Vitest and Playwright</dt><dd>201</dd></div>
+      <div><dt>sound cues</dt><dd>24</dd></div>
+    </dl>
+    <p class="visit"><a href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub <span aria-hidden="true">↗</span></a></p>
+  </section>
+
+  <Credits class="credits" items={['dock', 'sound', 'photos', 'stack']} />
+</article>
+
+<style>
+  .lb { --snap: none; max-width: 1320px; margin: 0 auto; padding-bottom: 80px; }
+  .lb a:focus-visible, .lb button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* the title page */
+  .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); display: flex; gap: 8px; }
+  .eyebrow a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .title h1 { margin-top: 22px; font: 400 clamp(56px, 15vw, 150px)/.92 var(--serif); letter-spacing: -.02em; }
+  .intro { display: grid; gap: 36px; margin-top: clamp(28px, 5vw, 56px); padding-bottom: clamp(40px, 6vw, 72px); }
+  .thesis { font: 400 clamp(19px, 2.2vw, 25px)/1.45 var(--display); letter-spacing: -.01em; color: var(--ink); text-wrap: pretty; max-width: 34em; }
+  .book h2 { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .book ol { list-style: none; margin: 12px 0 0; padding: 0; display: grid; }
+  .book a { display: flex; align-items: baseline; gap: 14px; min-height: 48px; padding-top: 14px; box-shadow: inset 0 1px 0 var(--line);
+    font: 400 21px/1.2 var(--serif); color: var(--ink); }
+  .book .no { font: 500 11px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; width: 1.6em; }
+  @media (hover: hover) and (pointer: fine) { .book a:hover { padding-left: 6px; } .book a { transition: padding .26s var(--ease); } }
+
+  /* a look: photo page + piece page */
+  .look { scroll-margin-top: 12px; }
+  .spread { position: relative; background: #fff; }
+  .ph { position: relative; margin: 0; overflow: hidden; background: #efede9; }
+  .pic, .pic picture, .pic img { display: block; width: 100%; height: 100%; }
+  .pic img { object-fit: cover; }
+  .ph figcaption { position: absolute; inset: auto 0 0 0; padding: 110px var(--gut) 76px; color: #fff;
+    background: linear-gradient(to top, rgba(18, 16, 14, .72), rgba(18, 16, 14, .42) 55%, rgba(18, 16, 14, 0)); }
+  .num { font: 400 clamp(60px, 18vw, 96px)/.9 var(--serif); display: block; }
+  .ph h2 { margin-top: 8px; font: 400 clamp(30px, 8.5vw, 44px)/1.04 var(--serif); letter-spacing: -.005em; text-wrap: balance; }
+  .folio { display: none; }
+
+  /* the piece */
+  .pg { padding: 28px 0 64px; }
+  .area { display: flex; justify-content: center; align-items: flex-start; gap: 12px; }
+  .area :global(.shot) { flex: none; }
+  .area :global(.one) { width: min(62vw, 280px); }
+  .area :global(.two) { width: 100%; }
+  .area .ba { margin: 0; flex: 1; max-width: 220px; min-width: 0; }
+  .area .ba figcaption, .hint { font: 400 12.5px/1.4 var(--mono); color: var(--ink-3); margin-top: 10px; text-align: center; }
+  .a-sheet :global(.two) { width: calc(50% - 6px); max-width: 220px; }
+  .dockhold, .passhold { position: relative; overflow: hidden; background: #fff; flex: none; }
+  .dockhold { width: min(70vw, 300px); aspect-ratio: 392 / 760; border-radius: 12vw; background: #3a2c22 url(/assets/work/whyclub/lab/hero-star.webp) center / cover;
+    box-shadow: 0 0 0 .5px rgba(22, 20, 15, .14), 0 18px 40px -24px rgba(40, 30, 15, .32); }
+  .passhold { width: min(66vw, 280px); aspect-ratio: 392 / var(--ph, 672); }
+  .passhold picture, .passhold img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .passhold :global(iframe) { opacity: 0; background: #fff; transition: opacity .3s var(--ease); }
+  .passhold:global(.is-live) :global(iframe) { opacity: 1; }
+  .a-sound { display: block; }
+  .a-sound :global(.sk) { grid-template-columns: 1fr 1fr !important; }
+
+  .ctrls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; min-height: 44px; }
+  .pill, .chips button { all: unset; box-sizing: border-box; height: 44px; padding: 0 18px; border-radius: 99px; display: inline-grid; place-items: center; cursor: pointer;
+    font: 500 13.5px/1 var(--display); color: var(--ink); background: #fff; -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease);
+    box-shadow: 0 1px 2px rgba(31, 29, 27, .08), 0 0 0 .5px rgba(31, 29, 27, .14); }
+  .pill[aria-pressed='true'], .chips button[aria-checked='true'] { background: var(--ink); color: #fff; }
+  .pill:active, .chips button:active { transform: scale(.97); }
+  .chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 100%; }
+  .chips button { padding: 0 6px; font-size: 12.5px; }
+  .replay { width: 100%; }
+  @media (hover: hover) and (pointer: fine) { .pill:hover, .chips button:not([aria-checked='true']):hover { box-shadow: 0 2px 8px rgba(31, 29, 27, .12), 0 0 0 .5px rgba(31, 29, 27, .22); } }
+
+  /* credits, set like garment credits on a lookbook page */
+  .under { margin-top: 26px; display: grid; gap: 20px; }
+  .cred { margin: 0; display: grid; border-top: 1px solid var(--ink); }
+  .cred div { display: grid; grid-template-columns: 4.6em 1fr; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .cred dt { font: 500 10.5px/1.9 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .cred dd { margin: 0; font: 400 15px/1.4 var(--display); color: var(--ink); }
+  .story { font: 400 15.5px/1.55 var(--display); color: var(--body); text-wrap: pretty; max-width: 34em; }
+
+  /* the end */
+  .colophon { margin-top: clamp(72px, 10vw, 140px); max-width: 640px; }
+  .colophon h2 { font: 400 clamp(36px, 6vw, 56px)/1 var(--serif); }
+  .colophon p { margin-top: 16px; font: 400 16.5px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .nums { margin: 28px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; border-top: 1px solid var(--ink); }
+  .nums div { padding-top: 12px; }
+  .nums dd { margin: 0; font: 400 clamp(44px, 9vw, 72px)/1 var(--serif); font-variant-numeric: tabular-nums; }
+  .nums dt { margin-top: 6px; order: 2; font: 400 12.5px/1.4 var(--display); color: var(--ink-2); }
+  .nums div { display: flex; flex-direction: column; }
+  .colophon .visit { margin-top: 28px; font-weight: 500; }
+  .colophon .visit a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+  .lb > :global(.credits) { margin-top: clamp(56px, 8vw, 96px); }
+
+  /* phone: each look is a screen of photo, then the piece on white */
+  .counter { position: sticky; top: 12px; z-index: 6; width: max-content; margin: 0 auto -28px; height: 28px; padding: 0 13px; border-radius: 99px; background: var(--ink);
+    font: 500 12px/28px var(--mono); color: #fff; font-variant-numeric: tabular-nums; letter-spacing: .04em; opacity: 0; transition: opacity .25s var(--ease); }
+  .counter.show { opacity: 1; }
+  @media (max-width: 899px) {
+    .ph figcaption { padding-bottom: 120px; }
+    .ph { margin-inline: calc(var(--gut) * -1); height: 100svh; min-height: 520px; scroll-snap-align: start; }
+    :global(html:has([data-dir='7']:not([hidden]))) { scroll-snap-type: y proximity; }
+    .look { margin-bottom: 8px; }
+    .area .ba { max-width: none; }
+    .area:has(.ba) { gap: 10px; }
+  }
+  @media (max-width: 640px) {
+    .dockhold { border-radius: 9.6vw; }
+  }
+
+  /* desktop: two pages and a fold */
+  @media (min-width: 900px) {
+    .counter { display: none; }
+    .intro { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(40px, 6vw, 96px); align-items: start; }
+    .book ol { grid-template-columns: 1fr; }
+    .look { margin-block: 20px; display: grid; justify-items: center; scroll-margin-top: 20px; }
+    .spread { --sh: clamp(720px, 100svh - 40px, 900px); --under: 252px; --ctrls: 60px; --ah: calc(var(--sh) - 96px - var(--under) - var(--ctrls));
+      width: 100%; height: var(--sh); display: grid; grid-template-columns: 1fr 1fr; box-shadow: 0 0 0 1px var(--line); border-radius: 6px; overflow: hidden; }
+    .spread::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--line); }
+    .flip .ph { order: 2; }
+    .flip .pg { order: 1; }
+    .ph figcaption { padding: 140px 40px 64px; }
+    .num { font-size: 110px; }
+    .ph h2 { font-size: clamp(40px, 4vw, 56px); }
+    .folio { display: block; position: absolute; bottom: 20px; font: 500 11px/1 var(--mono); letter-spacing: .06em; color: var(--ink-3); font-variant-numeric: tabular-nums; text-transform: uppercase; }
+    .ph .folio { left: 40px; color: rgba(255, 255, 255, .85); }
+    .flip .ph .folio { left: auto; right: 40px; }
+    .pg { position: relative; padding: 36px 40px 60px; display: flex; flex-direction: column; min-width: 0; }
+    .pg .folio { right: 40px; }
+    .flip .pg .folio { right: auto; left: 40px; }
+    .stage { flex: none; height: calc(var(--ah) + var(--ctrls)); display: flex; flex-direction: column; justify-content: flex-start; }
+    .area { height: var(--ah); align-items: center; gap: 16px; }
+    .ctrls { margin-top: 0; height: var(--ctrls); align-content: center; }
+    .area :global(.one) { width: calc(var(--ah) * 392 / 848); }
+    .a-sheet :global(.two) { width: min(calc(var(--ah) * 392 / 848), calc(50% - 8px)); max-width: none; }
+    .area .ba { flex: none; width: min(calc((var(--ah) - 30px) * 720 / 1565), calc(50% - 8px)); max-width: none; }
+    .dockhold { width: calc(var(--ah) * 392 / 760); border-radius: calc(var(--ah) * .075); }
+    .passhold { width: calc(var(--ah) * 392 / var(--ph, 672)); max-width: 100%; }
+    .ctrls { flex-wrap: nowrap; }
+    .chips { width: auto; grid-template-columns: repeat(4, auto); }
+    .chips button { padding: 0 14px; }
+    .replay { width: auto; flex: none; }
+    .a-sound { display: grid; align-content: center; }
+    .under { margin-top: auto; height: var(--under); align-content: start; gap: 14px; }
+    .cred div { padding: 6px 0; }
+    .story { font-size: 14.5px; line-height: 1.5; }
+    .nums { max-width: 560px; }
+  }
+  @media (min-width: 900px) and (max-height: 800px) { .story { font-size: 14px; } }
+
+  /* playful: the photo wipes in, the credits type in line by line */
+  @media (prefers-reduced-motion: no-preference) {
+    .lb[data-js] .pic { clip-path: inset(0 0 100% 0); transition: clip-path .9s var(--ease); }
+    .lb[data-js] .ph figcaption { opacity: 0; translate: 0 10px; transition: opacity .5s var(--ease) .45s, translate .5s var(--ease) .45s; }
+    .lb[data-js] .cred div, .lb[data-js] .story { opacity: 0; translate: 0 6px; transition: opacity .4s var(--ease) calc(.35s + var(--i) * 90ms), translate .4s var(--ease) calc(.35s + var(--i) * 90ms); }
+    .lb[data-js] .look.in .pic { clip-path: inset(0); }
+    .lb[data-js] .look.in .ph figcaption, .lb[data-js] .look.in .cred div, .lb[data-js] .look.in .story { opacity: 1; translate: 0 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pill, .chips button, .passhold :global(iframe), .counter, .book a { transition: none; }
+  }
+</style>
+
+<script>
+  import { frame, whenShown } from './lab';
+
+  const root = document.querySelector<HTMLElement>("[data-lookbook]")!;
+  root.dataset.js = '';
+  const looks = [...root.querySelectorAll<HTMLElement>('.look')];
+
+  // the reveal: once per look, when a good part of it is on screen
+  const reveal = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); reveal.unobserve(e.target); } });
+  }, { threshold: 0.18 });
+  looks.forEach((l) => reveal.observe(l));
+
+  // the counter: whichever look crosses the middle of the screen
+  const counter = root.querySelector<HTMLElement>('.counter')!;
+  const cur = counter.querySelector<HTMLElement>('[data-cur]')!;
+  const mid = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      cur.textContent = String(e.target.getAttribute('data-look')).padStart(2, '0');
+    });
+  }, { rootMargin: '-50% 0px -50% 0px' });
+  looks.forEach((l) => mid.observe(l));
+  const lookRange = new IntersectionObserver((entries) => {
+    counter.classList.toggle('show', entries.some((e) => e.isIntersecting));
+  }, { rootMargin: '-10% 0px -10% 0px' });
+  looks.forEach((l) => lookRange.observe(l));
+
+  // the dock, live
+  const dockHold = root.querySelector<HTMLElement>('[data-dock-hold]')!;
+  const dock = frame(dockHold, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  const scrollB = root.querySelector<HTMLButtonElement>('[data-act=scroll]')!;
+  let panelOpen = false, scrolled = false;
+  const sync = () => {
+    openB.setAttribute('aria-pressed', String(panelOpen));
+    openB.textContent = panelOpen ? 'Close Shop' : 'Open Shop';
+    scrollB.setAttribute('aria-pressed', String(scrolled));
+    scrollB.textContent = scrolled ? 'Back to the top' : 'Scroll the page';
+  };
+  dock.on((d) => { if (!d.moving && d.shape) { panelOpen = d.shape === 'panel'; sync(); } });
+  openB.addEventListener('click', () => { panelOpen = !panelOpen; dock.send(panelOpen ? { open: 'shop' } : { close: true }); sync(); });
+  scrollB.addEventListener('click', () => {
+    scrolled = !scrolled;
+    if (panelOpen) { panelOpen = false; dock.send({ close: true }); }
+    dock.send({ scroll: scrolled ? 'down' : 'top' });
+    sync();
+  });
+
+  // the pass, live: chips pick a stage
+  const passHold = root.querySelector<HTMLElement>('[data-pass-hold]')!;
+  const pass = frame(passHold, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  pass.on((d) => { if (d.height) passHold.style.setProperty('--ph', String(Math.min(890, Math.ceil(d.height)))); });
+  const chips = root.querySelector<HTMLElement>('.chips')!;
+  const radios = [...chips.querySelectorAll<HTMLButtonElement>('[role=radio]')];
+  const pick = (b: HTMLButtonElement, focus = false) => {
+    radios.forEach((r) => { r.setAttribute('aria-checked', String(r === b)); r.tabIndex = r === b ? 0 : -1; });
+    if (focus) b.focus();
+    pass.send({ stage: b.dataset.stage });
+  };
+  chips.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=radio]'); if (b) pick(b); });
+  chips.addEventListener('keydown', (e) => {
+    const i = radios.findIndex((r) => r.getAttribute('aria-checked') === 'true');
+    const k = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!k) return;
+    e.preventDefault();
+    pick(radios[(i + k + radios.length) % radios.length], true);
+  });
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+
+  // the iframes size themselves to their holder, so nudge them when this direction is shown
+  whenShown(root, () => dispatchEvent(new Event('resize')));
+</script>

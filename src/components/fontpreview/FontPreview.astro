@@ -1,0 +1,241 @@
+---
+// the font preview page: the problem in a few lines, then the thing itself, running in the page. a finder window,
+// a fonts folder, space, and quick look with the real fonts set in themselves. demo.ts drives it
+import '../project/project.css';
+
+const REPO = 'https://github.com/emSoumik/font-preview';
+const DMG = 'https://github.com/emSoumik/font-preview/releases/latest';
+const INSTALL = 'curl -fsSL https://raw.githubusercontent.com/emSoumik/font-preview/main/scripts/install.sh | bash';
+
+const steps = [
+  { name: 'Open Fonts', cap: 'A folder of fonts in Finder: a variable WOFF2, TrueType, a Devanagari face. None of them installed.' },
+  { name: 'Pick one', cap: 'Select a file. Nothing to open, nothing to install.' },
+  { name: 'Press Space', cap: 'Quick Look shows the whole font: its name set in itself, every size, the character set and every glyph.' },
+  { name: 'Day or night', cap: 'A switch in the corner checks the font on a dark background, without changing the rest of your Mac.' },
+  { name: 'Next font', cap: 'Press ↓ and the preview follows the selection, so a whole folder takes seconds.' },
+];
+
+const calls = [
+  { t: 'Open on Regular, not Thin.', why: 'Variable fonts and collections list their faces in file order, which often starts with the thinnest. The preview opens on Regular, the face you’re most likely judging, and a menu in the corner switches between the rest.' },
+  { t: 'Show what the font has, nothing it doesn’t.', why: 'The character set only lists characters the font contains, so a gap tells you something real about the font.' },
+  { t: 'Light and dark, inside the window.', why: 'A face can look right on white and fall apart on black. One switch checks both, without touching the system appearance.' },
+  { t: 'Ask for nothing.', why: 'No Full Disk Access, no Accessibility, no screen recording. The preview runs in Apple’s sandbox, reads only the file you pressed Space on, and has no network access. The app checks GitHub for updates once a day and refuses any update whose signature doesn’t match.' },
+];
+---
+<article class="pj fp">
+  <h1>Font Preview</h1>
+  <p class="pj-meta">Quick Look for fonts on macOS. Open source, October 2026.</p>
+  <p class="pj-lede">Press Space on a font file in Finder and macOS shows one line of sample text, or, for a WOFF2, a blank icon. To actually see a font you had to install it. Font Preview is a Quick Look extension that shows the whole font straight from the file: the family set in itself, every size, the character set and every glyph.</p>
+  <p class="pj-links"><a href={REPO} target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a><a href={DMG} target="_blank" rel="noopener">Download <span aria-hidden="true">↗</span></a></p>
+
+  <section class="pj-stage" data-fp aria-label="Try it: a Finder window with a folder of fonts">
+    <div class="pj-box fp-desk" data-desk tabindex="0" aria-label="Finder demo. Use the arrow keys to choose a file, Return to open a folder, Space to preview, Escape to close.">
+      <div class="fp-win fp-finder">
+        <div class="fp-bar">
+          <span class="fp-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+          <button type="button" class="fp-nav" data-back aria-label="Back to Downloads"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button>
+          <span class="fp-nav is-off" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5L10.5 8 6 12.5"/></svg></span>
+          <span class="fp-title" data-dir>Downloads</span>
+        </div>
+        <div class="fp-main">
+          <nav class="fp-side" aria-label="Favourites">
+            <p>Favourites</p>
+            <span class="fp-fav" aria-hidden="true">Recents</span>
+            <span class="fp-fav" aria-hidden="true">Applications</span>
+            <span class="fp-fav" aria-hidden="true">Desktop</span>
+            <button type="button" class="fp-fav" data-side="Downloads">Downloads</button>
+            <button type="button" class="fp-fav" data-side="Fonts">Fonts</button>
+          </nav>
+          <div class="fp-files">
+            <p class="fp-head" aria-hidden="true"><span>Name</span><span>Kind</span></p>
+            <ul class="fp-list" role="listbox" aria-label="Files" data-list></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="fp-win fp-ql" data-ql aria-hidden="true" data-theme="light">
+        <div class="fp-bar fp-qlbar">
+          <button type="button" class="fp-close" data-ql-close aria-label="Close the preview"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+          <span class="fp-title" data-ql-name></span>
+          <span class="fp-openwith" aria-hidden="true">Open with Font Book</span>
+        </div>
+        <div class="fq" data-ql-body></div>
+      </div>
+
+      <svg class="fp-cursor" data-cursor viewBox="0 0 20 24" aria-hidden="true"><path d="M2 1.5v18.2l4.6-4.4 3 6.8 3.2-1.4-3-6.6h6.4z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </div>
+
+    <div class="fp-keys">
+      <button type="button" class="fp-key is-space" data-key="space" aria-label="Space: preview the selected file">space</button>
+      <button type="button" class="fp-key" data-key="up" aria-label="Up: previous file">↑</button>
+      <button type="button" class="fp-key" data-key="down" aria-label="Down: next file">↓</button>
+      <p class="fp-hint" data-hint aria-live="polite">Playing on its own. Click inside the window to take over.</p>
+      <button type="button" class="fp-replay" data-replay hidden>Replay</button>
+    </div>
+    <div class="pj-steps" role="group" aria-label="Steps">
+      {steps.map((st, i) => <button type="button" data-step={i} aria-current={i === 0 ? 'step' : undefined}><i>{i + 1}</i>{st.name}</button>)}
+    </div>
+    <div class="pj-cap" aria-live="polite">{steps.map((st, i) => <span data-cap hidden={i !== 0}>{st.cap}</span>)}</div>
+  </section>
+
+  <h2>Why I built it</h2>
+  <p>I kept running into the same thing myself: a folder of downloaded fonts, and no quick way to see what any of them looked like. Font Book wants to install them first, and a web font previews as a blank icon.</p>
+  <p>Quick Look was already the right place: select, Space, look, move on. It just needed to understand fonts.</p>
+
+  <h2>What it shows</h2>
+  <ol class="pj-list">
+    <li>The family name set in the font itself, with its format, glyph count, version, designer and file size.</li>
+    <li>Sample text from 72 points down to 12.</li>
+    <li>The character set, and every glyph in a grid.</li>
+    <li>A menu of faces for collections and variable fonts.</li>
+    <li>A light and dark switch.</li>
+  </ol>
+  <p class="pj-note">It previews TrueType, OpenType, collections (.ttc, .otc), Mac suitcases (.dfont), and WOFF and WOFF2 web fonts. It needs macOS 14 or later, and uses about 20 MB of memory and no CPU while a preview sits open.</p>
+
+  <h2>Decisions</h2>
+  <dl class="pj-calls fp-calls">
+    {calls.map((c) => <div><dt>{c.t}</dt><dd>{c.why}</dd></div>)}
+  </dl>
+
+  <h2>Install</h2>
+  <p>Run this in Terminal. It downloads the latest release, copies Font Preview to Applications and turns the Quick Look extension on.</p>
+  <div class="fp-code">
+    <code>{INSTALL}</code>
+    <button type="button" data-copy={INSTALL}>Copy</button>
+  </div>
+  <p>Or <a href={DMG} target="_blank" rel="noopener">download the DMG</a> and drag it into Applications. The <a href={REPO} target="_blank" rel="noopener">README</a> explains every permission macOS asks for, and has a prompt to let a coding agent install it for you.</p>
+
+  <p class="pj-end">Font Preview is free and open source under the MIT license, written in Swift. Source, issues and releases are on <a href={REPO} target="_blank" rel="noopener">GitHub</a>.</p>
+</article>
+
+<script>
+  import { demo } from './demo';
+  document.querySelectorAll<HTMLElement>('[data-fp]').forEach(demo);
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = 'Copied'; } catch { b.textContent = 'Select and copy'; }
+    setTimeout(() => (b.textContent = 'Copy'), 1600);
+  }));
+</script>
+
+<style>
+  :global(.sr) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* the desk: a soft wallpaper instead of the grid, with the two windows on it */
+  .fp-desk { height: clamp(480px, 62vw, 580px); background: linear-gradient(160deg, #dfe6ef 0%, #ece8e4 55%, #f1e6dc 100%); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; color: #1d1d1f; outline-offset: 4px; }
+  .fp-win { position: absolute; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; background: #fff;
+    box-shadow: 0 0 0 .5px rgba(0, 0, 0, .18), 0 1px 2px rgba(0, 0, 0, .06), 0 18px 48px -10px rgba(30, 30, 50, .3); }
+  .fp-bar { position: relative; display: flex; align-items: center; gap: 6px; flex: none; height: 46px; padding: 0 12px; border-bottom: .5px solid rgba(0, 0, 0, .1); background: #f6f6f6; }
+  .fp-lights { display: flex; gap: 8px; margin-right: 10px; }
+  .fp-lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .12); }
+  .fp-lights i:nth-child(2) { background: #febc2e; } .fp-lights i:nth-child(3) { background: #28c840; }
+  .fp-nav { all: unset; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: #5d5d61; cursor: pointer; }
+  .fp-nav svg { width: 15px; }
+  .fp-nav[disabled], .fp-nav.is-off { color: #c2c2c6; cursor: default; }
+  @media (hover: hover) { .fp-nav:not([disabled]):not(.is-off):hover { background: rgba(0, 0, 0, .06); } }
+  .fp-title { margin-left: 6px; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .fp-finder { left: 5%; top: 7%; width: 64%; height: 78%; }
+  .fp-main { display: grid; grid-template-columns: 148px 1fr; flex: 1; min-height: 0; }
+  .fp-side { display: flex; flex-direction: column; gap: 1px; padding: 10px 8px; background: #f2f1f3; border-right: .5px solid rgba(0, 0, 0, .08); font-size: 13px; }
+  .fp-side p { margin: 0 0 4px 8px; font-size: 11px; font-weight: 600; color: #8e8e93; }
+  .fp-fav { all: unset; padding: 4px 8px; border-radius: 6px; color: #2c2c2e; cursor: default; }
+  button.fp-fav { cursor: pointer; }
+  .fp-fav[data-on] { background: rgba(0, 0, 0, .08); }
+  .fp-files { min-width: 0; overflow: hidden; font-size: 13px; }
+  .fp-head { display: grid; grid-template-columns: 1fr 34%; gap: 12px; margin: 0; padding: 6px 16px; border-bottom: .5px solid rgba(0, 0, 0, .08); font-size: 11px; font-weight: 600; color: #8e8e93; }
+  .fp-list { margin: 4px 8px; padding: 0; list-style: none; }
+  .fp-list :global(li) { display: grid; grid-template-columns: 20px 1fr 34%; gap: 8px; align-items: center; height: 30px; padding: 0 8px; border-radius: 6px; cursor: default; user-select: none; -webkit-user-select: none; }
+  .fp-list :global(li:nth-child(even)) { background: #f7f7f8; }
+  .fp-list :global(li[aria-selected="true"]) { background: #0a63d8; color: #fff; }
+  .fp-list :global(li[aria-selected="true"] .fp-kd) { color: rgba(255, 255, 255, .8); }
+  .fp-desk :global(.fp-ic) { display: grid; place-items: center; width: 18px; height: 18px; }
+  .fp-desk :global(.fp-ic svg) { width: 100%; height: 100%; }
+  .fp-list :global(.fp-nm) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fp-list :global(.fp-kd) { color: #8e8e93; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* quick look: grows out of the file, in front of finder */
+  .fp-ql { right: 4%; top: 9%; width: 64%; height: 84%; z-index: 2; opacity: 0; scale: .9; pointer-events: none; visibility: hidden;
+    transition: opacity .22s var(--pj-ease), scale .32s var(--pj-ease), visibility 0s .32s; }
+  .fp-ql.open { opacity: 1; scale: 1; pointer-events: auto; visibility: visible; transition: opacity .2s var(--pj-ease), scale .38s var(--pj-ease); }
+  .fp-qlbar { justify-content: center; background: #f6f6f6; }
+  .fp-qlbar .fp-title { margin: 0; max-width: 50%; }
+  .fp-close { all: unset; position: absolute; left: 10px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: #5d5d61; cursor: pointer; }
+  .fp-close svg { width: 13px; }
+  @media (hover: hover) { .fp-close:hover { background: rgba(0, 0, 0, .06); } }
+  .fp-openwith { position: absolute; right: 10px; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; color: #3a3a3c; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .15), 0 1px 1px rgba(0, 0, 0, .05); }
+
+  /* the preview itself, set in the font. sizes scale with the window, so 72 still overflows the way it would */
+  .fq { container-type: inline-size; flex: 1; min-height: 0; overflow: auto; padding: 22px 26px 30px; background: #fbfbfb; color: #1d1d1f; overscroll-behavior: contain; scrollbar-width: thin; transition: background-color .3s, color .3s; }
+  [data-theme="dark"] .fq { background: #1e1e1e; color: #f2f2f2; }
+  [data-theme="dark"] .fp-qlbar { background: #2b2b2b; border-color: rgba(255, 255, 255, .08); color: #f2f2f2; }
+  [data-theme="dark"] .fp-qlbar .fp-close { color: #bdbdc2; }
+  [data-theme="dark"] .fp-openwith { background: #3a3a3c; color: #f2f2f2; box-shadow: none; }
+  .fq :global(p) { margin: 0; }
+  .fq :global(.fq-head) { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .fq :global(.fq-fam) { font-size: clamp(30px, 8cqw, 52px); line-height: 1.1; }
+  .fq :global(.fq-face) { margin-top: 10px !important; font: 600 13px/1.3 -apple-system, system-ui, sans-serif; font-style: normal; }
+  .fq :global(.fq-meta) { margin-top: 3px !important; font: 400 11px/1.45 -apple-system, system-ui, sans-serif; font-style: normal; color: #8e8e93; }
+  .fq :global(.fq-tools) { display: flex; align-items: center; gap: 8px; flex: none; margin-top: 8px; font: 400 12px/1 -apple-system, system-ui, sans-serif; font-style: normal; }
+  .fq :global(select) { appearance: none; height: 26px; padding: 0 24px 0 10px; border: 0; border-radius: 6px; font: 500 12px/1 -apple-system, system-ui, sans-serif; color: inherit; cursor: pointer;
+    background: rgba(0, 0, 0, .06) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 5L5 2.5 7.5 5M2.5 9L5 11.5 7.5 9'/%3E%3C/svg%3E") right 8px center / 8px no-repeat; }
+  [data-theme="dark"] .fq :global(select) { background-color: rgba(255, 255, 255, .1); }
+  .fq :global(.fq-theme) { all: unset; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: #8e8e93; cursor: pointer; }
+  .fq :global(.fq-theme svg) { width: 15px; height: 15px; }
+  .fq :global(.fq-theme .sun), [data-theme="dark"] .fq :global(.fq-theme .moon) { display: none; }
+  [data-theme="dark"] .fq :global(.fq-theme .sun) { display: block; }
+  .fq :global(.fq-theme:focus-visible), .fq :global(select:focus-visible) { outline: 2px solid #0a63d8; outline-offset: 1px; }
+  .fq :global(.fq-k) { margin: 26px 0 10px !important; font: 600 10px/1 -apple-system, system-ui, sans-serif; font-style: normal; letter-spacing: .08em; text-transform: uppercase; color: #8e8e93; }
+  .fq :global(.fq-size) { display: flex; align-items: baseline; gap: 12px; white-space: nowrap; }
+  .fq :global(.fq-size small) { flex: none; width: 18px; text-align: right; font: 400 10px/1 -apple-system, system-ui, sans-serif; font-style: normal; color: #b0b0b5; }
+  .fq :global(.fq-size span) { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: calc(var(--s) * .15cqw); line-height: 1.25; }
+  .fq :global(.fq-set) { font-size: clamp(16px, 4cqw, 26px); line-height: 1.5; overflow-wrap: anywhere; }
+  .fq :global(.fq-grid) { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); border-top: .5px solid rgba(128, 128, 128, .25); border-left: .5px solid rgba(128, 128, 128, .25); }
+  .fq :global(.fq-grid span) { display: grid; place-items: center; aspect-ratio: 1; font-size: 22px; border-right: .5px solid rgba(128, 128, 128, .25); border-bottom: .5px solid rgba(128, 128, 128, .25); }
+  .fq :global(.fq-plain) { display: grid; justify-items: center; align-content: center; gap: 8px; height: 100%; font-family: -apple-system, system-ui, sans-serif; }
+  .fq :global(.fq-plain .fp-ic) { width: 96px; height: 96px; }
+  .fq :global(.fq-plain p) { font-size: 15px; font-weight: 600; }
+  .fq :global(.fq-plain small) { font-size: 12px; color: #8e8e93; }
+
+  /* the cursor the demo drives; it leaves when you take over */
+  .fp-cursor { position: absolute; left: 0; top: 0; z-index: 5; width: 18px; margin: -2px 0 0 -3px; translate: 50% 85%; opacity: 0; pointer-events: none; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .25));
+    transition: translate .7s cubic-bezier(.65, 0, .35, 1), opacity .3s, scale .1s; }
+  .fp-cursor.on { opacity: 1; }
+  .fp-cursor.down { scale: .85; }
+
+  /* the keys: the real ones work while the window has focus; these are for a phone, or a mouse */
+  .fp-keys { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .fp-key { all: unset; box-sizing: border-box; display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+    font: 500 14px/1 var(--display); color: var(--pj-ink); background: #fff; box-shadow: inset 0 0 0 1px var(--pj-line), 0 2px 0 rgba(31, 29, 27, .12); transition: transform .08s, box-shadow .08s, background-color .15s; }
+  .fp-key.is-space { min-width: 150px; color: var(--pj-2); }
+  .fp-key:active, .fp-key.down { transform: translateY(2px); box-shadow: inset 0 0 0 1px var(--pj-line), 0 0 0 rgba(31, 29, 27, .12); background: var(--pj-stage); }
+  .fp-key:focus-visible { outline-offset: 2px; }
+  .fp-hint { flex: 1; min-width: 200px; margin: 0 0 0 8px; font-size: 14px; line-height: 1.4; color: var(--pj-3); }
+  .fp-replay { all: unset; min-height: 40px; padding: 0 14px; border-radius: 99px; cursor: pointer; font: 500 14px/40px var(--display); box-shadow: inset 0 0 0 1px var(--pj-line); }
+  .fp-replay[hidden] { display: none; }
+  @media (hover: hover) { .fp-replay:hover { background: var(--pj-stage); } }
+
+  .fp-calls dd { color: inherit; }
+  .fp-code { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 6px 6px 6px 16px; border-radius: 12px; background: var(--pj-stage); box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .05); }
+  .fp-code code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 400 13px/40px var(--mono); color: var(--pj-ink); scrollbar-width: none; }
+  .fp-code button { all: unset; flex: none; min-width: 64px; height: 36px; padding: 0 12px; border-radius: 8px; text-align: center; cursor: pointer; font: 500 13px/36px var(--display); background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 1px 2px rgba(0, 0, 0, .06); }
+  .fp-code button:focus-visible { outline: 2px solid var(--pj-ink); outline-offset: 2px; }
+  .fp-code + p { margin-top: 16px; }
+
+  @media (max-width: 640px) {
+    .fp-desk { height: 540px; }
+    .fp-finder { left: 10px; right: 10px; top: 12px; width: auto; height: 300px; }
+    .fp-main { grid-template-columns: 1fr; }
+    .fp-side { display: none; }
+    .fp-head { grid-template-columns: 1fr; }
+    .fp-head span + span, .fp-list :global(.fp-kd) { display: none; }
+    .fp-list :global(li) { grid-template-columns: 20px 1fr; height: 36px; }
+    .fp-ql { left: 8px; right: 8px; top: 60px; bottom: 8px; width: auto; height: auto; }
+    .fp-openwith { display: none; }
+    .fq { padding: 18px 16px 24px; }
+    .fq :global(.fq-head) { flex-direction: column-reverse; gap: 4px; }
+    .fq :global(.fq-tools) { margin-top: 0; align-self: flex-end; }
+    .fp-key.is-space { flex: 1; }
+    .fp-hint { flex-basis: 100%; margin: 4px 0 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .fp-ql, .fp-ql.open, .fp-cursor { transition: none; } }
+</style>

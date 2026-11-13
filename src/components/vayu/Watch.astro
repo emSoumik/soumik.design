@@ -1,0 +1,320 @@
+---
+// the vayu watch, rebuilt in html from the figma make redesign: a case, a bezel, and every screen stacked on the glass
+// with one showing. data-face is din (day) or raat (night); data-shape is sq (apple watch) or ci (round).
+// sizes are in cqw of the glass, so one watch works at any width
+// data: the walk's story (Bandra, AQI 168) or the phone app's moment (Indiranagar, AQI 90), so the two can sit side by side
+interface Props { screens: string[]; on?: string; face?: 'din' | 'raat'; shape?: 'sq' | 'ci'; class?: string; label?: string; data?: 'walk' | 'app' }
+const { screens, on = screens[0], face = 'din', shape = 'sq', class: cls, label = 'The Vayu watch app', data = 'walk' } = Astro.props;
+const D = {
+  walk: { score: 81, fair: 'Comfort', pill: 'Live', place: 'Bandra', placeHi: 'बांद्रा', aqi: 168, band: 'Unhealthy', bandHi: 'अस्वस्थ', at: .56, tone: 'var(--sindoor)', ink: '#B8210F', cleanName: 'Through the park', cleanHi: 'पार्क से · स्वच्छ', clean: 42, cleanSub: '+4 min · 1.6 km', fast: 168 },
+  app: { score: 64, fair: 'Fair', pill: 'Modelled', place: 'Indiranagar', placeHi: 'इंदिरानगर', aqi: 90, band: 'Moderate', bandHi: 'मध्यम', at: .3, tone: 'var(--haldi)', ink: '#8A6100', cleanName: 'Park-side streets', cleanHi: 'पार्क के पास · स्वच्छ', clean: 62, cleanSub: '+7 min · 6.9 km', fast: 118 },
+}[data];
+const has = (s: string) => screens.includes(s);
+const lotus = (n = 8) => Array.from({ length: n }, (_, i) => i * (360 / n));
+---
+<div class:list={['vw', cls]} data-watch data-face={face} data-shape={shape} role="img" aria-label={label}>
+  <span class="vw-ring" aria-hidden="true"></span>
+  <div class="vw-case"><div class="vw-bezel"><div class="vw-glass" aria-hidden="true">
+
+    {has('vitals') && <div class:list={['sc', { on: on === 'vitals' }]} data-s="vitals">
+      <p class="sc-time" data-clock>8:40</p>
+      <p class="sc-k" style="--k: var(--rani-ink)"><i></i><span lang="hi">आज का स्वास्थ्य</span></p>
+      <p class="sc-t">Vitals</p>
+      <div class="sc-gauge">
+        <svg viewBox="0 0 100 100">
+          <defs><linearGradient id="vg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#00A39A"/><stop offset="1" stop-color="#22A04B"/></linearGradient></defs>
+          <circle cx="50" cy="50" r="44" class="sc-track"/>
+          <circle cx="50" cy="50" r="44" class="sc-arc" stroke="url(#vg)" pathLength="100" style={`--v: ${D.score}`}/>
+          {Array.from({ length: 24 }, (_, i) => <line x1="50" y1="15" x2="50" y2={i % 6 === 0 ? 20 : 18.5} transform={`rotate(${i * 15} 50 50)`} class="sc-tick"/>)}
+        </svg>
+        <b data-score>{D.score}</b><small><span lang="hi">आराम</span> · {D.fair}</small>
+      </div>
+      <p class="sc-pill"><i></i>{D.pill} · <span lang="hi">{D.placeHi}</span></p>
+    </div>}
+
+    {has('air') && <div class:list={['sc', { on: on === 'air' }]} data-s="air">
+      <p class="sc-time" data-clock>8:52</p>
+      <p class="sc-k" style="--k: var(--haldi-ink)"><i></i><span lang="hi">वायु गुणवत्ता</span></p>
+      <p class="sc-t">Air quality</p>
+      <div class="sc-card sc-aqi" style={`--band: ${D.tone}; --band-ink: ${D.ink}`}>
+        <p class="sc-row"><span>{D.place} · AQI</span><span>US EPA</span></p>
+        <b data-aqi>{D.aqi}</b>
+        <p class="sc-band">{D.band} <span lang="hi">{D.bandHi}</span></p>
+        <span class="sc-scale"><i style={`--at: ${D.at}`}></i></span>
+      </div>
+    </div>}
+
+    {has('routes') && <div class:list={['sc', { on: on === 'routes' }]} data-s="routes">
+      <p class="sc-time" data-clock>8:53</p>
+      <p class="sc-k" style="--k: var(--neem-ink)"><i></i><span lang="hi">मार्ग सुझाव</span></p>
+      <p class="sc-t">Route hints</p>
+      <div class="sc-card sc-route is-clean">
+        <p class="sc-row"><span class="sc-tag">Cleanest</span><span class="sc-n">{D.clean}<small>AQI</small></span></p>
+        <p class="sc-name">{D.cleanName}</p>
+        <p class="sc-sub" lang="hi">{D.cleanHi}</p>
+        <p class="sc-sub">{D.cleanSub}</p>
+      </div>
+      <div class="sc-card sc-route is-fast">
+        <p class="sc-row"><span class="sc-tag">Fastest</span><span class="sc-n">{D.fast}<small>AQI</small></span></p>
+      </div>
+    </div>}
+
+    {has('turn') && <div class:list={['sc', { on: on === 'turn' }]} data-s="turn">
+      <p class="sc-time" data-clock>8:54</p>
+      <p class="sc-k" style="--k: var(--neel-ink)"><i></i><span lang="hi">यात्रा</span></p>
+      <p class="sc-t">Turn left</p>
+      <div class="sc-turn">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M30 42V24a6 6 0 0 0-6-6H10"/><path d="M17 10l-8 8 8 8"/></svg>
+        <p><b>120 m</b>into the park</p>
+      </div>
+      <p class="sc-pill is-good"><i></i>Air ahead · 48</p>
+    </div>}
+
+    {has('breathe') && <div class:list={['sc', { on: on === 'breathe' }]} data-s="breathe">
+      <p class="sc-time" data-clock>9:02</p>
+      <p class="sc-k" style="--k: var(--rani-ink)"><i></i><span lang="hi">प्राणायाम</span></p>
+      <p class="sc-t">Breathe</p>
+      <div class="sc-card sc-breathe">
+        <svg viewBox="-50 -50 100 100" class="sc-lotus">
+          {lotus(8).map((r) => <ellipse cx="0" cy="-22" rx="9" ry="22" transform={`rotate(${r})`} />)}
+          {lotus(8).map((r) => <ellipse cx="0" cy="-16" rx="7" ry="16" transform={`rotate(${r + 22.5})`} class="in" />)}
+          <circle r="7" />
+        </svg>
+        <p><b>4s</b> in, <b>4s</b> out</p>
+      </div>
+    </div>}
+
+    {has('noise') && <div class:list={['sc sc-alert', { on: on === 'noise' }]} data-s="noise" style="--a: var(--haldi)">
+      <span class="sc-bloom"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 9a5 5 0 1 1 9.4 2.4c-.9 1.6-2.4 2.3-2.9 3.9-.4 1.4-1 3.2-3 3.2a2.6 2.6 0 0 1-2.4-1.6"/><path d="M10 9.4a2 2 0 1 1 3.4 1.4"/></svg></span>
+      <p class="sc-at">It’s loud here</p>
+      <p class="sc-ab">92 dB for 3 minutes. That can hurt your hearing.</p>
+      <p class="sc-btn">OK</p>
+    </div>}
+
+    {has('alert-aqi') && <div class:list={['sc sc-alert', { on: on === 'alert-aqi' }]} data-s="alert-aqi" style="--a: var(--sindoor)">
+      <span class="sc-bloom"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5l8.5 15h-17z"/><path d="M12 10.5v3.8M12 17.2v.1"/></svg></span>
+      <p class="sc-at">Air is unhealthy</p>
+      <p class="sc-ab">AQI crossed 150 near you. Your breathing is up.</p>
+      <p class="sc-ah" lang="hi">हवा ख़राब है · अंदर रहें</p>
+      <p class="sc-btn">See a cleaner way</p>
+    </div>}
+
+    {has('alert-breath') && <div class:list={['sc sc-alert', { on: on === 'alert-breath' }]} data-s="alert-breath" style="--a: var(--neel)">
+      <span class="sc-bloom"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 9h11a3 3 0 1 0-3-3M4 15h14a3 3 0 1 1-3 3"/></svg></span>
+      <p class="sc-at">Slow your breath</p>
+      <p class="sc-ab">24 breaths a minute, for six minutes.</p>
+      <p class="sc-ah" lang="hi">सांस धीमी करें</p>
+      <p class="sc-btn">Breathe for 30s</p>
+    </div>}
+
+    {has('alert-spo2') && <div class:list={['sc sc-alert', { on: on === 'alert-spo2' }]} data-s="alert-spo2" style="--a: var(--kesar)">
+      <span class="sc-bloom"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c3.5 4.4 5.5 7.6 5.5 10.2a5.5 5.5 0 0 1-11 0c0-2.6 2-5.8 5.5-10.2z"/></svg></span>
+      <p class="sc-at">Oxygen dipped</p>
+      <p class="sc-ab">Blood oxygen is at 93%. Stop for a minute.</p>
+      <p class="sc-ah" lang="hi">ऑक्सीजन कम है</p>
+      <p class="sc-btn">Breathe for 1 min</p>
+    </div>}
+
+    {has('alert-clean') && <div class:list={['sc sc-alert', { on: on === 'alert-clean' }]} data-s="alert-clean" style="--a: var(--neem)">
+      <span class="sc-bloom"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l7 2.8v5.2c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6.3z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.4"/></svg></span>
+      <p class="sc-at">Clean air zone</p>
+      <p class="sc-ab">PM2.5 is low here. You’re through.</p>
+      <p class="sc-ah" lang="hi">स्वच्छ हवा क्षेत्र</p>
+      <p class="sc-btn">Dismiss <span lang="hi">ठीक है</span></p>
+    </div>}
+
+    {/* the ideas we dropped, drawn the same way so the before and after compare honestly. none of these shipped */}
+    {has('x-all') && <div class:list={['sc sx-all', { on: on === 'x-all' }]} data-s="x-all">
+      <p class="sc-time">8:52</p>
+      <div class="sx-tiles">
+        <p><small>AQI</small><b>168</b></p><p><small>Breath</small><b>24</b></p>
+        <p><small>SpO₂</small><b>93%</b></p><p><small>Comfort</small><b>81</b></p>
+      </div>
+      <svg class="sx-spark" viewBox="0 0 100 26" preserveAspectRatio="none"><path d="M0 22 L14 21 L26 20 L36 15 L44 5 L56 3 L66 6 L76 14 L88 18 L100 19"/><path class="b" d="M0 18 L30 18 L40 12 L52 8 L64 9 L78 14 L100 16"/></svg>
+      <p class="sx-row"><span>Cleanest · 42</span><span>+4 min</span></p>
+      <p class="sx-row"><span>Fastest · 168</span><span>1.6 km</span></p>
+      <p class="sx-row"><span lang="hi">बांद्रा</span><span>Live</span></p>
+    </div>}
+
+    {has('x-number') && <div class:list={['sc sc-alert sx-num', { on: on === 'x-number' }]} data-s="x-number">
+      <p class="sx-lab">AQI near you</p>
+      <b class="sx-big">160</b>
+      <p class="sc-ab">Unhealthy</p>
+      <p class="sc-btn">OK</p>
+    </div>}
+
+    {has('x-routes') && <div class:list={['sc', { on: on === 'x-routes' }]} data-s="x-routes">
+      <p class="sc-time">8:53</p>
+      <p class="sc-k" style="--k: var(--neem-ink)"><i></i><span lang="hi">मार्ग सुझाव</span></p>
+      <p class="sc-t">Go cleaner</p>
+      <div class="sc-card sc-route is-clean">
+        <p class="sc-row"><span class="sc-tag">Best route</span></p>
+        <p class="sc-name">Through the park</p>
+        <p class="sc-sub">Cleaner air</p>
+      </div>
+      <p class="sc-btn sx-go">Start</p>
+    </div>}
+
+    {has('x-map') && <div class:list={['sc sx-map', { on: on === 'x-map' }]} data-s="x-map">
+      <svg viewBox="0 0 100 121" preserveAspectRatio="xMidYMid slice">
+        <rect width="100" height="121" class="g"/>
+        <rect x="8" y="22" width="34" height="30" rx="5" class="pk"/>
+        <path d="M0 84H100M0 60H100M30 0V121M62 0V121M84 0V121M0 104L100 34" class="st"/>
+        <circle cx="66" cy="70" r="24" class="hz"/>
+        <path d="M14 98H48L62 84L64 34" class="rt f"/><path d="M48 98L40 60L28 54L60 34" class="rt c"/>
+        <circle cx="14" cy="98" r="3.4" class="pn"/><circle cx="64" cy="34" r="3.4" class="pn e"/>
+        <text x="70" y="78">AQI 168</text><text x="10" y="18">park · 42</text><text x="66" y="28">office</text><text x="4" y="112">home · 8:54</text>
+      </svg>
+      <p class="sx-bar"><span>1.6 km</span><span>+4 min</span></p>
+    </div>}
+
+  </div></div></div>
+</div>
+
+<style is:global>
+  /* the case: titanium by day, graphite by night. the crown and side button hang off the right edge */
+  .vw { --mor: #00A39A; --rani: #E3197E; --kesar: #FF8A00; --haldi: #F5B700; --neel: #2F3FBF; --neem: #22A04B; --sindoor: #E0301E; --jamun: #7A2F9A; --manjistha: #7A1F3D; --sona: #C9971C; --raat: #14123A;
+    --mor-ink: #00716C; --rani-ink: #B80F62; --kesar-ink: #B85A00; --haldi-ink: #8A6100; --neel-ink: #2431A0; --neem-ink: #1B7A3A;
+    --serif: "Instrument Serif", Georgia, serif; --dev: "Tiro Devanagari Hindi", "Kohinoor Devanagari", serif;
+    container-type: inline-size; position: relative; width: var(--vw-w, 240px); flex: none; }
+  .vw-case { position: relative; padding: 6.5cqw; border-radius: 27cqw; transition: border-radius .5s var(--pj-ease, ease);
+    background: linear-gradient(145deg, #f3f1ec 0%, #d9d5cc 46%, #c9c4ba 100%);
+    box-shadow: inset 0 0 0 .6cqw rgba(255, 255, 255, .7), inset 0 -1.4cqw 2cqw rgba(0, 0, 0, .08), 0 1px 1px rgba(0, 0, 0, .08), 0 7cqw 14cqw -7cqw rgba(30, 24, 12, .45); }
+  .vw[data-face="raat"] .vw-case { background: linear-gradient(145deg, #3a3a3d 0%, #222224 50%, #151516 100%);
+    box-shadow: inset 0 0 0 .6cqw rgba(255, 255, 255, .12), 0 1px 1px rgba(0, 0, 0, .2), 0 7cqw 14cqw -7cqw rgba(0, 0, 0, .55); }
+  .vw-case::before, .vw-case::after { content: ""; position: absolute; right: -3.2cqw; border-radius: 0 2cqw 2cqw 0; }
+  .vw-case::after { top: 24%; width: 4.4cqw; height: 16cqw; background: repeating-linear-gradient(180deg, #cfcac0 0 .9cqw, #ebe8e1 .9cqw 1.8cqw); box-shadow: inset -.6cqw 0 1cqw rgba(0, 0, 0, .12); }
+  .vw-case::before { top: 50%; width: 2.4cqw; height: 15cqw; background: #d3cfc6; }
+  .vw[data-face="raat"] .vw-case::after { background: repeating-linear-gradient(180deg, #2a2a2d 0 .9cqw, #3c3c40 .9cqw 1.8cqw); }
+  .vw[data-face="raat"] .vw-case::before { background: #2c2c2f; }
+  .vw-bezel { padding: 3cqw; border-radius: 21cqw; background: #050505; transition: border-radius .5s var(--pj-ease, ease); }
+  .vw-glass { container-type: inline-size; position: relative; aspect-ratio: 200 / 242; border-radius: 17cqw; overflow: hidden; transition: border-radius .5s var(--pj-ease, ease), aspect-ratio .5s var(--pj-ease, ease);
+    background: linear-gradient(180deg, #ECEAF8 0%, #F6F3FA 44%, #FBEFE2 100%); }
+  .vw[data-face="raat"] .vw-glass { background: linear-gradient(180deg, #1a1748 0%, #14123A 55%, #1d1030 100%); }
+  .vw[data-shape="ci"] .vw-case, .vw[data-shape="ci"] .vw-bezel, .vw[data-shape="ci"] .vw-glass { border-radius: 50%; }
+  .vw[data-shape="ci"] .vw-glass { aspect-ratio: 1; }
+  .vw[data-shape="ci"] .vw-case::before { display: none; }
+
+  /* a tap on the wrist: the case shivers and rings leave it in the alert's colour */
+  .vw-ring { position: absolute; inset: 0; z-index: -1; border-radius: 27cqw; pointer-events: none; box-shadow: 0 0 0 2px var(--tap, var(--sindoor)); opacity: 0; }
+  .vw[data-shape="ci"] .vw-ring { border-radius: 50%; }
+  .vw.tap .vw-ring { animation: vw-ring 1s var(--pj-ease, ease) 2; }
+  .vw.tap .vw-case { animation: vw-buzz .32s linear var(--buzz, 2); }
+  @keyframes vw-ring { 0% { opacity: .8; scale: 1; } 100% { opacity: 0; scale: 1.3; } }
+  @keyframes vw-buzz { 0%, 100% { translate: 0 0; } 25% { translate: -1.1cqw 0; } 50% { translate: 1.1cqw 0; } 75% { translate: -.6cqw 0; } }
+
+  /* ---- the screens. 1cqw is a hundredth of the glass */
+  .sc { --ink: #14123A; --ink2: rgba(20, 18, 58, .58); --card: #fff; --cardline: rgba(201, 151, 28, .22);
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 6cqw 8cqw 8cqw; color: var(--ink);
+    font: 500 5.4cqw/1.25 var(--display); letter-spacing: 0; opacity: 0; scale: .985; transition: opacity .35s var(--pj-ease, ease), scale .45s var(--pj-ease, ease); }
+  .vw[data-face="raat"] .sc { --ink: #F6F3FA; --ink2: rgba(246, 243, 250, .6); --card: rgba(255, 255, 255, .07); --cardline: rgba(201, 151, 28, .3); }
+  .vw[data-shape="ci"] .sc { padding: 9cqw 13cqw 10cqw; align-items: center; text-align: center; }
+  .sc.on { opacity: 1; scale: 1; }
+  .sc p { margin: 0; }
+  .sc [lang="hi"] { font-family: var(--dev); font-weight: 400; }
+  .sc-time { align-self: center; font: 600 6cqw/1 var(--display); font-variant-numeric: tabular-nums; }
+  .sc-k { display: flex; align-items: center; gap: 2cqw; margin-top: 5cqw !important; font-size: 5.6cqw; color: var(--k); }
+  .sc-k i { width: 2.8cqw; height: 2.8cqw; background: currentColor; rotate: 45deg; border-radius: .4cqw; }
+  .vw[data-face="raat"] .sc-k { filter: brightness(1.25); }
+  .sc-t { margin-top: 1cqw !important; font: 400 14cqw/1 var(--serif); letter-spacing: -.01em; }
+  .vw[data-shape="ci"] .sc-t { font-size: 12cqw; }
+
+  .sc-gauge { position: relative; align-self: center; width: 64cqw; margin-top: 4cqw; display: grid; place-items: center; }
+  .vw[data-shape="ci"] .sc-gauge { width: 60cqw; }
+  .sc-gauge svg { width: 100%; rotate: -90deg; }
+  .sc-track, .sc-arc { fill: none; stroke-width: 8; }
+  .sc-track { stroke: var(--cardline); }
+  .sc-arc { stroke-linecap: round; stroke-dasharray: var(--v) 100; transition: stroke-dasharray .9s var(--pj-ease, ease); }
+  .sc-tick { stroke: var(--ink); stroke-width: 1; opacity: .5; }
+  .sc-gauge b { position: absolute; top: 31%; font: 400 19cqw/1 var(--serif); font-variant-numeric: tabular-nums; }
+  .sc-gauge small { position: absolute; top: 59%; font-size: 4.4cqw; color: var(--ink2); white-space: nowrap; }
+  .sc-pill { align-self: center; display: inline-flex; align-items: center; gap: 1.6cqw; margin-top: auto !important; padding: 1.6cqw 3.6cqw; border-radius: 99px; font-size: 4.6cqw; color: var(--neem-ink); background: rgba(34, 160, 75, .14); }
+  .vw[data-face="raat"] .sc-pill { color: #6fd392; }
+  .sc-pill i { width: 1.8cqw; height: 1.8cqw; border-radius: 50%; background: currentColor; }
+
+  .sc-card { width: 100%; margin-top: 5cqw; padding: 5cqw; border-radius: 7cqw; background: var(--card); box-shadow: inset 0 0 0 .5cqw var(--cardline), 0 1cqw 3cqw rgba(0, 0, 0, .04); }
+  .sc-row { display: flex; justify-content: space-between; align-items: center; font-size: 4.6cqw; color: var(--ink2); }
+  .sc-aqi { background: linear-gradient(180deg, color-mix(in oklab, var(--band, var(--sindoor)) 16%, #fff), color-mix(in oklab, var(--band, var(--sindoor)) 5%, #fff)); box-shadow: inset 0 0 0 .5cqw color-mix(in oklab, var(--band, var(--sindoor)) 26%, transparent); }
+  .vw[data-face="raat"] .sc-aqi { background: color-mix(in oklab, var(--band, var(--sindoor)) 16%, transparent); }
+  .sc-aqi b { display: block; margin-top: 2cqw; font: 400 26cqw/1 var(--serif); font-variant-numeric: tabular-nums; color: var(--band-ink, #B8210F); }
+  .vw[data-face="raat"] .sc-aqi b { color: color-mix(in oklab, var(--band, var(--sindoor)) 70%, #fff); }
+  .sc-band { margin-top: 2cqw !important; font-weight: 600; font-size: 5.6cqw; }
+  .sc-band span { font-weight: 400; color: var(--ink2); }
+  .sc-scale { position: relative; display: block; height: 2.2cqw; margin-top: 4cqw; border-radius: 9px; background: linear-gradient(90deg, #22A04B 4%, #F5B700 25%, #FF8A00 42%, #E0301E 58%, #7A2F9A 83%, #7A1F3D); }
+  .sc-scale i { position: absolute; top: 50%; left: calc(var(--at) * 100%); width: 5.6cqw; height: 5.6cqw; margin: -2.8cqw 0 0 -2.8cqw; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1cqw var(--band, #E0301E), 0 1cqw 2cqw rgba(0, 0, 0, .2); transition: left .8s var(--pj-ease, ease); }
+
+  .sc-route { padding: 4.4cqw 5cqw; }
+  .sc-route.is-clean { background: linear-gradient(180deg, rgba(34, 160, 75, .2), rgba(34, 160, 75, .08)); box-shadow: inset 0 0 0 .5cqw rgba(34, 160, 75, .3); }
+  .sc-route.is-fast { margin-top: 2.6cqw; opacity: .55; }
+  .sc-tag { padding: 1.4cqw 3.4cqw; border-radius: 99px; font-weight: 600; font-size: 4.4cqw; color: #fff; background: var(--neem-ink); }
+  .is-fast .sc-tag { color: var(--ink); background: rgba(255, 138, 0, .28); }
+  .sc-n { font: 400 9cqw/1 var(--serif); color: var(--ink); }
+  .sc-n small { margin-left: 1cqw; font: 500 3.6cqw/1 var(--mono); color: var(--ink2); }
+  .sc-name { margin-top: 3cqw !important; font: 400 8.4cqw/1.05 var(--serif); }
+  .sc-sub { margin-top: 1.2cqw !important; font-size: 4.4cqw; color: var(--ink2); }
+
+  .sc-turn { display: flex; align-items: center; gap: 5cqw; margin-top: 6cqw; }
+  .sc-turn svg { width: 26cqw; color: var(--neel); }
+  .vw[data-face="raat"] .sc-turn svg { color: #8f9bf2; }
+  .sc-turn p { font-size: 5cqw; color: var(--ink2); }
+  .sc-turn b { display: block; font: 400 13cqw/1 var(--serif); color: var(--ink); }
+  .sc-pill.is-good { margin-top: auto !important; }
+
+  .sc-breathe { display: grid; justify-items: center; gap: 2cqw; padding: 4cqw; }
+  .sc-lotus { width: 50cqw; overflow: visible; }
+  .sc-lotus ellipse { fill: rgba(227, 25, 126, .26); stroke: rgba(227, 25, 126, .5); stroke-width: .6; }
+  .sc-lotus ellipse.in { fill: rgba(227, 25, 126, .4); }
+  .sc-lotus circle { fill: var(--rani); }
+  .sc-breathe p { font-size: 4.8cqw; color: var(--ink2); }
+  .sc-breathe b { font: 400 8cqw/1 var(--serif); color: var(--ink); }
+  @media (prefers-reduced-motion: no-preference) {
+    .sc.on .sc-lotus { animation: sc-breathe 8s cubic-bezier(.45, 0, .55, 1) infinite; }
+  }
+  @keyframes sc-breathe { 0%, 100% { scale: .72; rotate: 0deg; } 50% { scale: 1.06; rotate: 22.5deg; } }
+
+  .sc-alert { align-items: center; justify-content: center; text-align: center; padding-inline: 9cqw; }
+  .sc-bloom { position: relative; display: grid; place-items: center; width: 20cqw; height: 20cqw; margin-bottom: 5cqw; border-radius: 50%; background: var(--a);
+    box-shadow: 0 0 0 4cqw color-mix(in oklab, var(--a) 16%, transparent), 0 0 0 8cqw color-mix(in oklab, var(--a) 7%, transparent); }
+  .sc-bloom svg { width: 10cqw; }
+  .sc-at { font: 400 11cqw/1.02 var(--serif); }
+  .sc-ab { margin-top: 3cqw !important; font-size: 4.8cqw; line-height: 1.35; color: var(--ink2); }
+  .sc-ah { margin-top: 2.4cqw !important; font-size: 5.6cqw; color: color-mix(in oklab, var(--a) 80%, #14123A); }
+  .vw[data-face="raat"] .sc-ah { color: color-mix(in oklab, var(--a) 70%, white); }
+  .sc-btn { margin-top: 5cqw !important; padding: 2.8cqw 6cqw; border-radius: 99px; font-weight: 600; font-size: 4.8cqw; box-shadow: inset 0 0 0 .5cqw var(--cardline); background: var(--card); }
+  .sc-btn span { font-weight: 400; color: var(--ink2); }
+  .vw[data-shape="ci"] .sc-alert { padding-inline: 14cqw; }
+
+  /* ---- dropped ideas. busy on purpose: this is what one glance had to fight through */
+  .sx-all { padding: 6cqw 6cqw 7cqw; }
+  .sx-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 2cqw; width: 100%; margin-top: 4cqw; }
+  .sx-tiles p { margin: 0 !important; padding: 2.6cqw 3cqw; border-radius: 4cqw; background: var(--card); box-shadow: inset 0 0 0 .5cqw var(--cardline); }
+  .sx-tiles small { display: block; font-size: 3.6cqw; color: var(--ink2); }
+  .sx-tiles b { display: block; margin-top: .6cqw; font: 400 9cqw/1 var(--serif); font-variant-numeric: tabular-nums; }
+  .sx-spark { width: 100%; height: 11cqw; margin-top: 3cqw; overflow: visible; }
+  .sx-spark path { fill: none; stroke: var(--kesar); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+  .sx-spark path.b { stroke: var(--neel); }
+  .sx-row { display: flex; justify-content: space-between; width: 100%; margin-top: 1.4cqw !important; padding-top: 1.4cqw; border-top: .5cqw solid var(--cardline); font-size: 3.8cqw; color: var(--ink2); }
+  .sx-row span:first-child { color: var(--ink); }
+  .sx-num .sx-lab { font-size: 5cqw; color: var(--ink2); }
+  .sx-num .sx-big { margin-top: 2cqw; font: 400 34cqw/.9 var(--serif); font-variant-numeric: tabular-nums; color: #B8210F; }
+  .vw[data-face="raat"] .sx-num .sx-big { color: #ff8a7a; }
+  .sx-go { align-self: stretch; margin-top: auto !important; text-align: center; }
+  .sx-map { padding: 0; }
+  .sx-map svg { position: absolute; inset: 0; width: 100%; height: 100%; font: 500 4.2px/1 var(--display); }
+  .sx-map .g { fill: #eceaf4; }
+  .sx-map .pk { fill: rgba(34, 160, 75, .3); }
+  .sx-map .st { fill: none; stroke: #fff; stroke-width: 3.2; }
+  .sx-map .hz { fill: rgba(224, 48, 30, .2); }
+  .sx-map .rt { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .sx-map .rt.f { stroke: #E0301E; stroke-dasharray: 2 2; }
+  .sx-map .rt.c { stroke: #22A04B; }
+  .sx-map .pn { fill: #fff; stroke: #1f1d1b; stroke-width: 1.2; }
+  .sx-map .pn.e { fill: #1f1d1b; }
+  .sx-map text { fill: #1f1d1b; }
+  .sx-bar { position: absolute; inset: auto 4cqw 4cqw; display: flex; justify-content: space-between; padding: 2.4cqw 4cqw; border-radius: 99px; font-size: 4.2cqw; background: rgba(255, 255, 255, .9); box-shadow: 0 .5cqw 2cqw rgba(0, 0, 0, .1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sc, .sc-arc, .sc-scale i { transition: none; }
+    .vw.tap .vw-ring, .vw.tap .vw-case { animation: none; }
+  }
+</style>

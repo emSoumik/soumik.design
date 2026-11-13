@@ -1,24 +1,41 @@
 ---
+import { Picture } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
+import PostHeader from '../../components/blog/PostHeader.astro';
+import Title from '../../components/blog/Title.astro';
 import { published, day, iso } from '../../lib/content';
 
 const posts = await published('blog');
+// the same count the post page shows
+const minutes = (body = '') => Math.max(1, Math.ceil(body.split(/\s+/).length / 230));
 ---
 <Base noindex={!posts.length} title="Blog" description="Notes from Soumik Halder, a design engineer, on designing things and then building them.">
-  <div class="col">
-    <header class="index-head">
-      <p class="eyebrow">notes</p>
-      <h1>Blog</h1>
-      <p>Notes on designing things, then building them.</p>
+  <div class="blog bi">
+    <header class="bi-head">
+      <p>blog</p>
+      <h1>Designing, then <em>building</em></h1>
+      <p>Notes on designing things, then building them. Most of them you can play with.</p>
     </header>
     {posts.length ? (
-      <ul class="posts">
-        {posts.map(({ id, data }) => (
+      <ul class="bi-list">
+        {posts.map(({ id, data, body }) => (
           <li>
-            <a class="post" href={`/blog/${id}/`}>
-              <time datetime={iso(data.date)}>{day(data.date)}</time>
-              <h2>{data.title}{data.draft && <span class="draft">draft</span>}</h2>
-              <p>{data.description}</p>
+            <a class="bi-post" href={`/blog/${id}/`}>
+              <div>
+                <p class="meta">
+                  <time datetime={iso(data.date)}>{day(data.date).toLowerCase()}</time>
+                  <span>{minutes(body)} min read</span>
+                  {data.draft && <span class="draft">draft</span>}
+                </p>
+                <h2><Title text={data.title} accent={data.accent} /></h2>
+                <p>{data.description}</p>
+                <span class="go">read it <i aria-hidden="true">→</i></span>
+              </div>
+              <div class="shot">
+                {data.cover
+                  ? <Picture src={data.cover} alt="" widths={[400, 760]} sizes="(min-width: 761px) 380px, calc(100vw - 32px)" formats={['avif']} fallbackFormat="webp" />
+                  : <PostHeader kind={data.header ?? 'garden'} slug={id} mini />}
+              </div>
             </a>
           </li>
         ))}

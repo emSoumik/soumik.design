@@ -1,0 +1,63 @@
+---
+// <Flowers />: every flower in the garden, drawn from its sprite. tap one to turn it into the next of its kind, the
+// way a tap on a grown flower does in the garden
+import { KINDS, forms, head, rects } from '../blog/plant';
+const NAME: Record<string, string> = { forget: 'forget-me-not', lily: 'stargazer lily', blossom: 'blossom' };
+const all = KINDS.map((k) => {
+  const fs = forms(k);
+  const size = Math.max(...fs.map((f) => Math.max(f.head.length, f.head[0].length))) + 2;
+  return { k, name: NAME[k] ?? k, size, forms: fs.map((f, i) => rects(head(k, i, 0))) };
+});
+---
+<figure class="bx fl" data-flowers>
+  <ul class="fl-grid">
+    {all.map((f) => (
+      <li>
+        <button type="button" class="fl-one" data-n={f.forms.length} data-f="0" aria-label={f.forms.length > 1 ? `${f.name}, ${f.forms.length} forms. Show the next` : f.name} disabled={f.forms.length < 2}>
+          <svg viewBox={`${-f.size / 2} ${-f.size / 2} ${f.size} ${f.size}`} shape-rendering="crispEdges" aria-hidden="true">
+            {f.forms.map((r, i) => <g data-i={i} set:html={r} />)}
+          </svg>
+          <span class="px">{f.name}</span>
+          {f.forms.length > 1 && <span class="fl-dots" aria-hidden="true">{f.forms.map(() => <i></i>)}</span>}
+        </button>
+      </li>
+    ))}
+  </ul>
+  <figcaption><span class="px">the cast</span> every flower in the garden, one letter per stitch in <code>flora.js</code>. tap one with dots under it to turn it into the next of its kind.</figcaption>
+</figure>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-flowers] .fl-one:not(:disabled)').forEach((b) => {
+    b.addEventListener('click', () => { b.dataset.f = String((+b.dataset.f! + 1) % +b.dataset.n!); });
+  });
+</script>
+
+<style>
+  .fl-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .fl-grid li { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0; }
+  .fl-one { position: relative; display: grid; justify-items: center; align-content: center; gap: 10px; width: 100%; aspect-ratio: 1 / .9; padding: 14px 8px 18px; border: 0; background: #fff; cursor: pointer; transition: transform .16s var(--ease); }
+  .fl-one:disabled { cursor: default; }
+  .fl-one:not(:disabled):active { transform: scale(.97); }
+  .fl-one svg { width: 56%; max-width: 88px; height: auto; }
+  .fl-one g { display: none; }
+  .fl-one[data-f="0"] g[data-i="0"], .fl-one[data-f="1"] g[data-i="1"], .fl-one[data-f="2"] g[data-i="2"], .fl-one[data-f="3"] g[data-i="3"] { display: inline; }
+  .fl-one .px { font: 500 12px/1.2 var(--pixel); color: var(--ink); text-align: center; }
+  .fl-dots { position: absolute; bottom: 10px; display: flex; gap: 3px; }
+  .fl-dots i { width: 4px; height: 4px; background: var(--line); }
+  .fl-one[data-f="0"] .fl-dots i:nth-child(1), .fl-one[data-f="1"] .fl-dots i:nth-child(2), .fl-one[data-f="2"] .fl-dots i:nth-child(3), .fl-one[data-f="3"] .fl-dots i:nth-child(4) { background: var(--ink); }
+  .fl-one:focus-visible { outline-offset: -4px; }
+  figcaption { font: 400 15px/1.5 var(--display); color: var(--ink-2); margin-top: 14px; max-width: var(--text); text-wrap: pretty; }
+  figcaption .px { font: 500 12px/1 var(--pixel); color: var(--ink); margin-right: 4px; }
+  figcaption code { font: .88em/1 var(--mono); color: var(--ink); }
+  @media (hover: hover) and (pointer: fine) { .fl-one:not(:disabled):hover svg { transform: translateY(-2px); } .fl-one svg { transition: transform .2s var(--ease); } }
+  /* a phone: one row you swipe along, three and a bit at a time */
+  @media (max-width: 640px) {
+    .fl-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; border-left: 0; scrollbar-width: none; overscroll-behavior-x: contain; }
+    .fl-grid::-webkit-scrollbar { display: none; }
+    .fl-grid li { flex: 0 0 31%; scroll-snap-align: start; }
+    .fl-grid li:first-child { border-left: 1px solid var(--line); }
+    .fl-one { aspect-ratio: 1 / 1.15; }
+    figcaption { padding-inline: var(--gut); }
+  }
+  @media (prefers-reduced-motion: reduce) { .fl-one, .fl-one svg { transition: none; } }
+</style>

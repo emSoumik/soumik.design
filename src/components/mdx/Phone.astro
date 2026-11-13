@@ -1,0 +1,56 @@
+---
+// <Phone src="/assets/work/whyclub/m-01" />: one screen in a phone. src is a path without its extension:
+// a still ships as .avif + .webp, a recording (video) as .webm + .mp4 with a .webp poster.
+// sized by its own width, so it reads the same as a cover detail or one of a row of three
+interface Props {
+  src: string;
+  alt: string;
+  caption?: string;
+  video?: boolean;
+  /** above the fold, like a cover: load straight away */
+  eager?: boolean;
+  class?: string;
+}
+const { src, alt, caption, video = false, eager = false, class: cls } = Astro.props;
+---
+<figure class:list={['ph', cls]}>
+  <div class="s"><div class="in">
+    {video ? (
+      <video muted loop playsinline disablepictureinpicture preload="none" poster={`${src}.webp`} aria-label={alt}>
+        <source src={`${src}.webm`} type="video/webm">
+        <source src={`${src}.mp4`} type="video/mp4">
+      </video>
+    ) : (
+      <picture>
+        <source srcset={`${src}.avif`} type="image/avif">
+        <img src={`${src}.webp`} alt={alt} width="392" height="848" loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false">
+      </picture>
+    )}
+  </div></div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .ph { container-type: inline-size; margin: 0; min-width: 0; }
+  .s { padding: 2.6cqw; border-radius: 15cqw; background: #17171a;
+    box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .22), 0 0 0 .5px rgba(22, 20, 15, .5), 0 6px 14px -6px rgba(40, 30, 15, .24), 0 26px 50px -22px rgba(40, 30, 15, .45); }
+  .in { position: relative; aspect-ratio: 392 / 848; border-radius: 12.6cqw; overflow: hidden; background: #fff; isolation: isolate; }
+  .in picture { display: contents; }
+  .in img, .in video { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 0; box-shadow: none; }
+  figcaption { margin-top: 12px; text-align: center; font: 400 12px/1.35 var(--mono); color: var(--ink-2); text-wrap: balance; }
+  @media (max-width: 640px) { figcaption { margin-top: 8px; font-size: 10.5px; } }
+</style>
+
+<script>
+  // recordings play while they're on screen; with reduced motion they stay on their poster
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const io = new IntersectionObserver((entries) => {
+      for (const { target, isIntersecting } of entries) {
+        const v = target as HTMLVideoElement;
+        if (isIntersecting && !document.hidden) { v.preload = 'auto'; v.play().catch(() => {}); }
+        else v.pause();
+      }
+    }, { threshold: 0.35 });
+    document.querySelectorAll<HTMLVideoElement>('.ph video').forEach((v) => io.observe(v));
+  }
+</script>

@@ -1,0 +1,119 @@
+/* PROTOTYPE: the whyclub lab, part two: the case study. a sticky chapter list beside it on a laptop, a sticky row
+   of chips over it on a phone. cards use the same soft grey fill as the tiles above */
+.study { --r: clamp(14px, 1.6vw, 20px); --ease: cubic-bezier(.23, 1, .32, 1); --card: linear-gradient(180deg, #f7f7f7, #efefef);
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 0 clamp(40px, 6vw, 96px); margin-top: clamp(120px, 14vw, 200px); padding-top: clamp(48px, 6vw, 72px); border-top: 1px solid var(--line); }
+.toc { position: sticky; top: 24px; align-self: start; }
+.toc-h { margin-bottom: 12px; font: 500 13px/1.4 var(--display); color: var(--ink-3); }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.toc a { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; font: 500 14px/1.3 var(--display); color: var(--ink-3); text-decoration: none; transition: color 200ms var(--ease); }
+.toc a .n { font-size: 12px; font-variant-numeric: tabular-nums; }
+.toc a[aria-current='true'] { color: var(--ink); }
+.toc a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+@media (hover: hover) and (pointer: fine) { .toc a:hover { color: var(--ink); } }
+
+.ch { padding-bottom: clamp(88px, 10vw, 140px); scroll-margin-top: 24px; }
+.kick { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font: 500 13px/1.4 var(--display); color: var(--ink-2); }
+.kick > span { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.kick em { padding: 3px 10px; border-radius: 99px; background: #f1f1f1; font: 500 12px/1.4 var(--display); font-style: normal; color: var(--ink-2); }
+.ch h2 { margin-top: 14px; max-width: 20ch; font: 500 clamp(30px, 4vw, 52px)/1.05 var(--display); letter-spacing: -.03em; color: var(--ink); text-wrap: balance; }
+.ch .say { margin-top: 24px; max-width: 60ch; font: 400 18px/1.65 var(--display); color: var(--body); text-wrap: pretty; }
+.ch .say + .say { margin-top: 1em; }
+.ch h3.sub { margin-top: 56px; font: 600 17px/1.3 var(--display); color: var(--ink); }
+.ch a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+/* tl;dr: the facts in a row, then three lines anyone can stop after */
+.meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 24px; margin: 36px 0 0; }
+.meta div { padding-top: 12px; border-top: 1px solid var(--line); }
+.meta dt { font: 400 12px/1.4 var(--display); color: var(--ink-3); }
+.meta dd { margin: 4px 0 0; font: 400 15px/1.45 var(--display); color: var(--ink); text-wrap: pretty; }
+.tldr { list-style: none; margin: 28px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.tldr li { padding: 20px; border-radius: var(--r); background: var(--card); font: 400 15px/1.5 var(--display); color: var(--body); text-wrap: pretty; }
+.tldr b { display: block; margin-bottom: 6px; font: 600 13px/1.3 var(--display); color: var(--ink); }
+
+.journey { list-style: none; margin: 40px 0 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.journey .fill { aspect-ratio: 3 / 4; }
+.journey .dev { --top: 10%; --w: 70cqw; }
+.journey .nb { position: absolute; inset: 0; display: grid; place-items: center; font: 500 40px/1 var(--display); letter-spacing: -.03em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.journey p { margin-top: 12px; font: 400 13px/1.45 var(--display); color: var(--ink-2); text-wrap: pretty; }
+.journey b { display: block; margin-bottom: 2px; font: 600 14px/1.3 var(--display); color: var(--ink); }
+.labnote { margin-top: 32px; max-width: 64ch; padding: 14px 16px; border: 1px dashed rgba(31, 29, 27, .3); border-radius: 12px; font: 400 13.5px/1.55 var(--display); color: var(--ink-2); }
+.labnote b { margin-right: 8px; font-weight: 600; color: var(--ink); }
+
+.calls, .fails { list-style: none; margin: 40px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.calls li { padding: 24px; border-radius: var(--r); background: var(--card); }
+.calls .cn, .fails .cn { font: 500 12px/1 var(--display); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.calls h3, .fails h3 { margin: 12px 0 18px; font: 500 22px/1.2 var(--display); letter-spacing: -.016em; color: var(--ink); text-wrap: balance; }
+.calls .why, .calls .cost, .fails p:not(.cn) { font: 400 15px/1.55 var(--display); color: var(--body); text-wrap: pretty; }
+.calls .cost, .fails p + p:not(.cn) { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(31, 29, 27, .1); }
+.calls p span, .fails p span { display: block; margin-bottom: 4px; font: 500 12px/1.4 var(--display); color: var(--ink-3); }
+/* what didn't work: outlined, not filled, so it reads as the road not taken */
+.fails { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fails li { padding: 24px; border-radius: var(--r); box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .14); }
+.fails h3 { font-size: 19px; }
+.fails h3::before { content: ''; display: block; width: 18px; height: 1.5px; margin-bottom: 14px; background: var(--ink-3); }
+
+.steps { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.steps li, .care li { padding-top: 14px; border-top: 1px solid var(--line); font: 400 14px/1.55 var(--display); color: var(--ink-2); text-wrap: pretty; }
+.steps .n, .care .n { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .25); font: 500 12px/1 var(--display); color: var(--ink); }
+.steps b, .care b { display: block; margin: 12px 0 4px; font: 600 15px/1.35 var(--display); color: var(--ink); }
+.care { list-style: none; margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+
+.kit { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 12px; margin-top: 48px; }
+.kc { padding: 22px; border-radius: var(--r); background: var(--card); }
+.kh { margin-bottom: 18px; font: 500 12.5px/1.4 var(--display); color: var(--ink-3); }
+.kc .spec { font-size: 60px; line-height: 1; color: var(--ink); }
+.kc .voice { font-family: 'Faculty Glyphic', Georgia, serif; }
+.kc .use { margin-top: 18px; font-family: 'Manrope', var(--ui); font-weight: 600; }
+.kc .sl { margin-top: 6px; font: 400 13.5px/1.45 var(--display); color: var(--ink-2); }
+.kc .sl b { color: var(--ink); font-weight: 600; }
+.kc ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.kc li { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 0 12px; font: 400 12.5px/1.4 var(--mono); color: var(--ink-3); }
+.kc li i { grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.kc li b { font: 600 14px/1.3 var(--display); color: var(--ink); }
+.kc dl { margin: 0; display: grid; gap: 16px; }
+.kc dt { font: 500 22px/1.1 var(--display); letter-spacing: -.02em; color: var(--ink); }
+.kc dd { margin: 4px 0 0; font: 400 13.5px/1.45 var(--display); color: var(--ink-2); text-wrap: pretty; }
+
+.stack { list-style: none; margin: 40px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.stack li { position: relative; display: grid; grid-template-columns: 110px minmax(0, 260px) 1fr; gap: 4px 24px; align-items: baseline; padding: 18px 0 18px 26px; border-bottom: 1px solid var(--line); }
+.stack li::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 1px; background: rgba(31, 29, 27, .16); }
+.stack li::after { content: ''; position: absolute; left: 0; top: 24px; width: 9px; height: 9px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1.5px var(--ink); }
+.stack .k { font: 500 12.5px/1.4 var(--display); color: var(--ink-3); }
+.stack b { font: 500 16px/1.4 var(--display); color: var(--ink); }
+.stack .d { font: 400 14px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+.nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 32px 0 0; }
+.nums div { padding: 20px; border-radius: var(--r); background: var(--card); }
+.nums dt { font: 500 clamp(30px, 3.4vw, 46px)/1 var(--display); letter-spacing: -.035em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.nums dd { margin: 8px 0 0; font: 400 13px/1.45 var(--display); color: var(--ink-2); }
+
+@media (max-width: 1100px) and (min-width: 900px) {
+  .fails { grid-template-columns: 1fr 1fr; }
+  .journey { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 899px) {
+  .study { display: block; margin-top: 120px; padding-top: 0; border-top: 0; }
+  .toc { top: 0; z-index: 20; margin: 0 calc(var(--gut) * -1) 48px; padding: 8px var(--gut); background: rgba(255, 255, 255, .92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+  .toc::-webkit-scrollbar { display: none; }
+  .toc-h { display: none; }
+  .toc ol { display: flex; gap: 4px; }
+  .toc a { min-height: 44px; align-items: center; padding: 0 14px; border-radius: 99px; white-space: nowrap; font-size: 13px; }
+  .toc a .n { display: none; }
+  .toc a[aria-current='true'] { background: #111; color: #fff; }
+  .ch { scroll-margin-top: 72px; padding-bottom: 88px; }
+  .ch .say { font-size: 17px; line-height: 1.6; }
+  .meta { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .meta dd { font-size: 14.5px; }
+  .tldr, .calls, .fails, .steps, .care, .kit { grid-template-columns: 1fr; }
+  .steps, .care { gap: 18px; }
+  .journey { display: grid; grid-auto-flow: column; grid-auto-columns: 44%; grid-template-columns: none; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+    scrollbar-width: none; margin-inline: calc(var(--gut) * -1); padding: 0 var(--gut) 4px; scroll-padding-inline: var(--gut); }
+  .journey::-webkit-scrollbar { display: none; }
+  .journey li { scroll-snap-align: start; }
+  .calls li, .fails li { padding: 20px; }
+  .calls h3 { font-size: 20px; }
+  .stack li { grid-template-columns: 1fr; gap: 2px; }
+  .stack li::after { top: 22px; }
+  .nums { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .nums div { padding: 16px; }
+}

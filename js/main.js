@@ -3,6 +3,7 @@ import { SOCIALS, css } from './content.js';
 import { createBee, BEE_CSS } from './garden/bee.js';
 import { createButterflies, BUTTERFLY_CSS } from './garden/butterflies.js';
 import { createGarden as pixelGarden } from './garden/pixels.js';
+import { createCursor } from './garden/cursor.js';
 import { createAbout } from './companions/about.js';
 import { feel } from './feel.js';
 
@@ -16,13 +17,7 @@ const touch = matchMedia('(hover: none)').matches;
 const hintFl = document.querySelector('.hint .fl');
 hintFl.innerHTML = [...hintFl.textContent.replace('click', touch ? 'tap' : 'click')].map((ch, i) => ch === ' ' ? ' ' : `<span style="--i:${i}">${ch}</span>`).join('');
 
-const ICON = {
-  LinkedIn: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.6h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.76v5.59h-4v-4.96c0-1.18-.02-2.7-1.7-2.7-1.7 0-1.95 1.28-1.95 2.61v5.05h-4v-11Z"/></svg>',
-  X: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.75 3h3.07l-6.7 7.66L22 21h-6.17l-4.83-6.32L5.47 21H2.4l7.17-8.2L2 3h6.32l4.37 5.78L17.75 3Zm-1.08 16.17h1.7L7.4 4.74H5.58l11.09 14.43Z"/></svg>',
-  Email: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg>',
-};
 const ext = s => s.href.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
-document.getElementById('icons').innerHTML = SOCIALS.map(s => `<a href="${s.href}"${ext(s)} aria-label="${s.label}">${ICON[s.label]}</a>`).join('');
 document.getElementById('socials').innerHTML = SOCIALS.map(s => `<a href="${s.href}"${ext(s)}>${s.label === 'X' ? 'x.com' : s.label.toLowerCase()}</a>`).join('');
 
 setTimeout(() => document.querySelector('.mark h1').classList.remove('load'), 3400);
@@ -41,6 +36,11 @@ let garden = { plant() {}, patches: () => [] };
 const rectsOf = (sel, pad = 0) => [...document.querySelectorAll(sel)].map(el => { const r = el.getBoundingClientRect(), c = canvas.getBoundingClientRect();
   return [r.left - c.left - pad, r.top - c.top - pad, r.right - c.left + pad, r.bottom - c.top + pad]; });
 const KEEP = '.mark, .cw, .top, .nav, .hint';
+// data saver, slow-2g or 2g: no work section on idle, only when it nears the screen (work.js handles its own videos). no api, not lean
+const conn = navigator.connection;
+const lean = !!conn && (conn.saveData || /^(slow-2g|2g)$/.test(conn.effectiveType));
+// dev only: ?slow=3000 waits that long before building the garden, to see the waiting sprout and the tap replay
+if (import.meta.env.DEV) { const ms = +new URLSearchParams(location.search).get('slow'); if (ms > 0) await new Promise(r => setTimeout(r, ms)); }
 try {
   if (ink) {
     const { createGarden } = await import('./garden/watercolour.js');
@@ -53,16 +53,23 @@ try {
       field: (w, h, mob) => ({
         rect: mob ? [20, h * .12, w - 20, h * .66] : [40, h * .1, w - 40, h * .72],
         avoid: rectsOf(KEEP, mob ? 8 : 16),
-        n: mob ? 7 : 12,
+        n: mob ? 4 : 12,
       }),
-      onStitch: () => feel.stitch(),
-      onBloom: f => feel.plant(1, f.x),
-      onMorph: (f, how) => feel.morph(how, f.x),
+      onStitch: (f, part, p) => feel.stitch({ id: f.id, kind: f.kind, part, p, x: f.x }),
+      onBloom: f => feel.plant(1, f.x, { id: f.id, kind: f.kind }),
+      onMorph: (f, how) => feel.morph(how, f.x, { kind: f.kind }),
       onSparkle: (ms, x) => setTimeout(() => feel.sparkle(x), ms),
       onGrown: () => grown(),
     });
   }
 } catch (e) { console.warn('garden unavailable', e); }
+
+// the garden is built (or failed): the waiting sprout opens and the hint takes over. only a load slow enough for the sprout to
+// have shown (.waited) gets the handover; a fast one just gets the hint, on its old timing
+const waited = performance.now() > 1250;
+document.documentElement.classList.toggle('waited', waited);
+document.getElementById('hint').style.setProperty('--d', waited ? '1.1s' : `${Math.max(0, 1600 - performance.now()) | 0}ms`);
+document.documentElement.classList.add('ready');
 
 const spots = () => garden.patches().flatMap(p => p.flowers);
 const bee = createBee({ spots, start: 2.4 });
@@ -125,6 +132,7 @@ clearBtn.addEventListener('click', async () => {
 });
 function plant(x, y, slop) {
   const p = garden.plant(x, y, slop);
+  cursor.tapped(p);
   // a tap on a flower turns it into another of its kind; that's not a new planting, though the bee may come and look
   if (p?.morphed) {
     if (Math.random() < .3) setTimeout(() => bee.visit(p.flowers[0]), reduced ? 0 : 600);
@@ -173,50 +181,37 @@ addEventListener('pointerdown', e => {
   // fast clicks on the canvas shouldn't start selecting the page's text
   if (e.target === canvas) e.preventDefault();
   plant(x, y, slop);
-  pointing(x, y, true);
 }, true);
 addEventListener('pointerup', e => {
   garden.release?.();
-  if (e.pointerType === 'mouse' && e.target === canvas) pointing(...local(e));
   if (!down || e.pointerId !== down.id) return;
   const d = down; down = null;
   if (!about.isOpen && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 12) plant(d.x, d.y, d.slop);
 }, true);
 addEventListener('pointercancel', e => { if (down?.id === e.pointerId) { down = null; garden.release?.(); } }, true);
 
-// the cursor, drawn like the garden: a little pixel hand over a flower (a click turns it), pressing in while the button's
-// down, and a needle over bare soil (a click stitches one in). each gets a white edge so it reads over the flowers
-function cursor(rows, ink, hx, hy) {
-  const at = (x, y) => rows[y]?.[x] ?? '.', near = (x, y) => [-1, 0, 1].some(i => [-1, 0, 1].some(j => at(x + i, y + j) !== '.'));
-  let px = '';
-  for (let y = -1; y <= rows.length; y++) for (let x = -1; x <= rows[0].length; x++) {
-    const col = at(x, y) !== '.' ? ink[at(x, y)] : near(x, y) ? '#fff' : null;
-    if (col) px += `<rect x="${x + 1}" y="${y + 1}" width="1" height="1" fill="${col}"/>`;
-  }
-  const w = rows[0].length + 2, h = rows.length + 2;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * 2}" height="${h * 2}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges">${px}</svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hx * 2 + 3} ${hy * 2 + 3}, pointer`;
-}
-const HAND = ['.....##.......', '....#oo#......', '....#oo#......', '....#oo#......', '....#oo###....', '....#oo#oo###.', '..###oo#oo#oo#',
-  '.#oo#oooooooo#', '.#oooooooooo#.', '..#ooooooooo#.', '..#oooooooo#..', '...#ooooooo#..', '...#ooooooo#..', '....#######...'];
-const NEEDLE = ['k............', '.ks..........', '..ks.........', '...ks........', '....ks.......', '.....ks......', '......ks.....',
-  '.......kk....', '.......kpk...', '........kkp..', '...........p.', '...........p.', '..........p..'];
-const INK = { '#': '#1f1d1b', o: '#fff', k: '#1f1d1b', s: '#c3c9d2', p: '#e8578f' };
-// pressed, the hand sits a stitch lower than the click, so the fingertip reads as pushing in
-const CURSORS = { flower: cursor(HAND, INK, 5, 0), press: cursor(['..............', ...HAND.slice(0, -1)], INK, 5, 0), soil: cursor(NEEDLE, INK, 0, 0) };
-let shown = '';
-function pointing(x, y, pressing = false) {
-  const on = garden.hover?.(x, y) ?? false, c = on ? (pressing ? 'press' : 'flower') : 'soil';
-  if (c !== shown) canvas.style.cursor = CURSORS[shown = c];
-}
-canvas.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') pointing(...local(e), e.buttons === 1 && shown === 'press'); }, { passive: true });
-canvas.addEventListener('pointerleave', () => { garden.hover?.(-1, -1); shown = ''; });
+// the cursor: a pastel pixel arrow drawn by hand over the garden, for a mouse only (see garden/cursor.js). it also asks the
+// garden which flower is under the pointer, so that flower leans towards it
+const cursor = touch ? { tapped() {} } : createCursor({ canvas, hover: (x, y) => garden.hover?.(x, y), peek: (x, y, id) => garden.peek?.(x, y, id) });
+canvas.addEventListener('pointerleave', () => garden.hover?.(-1, -1));
 
-// ---- work: one scroll below; mounted when it gets close
-const work = document.getElementById('work');
+// taps made while the garden was still loading (recorded by the inline script in index.astro) get planted now, one after another
+const early = (window.__early || []).splice(0);
+if (early.length) {
+  early.forEach(([x, y, type], i) => setTimeout(() => plant(x, y, type === 'mouse' ? SLOP.mouse : SLOP.touch), reduced ? 0 : (waited ? 700 : 0) + i * 140));
+  setTimeout(() => sayHint('kept your taps. here they are.'), reduced ? 0 : (waited ? 700 : 0) + early.length * 140 + 500);
+}
+
+// ---- projects: one scroll below; mounted when it gets close
+const work = document.getElementById('projects');
 const toWork = () => work.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
 // the about card's work link closes the card first, then scrolls. binding it here too would scroll under the open card
 document.querySelectorAll('[data-work]').forEach(b => { if (!b.closest('.ab')) b.addEventListener('click', toWork); });
+// the dock opens out once you leave the top (a phone shows only the avatar before), and projects gets its dot while the list is on screen
+const root = document.documentElement;
+const moved = () => root.classList.toggle('moved', scrollY > 24);
+addEventListener('scroll', moved, { passive: true }); moved();
+if ('IntersectionObserver' in window) new IntersectionObserver(es => root.classList.toggle('at-work', es[es.length - 1].isIntersecting), { rootMargin: '-40% 0px -40% 0px' }).observe(work);
 let mounted = false;
 const mountWork = async () => {
   if (mounted) return; mounted = true;
@@ -224,7 +219,8 @@ const mountWork = async () => {
     (await import('./work/work.js')).mountWork(work);
     // mochi rides along: one line per project, then one at the end
     mochi.watch(document.querySelector('#work-whyclub .wk-head'), 'he built all of it. front to back.');
-    mochi.watch(document.querySelector('#work-shaders .wk-head'), () => touch ? 'tap through them. they’re live webgl.' : 'click through them. they’re live webgl.');
+    mochi.watch(document.querySelector('#work-vayu .wk-head'), 'a watch that warns you about bad air.');
+    mochi.watch(document.querySelector('#work-fontpreview .wk-head'), 'press space on a font. that’s it.');
     mochi.watch(document.querySelector('.wk-end'), 'say hi. he reads every email.', { threshold: .6 });
   } catch (e) { console.warn('work unavailable', e); }
 };
@@ -232,7 +228,8 @@ const mountWork = async () => {
 // has grown and the phone has a quiet moment. its videos and webgl wait until they're nearly on screen
 new IntersectionObserver((es, io) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); mountWork(); } }, { rootMargin: '0px' }).observe(work);
 const whenIdle = f => 'requestIdleCallback' in window ? requestIdleCallback(f, { timeout: 3000 }) : setTimeout(f, 600);
-addEventListener('load', () => setTimeout(() => whenIdle(mountWork), 5200), { once: true });
+// data saver or 2g: don't spend their data on it until they scroll that way
+if (!lean) addEventListener('load', () => setTimeout(() => whenIdle(mountWork), 5200), { once: true });
 
 // ---- about: the bee flies over and becomes the panel; mochi steps aside
 document.querySelectorAll('[data-about]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); if (about.isOpen) about.close(); else { mochi.hush(); about.open(b); } }));
@@ -243,11 +240,14 @@ setTimeout(() => {
   if (scrollY > innerHeight * .3 || about.isOpen) return;
   mochi.say('psst. want to see what soumik made?', { action: toWork });
 }, 4400);
+// /#projects: mount first so the section has its height, then land on it (the browser's own jump fires before that)
+if (location.hash === '#projects') mountWork().then(() => requestAnimationFrame(() => work.scrollIntoView({ behavior: 'auto' })));
 if (location.hash === '#about') setTimeout(() => about.open(document.querySelector('.nav [data-about]')), 1200);
 
-// dev only, never on the live site: the Agentation annotation toolbar, and the night mode prototype (?night=A…E) when
+// dev only, never on the live site: the Agentation annotation toolbar, and the night garden prototype when
 // its untracked folder is there. glob finds nothing for a missing file, so the build never breaks over it
 if (import.meta.env.DEV) {
-  const local = import.meta.glob(['./agentation-dev.js', './night-prototype/index.js']);
+  // work/end-proto.js: three footers behind a switcher above the projects footer (prototype, throwaway)
+  const local = import.meta.glob(['./agentation-dev.js', './night-prototype/index.js', './work/end-proto.js']);
   for (const load of Object.values(local)) load().catch(err => console.warn('[dev]', err));
 }

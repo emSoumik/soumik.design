@@ -1,0 +1,44 @@
+---
+// LAB: the credits at the end of a direction, kept small the way benji.org does it. only the ideas a direction
+// actually uses get a line
+type Key = 'dock' | 'lineup' | 'sound' | 'photos' | 'stack';
+interface Props { items: Key[]; class?: string; dark?: boolean }
+const { items, class: cls, dark = false } = Astro.props;
+const rows: Record<Key, [string, string, string?]> = {
+  dock: ['The dock', 'After Danny Williams’ “A dock that unfolds”', 'https://x.com/dannyjpwilliams/status/2099861544326848811'],
+  lineup: ['The phone lineup', 'After Michael Andreuzza', 'https://x.com/Mike_Andreuzza/status/2114825408046911962'],
+  sound: ['Sound', 'Played in the store with @web-kits/audio by Raphael Salaja', 'https://audio.raphaelsalaja.com/'],
+  photos: ['Photos', 'Model photos are edited with AI. The tees are real.'],
+  stack: ['Built with', 'Astro, React, Convex, Cloudflare Workers, Razorpay, Shiprocket'],
+};
+---
+<section class:list={['credits', cls, { dark }]} aria-label="Credits">
+  <h2>Credits</h2>
+  <dl>
+    {items.map((k) => {
+      const [label, text, href] = rows[k];
+      return (
+        <div>
+          <dt>{label}</dt>
+          <dd>{href ? <a href={href} target="_blank" rel="noopener">{text}<span aria-hidden="true"> ↗</span></a> : text}</dd>
+        </div>
+      );
+    })}
+    <div><dt>Design and code</dt><dd>Soumik Halder</dd></div>
+  </dl>
+</section>
+
+<style>
+  .credits { max-width: 640px; }
+  h2 { font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  dl { margin-top: 18px; display: grid; gap: 10px; }
+  dl div { display: grid; grid-template-columns: 9.5em 1fr; gap: 16px; font: 400 14px/1.5 var(--display); }
+  dt { color: var(--ink-3); }
+  dd { margin: 0; color: var(--ink); text-wrap: pretty; }
+  a { text-decoration: underline; text-decoration-color: rgba(31, 29, 27, .22); text-underline-offset: 3px; }
+  @media (hover: hover) and (pointer: fine) { a:hover { text-decoration-color: currentColor; } }
+  .dark h2, .dark dt { color: rgba(255, 255, 255, .5); }
+  .dark dd { color: #fff; }
+  .dark a { text-decoration-color: rgba(255, 255, 255, .3); }
+  @media (max-width: 640px) { dl div { grid-template-columns: 1fr; gap: 2px; } }
+</style>

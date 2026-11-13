@@ -1,0 +1,32 @@
+---
+// stitch: one daisy from the garden going in stitch by stitch (or fading in, to compare), at a speed you set.
+// drawn whole at build time; the script empties it and plays it in
+import { grow } from '../plant';
+const p = grow('daisy', { seed: 11, form: 0, pal: 0, green: 0, len: 9 });
+const [x0, y0, x1, y1] = p.box;
+const w = x1 - x0 + 5, h = y1 - y0 + 3;
+---
+<div class="dm-stage st" style="--dm-h: 360px; --dm-hp: 320px">
+  <svg class="st-svg" viewBox={`${x0 - 2.5} ${y0 - 1.5} ${w} ${h}`} shape-rendering="crispEdges" role="img" aria-label={`A pixel daisy, ${p.cells.length} stitches.`} data-n={p.cells.length}>
+    {p.cells.map((c, i) => <rect x={c.x} y={c.y} width="1" height="1" fill={c.col} data-o={c.o} style={`--i:${i}`} />)}
+    <rect class="st-flash" x="-99" y="-99" width="1" height="1" />
+  </svg>
+</div>
+<div class="dm-bar">
+  <div class="dm-seg" role="radiogroup" aria-label="How it appears" data-v="0">
+    <button type="button" role="radio" aria-checked="true" data-mode="stitch" disabled>stitch</button>
+    <button type="button" role="radio" aria-checked="false" data-mode="fade" disabled>fade in</button>
+    <i aria-hidden="true"></i>
+  </div>
+  <label class="dm-range">speed <input type="range" min="0" max="100" step="1" value="57" disabled aria-valuetext="26 milliseconds a stitch" /></label>
+  <button class="dm-btn" type="button" data-play disabled><span>play again</span></button>
+  <output class="dm-read" aria-live="polite"><b>{p.cells.length}</b> stitches · <b data-t>2.4 s</b></output>
+</div>
+
+<style>
+  .st-svg { position: absolute; inset: 24px 0 8px; width: 100%; height: calc(100% - 32px); --k: 9999; --a: 1; }
+  .st-svg rect { opacity: clamp(0, var(--k) - var(--i), 1); }
+  .st-svg.fade rect { opacity: var(--a); }
+  .st-svg .st-flash { opacity: 1; fill: #fff3c2; }
+  .st-svg.fade .st-flash { display: none; }
+</style>

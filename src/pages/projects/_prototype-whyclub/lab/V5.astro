@@ -1,0 +1,34 @@
+---
+// PROTOTYPE: 5 · push-in. five screens in a row, the store's whole path at a glance; then the camera pushes in on
+// the live one while the finger shops, and pulls back once it's home again. the grid under it is a masonry wall
+import Head from './Head.astro';
+import Phone from './Phone.astro';
+import Tile from './Tile.astro';
+import Hold from './Hold.astro';
+import { A_ } from './data';
+const props = Astro.props as any;
+const sides = [['m-03', 'l2'], ['m-02', 'l1'], [null, 'mid'], ['pass/confirmed-m', 'r1'], ['m-cart', 'r2']];
+---
+<section class="v v5" data-variant="5" aria-label="Overview, push-in">
+  <Head {...props} class="center" />
+  <div class="v5-stage fill t3" data-cam>
+    <div class="cam">
+      {sides.map(([src, at]) => src ? <div class={`side ${at}`} aria-hidden="true"><div class="glass"><img src={`${A_}${src}.webp`} alt="" loading="lazy"></div></div> : <Phone class="v5-ph mid" />)}
+    </div>
+    <Hold />
+  </div>
+
+  <div class="bento v5-bento">
+    <header class="bh"><h2>The wall</h2><p>Recordings, numbers and one line, stacked the way a moodboard would be.</p></header>
+    <div class="wall">
+      <Tile k="drops" tint={3} class="tall" />
+      <Tile k="quote" class="short" />
+      <Tile k="tests" class="short" />
+      <Tile k="dock" tint={1} class="tall" />
+      <Tile k="sheet" tint={2} class="tall" />
+      <Tile k="safari" tint={3} class="mid" />
+      <Tile k="sounds" class="short" />
+      <Tile k="lost" tint={2} class="mid" />
+    </div>
+  </div>
+</section>

@@ -1,0 +1,20 @@
+---
+// <Aside>a margin note</Aside>: put it just before the paragraph it belongs to. on a wide screen it sits in the right
+// margin beside that paragraph; on anything narrower it's a quiet note in the text
+interface Props { label?: string }
+const { label = 'note' } = Astro.props;
+---
+<aside class="note"><span class="px">{label}</span><slot /></aside>
+
+<style>
+  .note { font: 400 15px/1.55 var(--display); color: var(--ink-2); margin: 1.8em 0; padding-left: 16px; box-shadow: inset 2px 0 0 var(--ink); text-wrap: pretty; }
+  .note .px { display: block; font: 500 12px/1 var(--pixel); color: var(--ink); margin-bottom: 8px; }
+  .note :global(a) { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: rgba(31, 29, 27, .3); }
+  .note :global(code) { font: .88em/1 var(--mono); }
+  /* the margin: lined up with the first line of the paragraph after it */
+  @media (min-width: 1120px) {
+    .note { float: right; clear: right; width: var(--side); margin: calc(18px * 1.1 + 5px) 0 16px; padding-left: 0; box-shadow: none; font-size: 14px; line-height: 1.5; }
+    .note .px { margin-bottom: 6px; }
+    .note::before { content: ""; display: block; width: 16px; height: 2px; background: var(--ink); margin-bottom: 10px; }
+  }
+</style>

@@ -1,0 +1,432 @@
+---
+// PROTOTYPE: the drop pass as an experience. the live pass (the real whyclub code, built into
+// /assets/work/whyclub/pass/) sits alone on a white plane. a dark pill floats over its foot like a player's controls:
+// tap a stage or arrow between the four, and replay prints it again. the first time the plane is on
+// screen the pass prints, then steps through the stages by itself once, and stops for good on first touch.
+// notes point at parts the embed measures (see S/passembed/src/main.tsx), so every number and position is real
+const P = '/assets/work/whyclub/pass/';
+const stages = [
+  ['confirmed', 'You’re in.', 'Payment’s in and your pieces are set aside for you.', 'Confirmed'],
+  ['packed', 'All packed.', 'Folded, checked and sealed. Waiting on the courier.', 'Packed'],
+  ['shipped', 'On its way.', 'With the courier now. New scans land on this pass.', 'Shipped'],
+  ['delivered', 'It’s home.', 'Delivered. Go wear it loud.', 'Delivered'],
+];
+// each note names a part the embed reports: art, progress, upnext, barcode.
+// backed by why-club/src/components/order/pass: PassShader.tsx (scenes), StubParts.tsx (Progress, NextUp,
+// Scans, Barcode), stageTheme.ts (NEXT_UP), order-pass.css (op-grow)
+const progress = 'Four stops. The fill ends at the one your order is on, never ahead of it.';
+const progressLater = 'When the stage changes, the fill eases on to the next stop instead of jumping.';
+const barcode = 'Just for looks. It’s drawn from the pass number, so every pass gets its own.';
+const notes = {
+  confirmed: [
+    ['art', 'Header', 'Drawn live in WebGL, not a video. For this stage a stem grows and one bloom opens.'],
+    ['progress', 'Progress', progress],
+    ['upnext', 'Up next', 'Written in the future tense, so the pass never says packed before it is.'],
+    ['barcode', 'Barcode', barcode],
+  ],
+  packed: [
+    ['art', 'Header', 'Each stage has its own scene. Here a box drops in, folds shut and gets taped, and a tag swings from it.'],
+    ['progress', 'Progress', progressLater],
+    ['upnext', 'Up next', 'It only talks about what’s coming: a courier picks it up, and scans will appear on the pass.'],
+    ['barcode', 'Barcode', barcode],
+  ],
+  shipped: [
+    ['art', 'Header', 'Here a route draws itself from the studio to a pin, then a spot of light runs along it.'],
+    ['progress', 'Progress', progressLater],
+    ['upnext', 'Up next', 'Below it, the courier’s scans show three at a time, the rest behind a button.'],
+    ['barcode', 'Barcode', barcode],
+  ],
+  delivered: [
+    ['art', 'Header', 'Five blooms, each in its own lane, breathing at their own pace so they never all move together.'],
+    ['progress', 'Progress', progressLater],
+    ['upnext', 'Up next', 'With nothing left to come, it says Complete.'],
+    ['barcode', 'Barcode', barcode],
+  ],
+};
+interface Props { caption?: string }
+const { caption } = Astro.props;
+---
+<figure class="ps" data-mode="m" data-layout="dots" data-src={`${P}index.html`} data-notes={JSON.stringify(notes)}>
+  <div class="band">
+    <div class="box">
+      <div class="live"></div>
+      <svg class="leaders" aria-hidden="true"></svg>
+      <div class="dots" aria-hidden="true"></div>
+      <div class="side" aria-hidden="true"></div>
+    </div>
+
+    <!-- the stage control: a dark pill like a phone's playback bar. the four stops are one radiogroup (one tab stop,
+         arrows move), the white chip slides to the chosen one, and replay prints the pass again -->
+    <div class="pctl">
+      <div class="stages" role="radiogroup" aria-label="Order stage">
+        <i class="chip" aria-hidden="true"></i>
+        {stages.map(([, , , label], i) => <button type="button" role="radio" aria-checked={String(i === 0)} tabindex={i === 0 ? 0 : -1} data-i={i}>{label}</button>)}
+      </div>
+      <span class="divider" aria-hidden="true"></span>
+      <button type="button" class="replay" aria-label="Replay the print">
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3.5 10a6.5 6.5 0 1 0 2-4.7"></path><path d="M3.5 3.5v3.6h3.6"></path></svg>
+        <span>Replay</span>
+      </button>
+    </div>
+
+    <div class="now" aria-live="polite">
+      <p class="t">{stages[0][1]}</p>
+      <p class="l">{stages[0][2]}</p>
+    </div>
+
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Pass layout">
+        <button type="button" role="radio" aria-checked="true" tabindex="0" data-mode="m">Phone</button>
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-mode="d">Desktop</button>
+      </div>
+    </div>
+  </div>
+
+  <ol class="list" aria-label="What each part does"></ol>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .ps { --soft: #fff; --e: cubic-bezier(.23, 1, .32, 1); --e2: cubic-bezier(.32, .72, 0, 1);
+    width: 100vw; margin-left: 50%; translate: -50% 0; overflow: clip; }
+  /* the plane is the colour the pass's notches are cut in, so the live pass has no visible edge */
+  .band { background: var(--soft); border-block: 1px solid rgba(31, 29, 27, .1); padding: clamp(32px, 5vw, 64px) 0 clamp(24px, 3vw, 36px); }
+
+  .band { display: flex; flex-direction: column; }
+  /* the box follows the pass's own height as scans arrive; the stage track sits right under it */
+  .box { position: relative; width: 100%; height: var(--h, 820px); overflow: hidden; transition: height .5s var(--e2); }
+  .live { position: absolute; top: 0; left: var(--left, 0px); width: var(--fw, 392px); height: var(--fh, 820px);
+    transform: scale(var(--k, 1)); transform-origin: 0 0; opacity: 0; transition: opacity .3s var(--e); }
+  .ps.shown .live { opacity: 1; }
+  .live :global(iframe) { display: block; width: 100%; height: 100%; border: 0; background: var(--soft); }
+
+  /* notes: leaders on wide screens, numbered dots on phones; both fade out while the pass is moving */
+  .leaders, .side, .dots { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .24s var(--e); }
+  .leaders { width: 100%; height: 100%; overflow: visible; }
+  .ps.noted .leaders, .ps.noted .side, .ps.noted .dots, .ps.noted .list { opacity: 1; }
+  .ps.moving .leaders, .ps.moving .side, .ps.moving .dots, .ps.moving .list { opacity: 0; transition-duration: .12s; }
+  .ps[data-layout='dots'] .leaders, .ps[data-layout='dots'] .side { display: none; }
+  .ps[data-layout='lead'] .dots, .ps[data-layout='lead'] .list { display: none; }
+  .leaders :global(path) { fill: none; stroke: var(--ink-3); stroke-width: 1; }
+  .leaders :global(circle) { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
+  .side :global(.n) { position: absolute; width: 200px; }
+  .side :global(.n b), .list :global(b) { display: block; font: 500 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+  .side :global(.n p) { margin-top: 6px; font: 400 14px/1.45 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .dots :global(i), .list :global(li)::before { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font: 500 12px/1 var(--display); font-style: normal; }
+  .dots :global(i) { position: absolute; translate: -50% -50%; box-shadow: 0 0 0 2px var(--soft); }
+
+  /* the stage control: a near-black pill that floats over the bottom of the pass while it's on screen, like a player's controls */
+  .pctl { order: 1; position: sticky; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 3; align-self: center; margin: -76px auto 0; display: flex; align-items: center; gap: 4px;
+    padding: 4px; border-radius: 99px; background: #0b0b0b; color: #fff; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .06) inset; max-width: calc(100% - 32px); }
+  .stages { position: relative; display: flex; }
+  .stages button, .replay { all: unset; box-sizing: border-box; position: relative; z-index: 1; height: 44px; padding: 0 16px; border-radius: 99px; display: grid; place-items: center; cursor: pointer;
+    font: 500 14px/1 var(--display); color: rgba(255, 255, 255, .56); white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+    transition: color .2s var(--e), scale .12s var(--e); }
+  .stages button[aria-checked='true'] { color: #0b0b0b; }
+  .stages button:focus-visible, .replay:focus-visible { outline: 2px solid #4c8dff; outline-offset: 2px; }
+  .stages button:active, .replay:active { scale: .96; }
+  @media (hover: hover) and (pointer: fine) { .stages button:not([aria-checked='true']):hover, .replay:hover { color: #fff; } }
+  /* the chip under the chosen stage; script sets where it is and how wide */
+  .chip { position: absolute; left: 0; top: 0; height: 44px; width: var(--cw, 0px); border-radius: 99px; background: #fff; transform: translateX(var(--cx, 0px));
+    transition: transform .34s var(--e2), width .34s var(--e2); }
+  .divider { flex: none; width: 1px; height: 22px; margin: 0 4px; background: rgba(255, 255, 255, .18); }
+  .replay { display: flex; gap: 7px; padding: 0 16px 0 13px; color: #fff; }
+  .replay svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+  .now { order: -2; margin: 0 0 clamp(16px, 2vw, 28px); text-align: center; padding: 0 16px; min-height: 76px; }
+  .t { font: 500 clamp(20px, 2.4vw, 26px)/1.15 var(--display); letter-spacing: -.01em; color: var(--ink); }
+  .l { margin: 8px auto 0; max-width: 34ch; font: 400 15px/1.45 var(--display); color: var(--ink-2); text-wrap: balance; }
+
+  .controls { order: 2; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; padding: 0 16px; }
+  .controls button { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 16px; border-radius: 99px; display: grid; place-items: center; cursor: pointer;
+    font: 500 13px/1 var(--display); color: var(--ink-2); transition: color .2s, background-color .2s, scale .15s var(--e); -webkit-tap-highlight-color: transparent; }
+  .controls button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .seg { display: flex; padding: 3px; border-radius: 99px; background: rgba(31, 29, 27, .06); }
+  .seg button { min-height: 38px; }
+  .seg button[aria-checked='true'] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(31, 29, 27, .12), 0 0 0 .5px rgba(31, 29, 27, .08); }
+  @media (hover: hover) and (pointer: fine) { .controls button:hover { color: var(--ink); } }
+  .controls button:active { scale: .97; }
+
+  /* phone notes: the numbered list the dots refer to */
+  .list { list-style: none; counter-reset: n; margin: 0 auto; padding: 24px 16px 0; max-width: 560px; display: grid; gap: 16px; opacity: 0; transition: opacity .24s var(--e); }
+  .list :global(li) { counter-increment: n; display: grid; grid-template-columns: 22px 1fr; column-gap: 12px; align-items: start; }
+  .list :global(li)::before { content: counter(n); grid-row: span 2; margin-top: -1px; }
+  .list :global(p) { margin-top: 4px; font: 400 14px/1.45 var(--display); color: var(--ink-2); }
+  .list :global(b) { padding-top: 4px; }
+  figcaption { margin: 16px auto 0; padding: 0 16px; max-width: 560px; text-align: center; font: 400 13px/1.45 var(--display); color: var(--ink-2); }
+  figcaption :global(a) { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+  @media (max-width: 640px) {
+    .band { padding-top: 20px; }
+    /* on a phone the pass is taller than the screen, so the track and title go above it and stay in reach */
+    .now { margin-bottom: 8px; min-height: 70px; }
+    .controls { margin-top: 8px; }
+    .seg { display: none; }
+    /* a phone: the four stops share the width, replay shrinks to a 44px circle */
+    .pctl { width: calc(100% - 24px); }
+    .stages { flex: 1; min-width: 0; }
+    .stages button { flex: 1 1 0; min-width: 0; padding: 0 4px; font-size: 13px; }
+    .replay { width: 44px; padding: 0; justify-content: center; }
+    .replay span { display: none; }
+    .l { font-size: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .box, .live, .chip, .stages button, .leaders, .side, .dots, .list { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.ps').forEach((ps) => {
+    const $ = <T extends HTMLElement>(s: string) => ps.querySelector<T>(s)!;
+    const box = $('.box'), live = $('.live'), leaders = ps.querySelector<SVGSVGElement>('.leaders')!;
+    const dots = $('.dots'), side = $('.side'), list = $('.list'), now = $('.now'), group = $('.stages'), chip = $('.chip');
+    const stops = [...group.querySelectorAll<HTMLElement>('[role=radio]')];
+    const keys = ['confirmed', 'packed', 'shipped', 'delivered'];
+    const NOTES: Record<string, [string, string, string][]> = JSON.parse(ps.dataset.notes!);
+    const TITLES = [['You’re in.', 'Payment’s in and your pieces are set aside for you.'], ['All packed.', 'Folded, checked and sealed. Waiting on the courier.'],
+      ['On its way.', 'With the courier now. New scans land on this pass.'], ['It’s home.', 'Delivered. Go wear it loud.']];
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    const PRINT_MS = 1700; // mirrors PRINT_MS in why-club order/pass/shared.tsx
+    const NS = 'http://www.w3.org/2000/svg';
+    // frame widths: phone = the viewer's width (the pass maxes at 440), else 392 for the phone pass and 1024 for the wide one (its own max)
+    // box heights per stage (the pass grows as scans arrive); measured, then replaced by what the embed reports
+    const DEF_H: Record<string, number[]> = { p: [678, 678, 795, 895], m: [779, 779, 896, 996], d: [678, 678, 678, 712] };
+    const FRAME_H = 1000;
+    const PAD = 56; // extra frame room around the pass for its shadow (?pad= on the embed)
+
+    type Rect = { x: number; y: number; w: number; h: number };
+    let i = 0, frame: HTMLIFrameElement | null = null, ready = false, armed = false, auto = true, started = false;
+    let pad = 0, parts: Record<string, Rect | null> = {}, heights: Record<string, number[]> = JSON.parse(JSON.stringify(DEF_H)), fw = 392, k = 1, left = 0;
+    let moveT = 0, autoT = 0;
+
+    const mode = () => ps.dataset.mode as 'm' | 'd';
+    const send = (msg: object) => frame?.contentWindow?.postMessage({ wc: 'pass', ...msg }, '*');
+
+    const hk = () => (ps.clientWidth <= 640 ? 'p' : mode());
+    const boxH = () => heights[hk()][i];
+
+    // ---- layout: how big the live pass is, and whether notes get leaders or dots
+    const layout = () => {
+      const W = ps.clientWidth;
+      const phone = W <= 640;
+      if (phone && mode() !== 'm') setMode('m');
+      let lead = false;
+      pad = phone ? 0 : PAD;
+      if (phone) { fw = W; k = 1; }
+      else if (mode() === 'm') { fw = 392 + pad * 2; k = 1; lead = W >= 1000; }
+      else { fw = 1024 + pad * 2; lead = W >= 1400; k = Math.min(1, (lead ? W - 528 : W - 32) / 960); } // 960 = the wide pass's width inside its frame
+      left = (W - fw * k) / 2;
+      ps.dataset.layout = lead ? 'lead' : 'dots';
+      ps.style.setProperty('--fw', `${fw}px`);
+      ps.style.setProperty('--fh', `${FRAME_H}px`);
+      ps.style.setProperty('--k', String(k));
+      ps.style.setProperty('--left', `${left}px`);
+      ps.style.setProperty('--h', `${Math.ceil(boxH() * k)}px`);
+      placeChip();
+      drawNotes();
+    };
+
+    // ---- notes
+    const at = (r: Rect) => ({ x: left + r.x * k, y: r.y * k, w: r.w * k, h: r.h * k });
+    const drawNotes = () => {
+      const list_ = (NOTES[keys[i]] || []).filter(([id]) => parts[id]);
+      leaders.replaceChildren(); side.replaceChildren(); dots.replaceChildren();
+      const lead = ps.dataset.layout === 'lead';
+      const art = parts.pass && at(parts.pass); // the whole pass: notes sit outside it
+      if (!art || !list_.length) { ps.classList.remove('noted'); return; }
+      const centre = art.x + art.w / 2;
+      const W = ps.clientWidth;
+      const placed: { side: 'l' | 'r'; dx: number; dy: number; el: HTMLElement; id: string }[] = [];
+      list_.forEach(([id, label, text], n) => {
+        const r = at(parts[id]!);
+        // dots sit just inside the part's edge; the art header's goes top-left where no type is
+        const sideOf: 'l' | 'r' = mode() === 'd' ? (r.x + r.w / 2 < centre ? 'l' : 'r') : n % 2 === 0 ? 'l' : 'r';
+        const dx = sideOf === 'l' ? r.x : r.x + r.w;
+        const dy = id === 'art' ? r.y + r.h * .38 : id === 'progress' ? r.y + 14 * k : r.y + Math.min(r.h / 2, 22);
+        if (lead) {
+          const el = document.createElement('div');
+          el.className = 'n';
+          el.innerHTML = `<b></b><p></p>`;
+          el.querySelector('b')!.textContent = label;
+          el.querySelector('p')!.textContent = text;
+          side.append(el);
+          placed.push({ side: sideOf, dx, dy, el, id });
+        } else {
+          const d = document.createElement('i');
+          d.textContent = String(n + 1);
+          d.style.left = `${dx}px`; d.style.top = `${dy}px`;
+          dots.append(d);
+        }
+      });
+      if (!lead) {
+        list.replaceChildren(...list_.map(([, label, text]) => {
+          const li = document.createElement('li');
+          li.innerHTML = `<b></b><p></p>`;
+          li.querySelector('b')!.textContent = label;
+          li.querySelector('p')!.textContent = text;
+          return li;
+        }));
+        ps.classList.add('noted');
+        return;
+      }
+      // leader mode: notes in the gutters either side, stacked so they never overlap, each tied to its dot
+      const gap = 14, NW = 200, gutter = 48;
+      (['l', 'r'] as const).forEach((s) => {
+        const col = placed.filter((q) => q.side === s).sort((a, b) => a.dy - b.dy);
+        const x = s === 'l' ? art.x - gutter - NW : art.x + art.w + gutter;
+        let y = -Infinity;
+        col.forEach((q) => {
+          const top = Math.max(q.dy - 12, y + gap);
+          q.el.style.left = `${x}px`; q.el.style.top = `${top}px`;
+          y = top + q.el.offsetHeight;
+        });
+        // if the stack runs past the bottom, lift it
+        const over = y - box.clientHeight;
+        if (over > 0) col.forEach((q) => { q.el.style.top = `${parseFloat(q.el.style.top) - over}px`; });
+        col.forEach((q) => {
+          const ey = parseFloat(q.el.style.top) + 8, ex = s === 'l' ? x + NW + 8 : x - 8;
+          const bend = q.dx + (s === 'l' ? -22 : 22);
+          const path = document.createElementNS(NS, 'path');
+          path.setAttribute('d', `M${ex} ${ey} H${bend} L${q.dx} ${q.dy}`);
+          const c = document.createElementNS(NS, 'circle');
+          c.setAttribute('cx', String(q.dx)); c.setAttribute('cy', String(q.dy)); c.setAttribute('r', '4');
+          leaders.append(path, c);
+        });
+      });
+      ps.classList.add('noted');
+    };
+
+    // ---- the stage control: the chip sits under the chosen stop
+    const placeChip = () => {
+      const b = stops[i];
+      chip.style.setProperty('--cx', `${b.offsetLeft}px`);
+      chip.style.setProperty('--cw', `${b.offsetWidth}px`);
+    };
+
+    const paint = (animate: boolean) => {
+      stops.forEach((s, n) => { s.setAttribute('aria-checked', String(n === i)); s.tabIndex = n === i ? 0 : -1; });
+      placeChip();
+      const swap = () => {
+        now.querySelector('.t')!.textContent = TITLES[i][0];
+        now.querySelector('.l')!.textContent = TITLES[i][1];
+      };
+      now.getAnimations().forEach((a) => a.cancel());
+      if (!animate || reduce.matches) { swap(); return; }
+      now.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, easing: 'ease-out', fill: 'forwards' }).finished
+        .then(() => { swap(); now.getAnimations().forEach((a) => a.cancel()); now.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.23, 1, .32, 1)' }); })
+        .catch(() => {});
+    };
+
+    const moving = (ms = 1800) => {
+      ps.classList.add('moving');
+      clearTimeout(moveT);
+      moveT = window.setTimeout(() => ps.classList.remove('moving'), ms);
+    };
+
+    const setStage = (n: number) => {
+      n = Math.max(0, Math.min(3, n));
+      if (n === i) return;
+      i = n;
+      paint(true);
+      moving();
+      ps.style.setProperty('--h', `${Math.ceil(boxH() * k)}px`);
+      drawNotes();
+      send({ stage: keys[i] });
+    };
+
+    // ---- the auto walk: once through the stages, and never again after a touch
+    const stopAuto = () => { auto = false; clearTimeout(autoT); };
+    const start = () => {
+      started = true;
+      send({ replay: true });
+      moving(PRINT_MS + 900);
+      ps.classList.add('shown');
+      if (auto && !reduce.matches) autoT = window.setTimeout(function step() {
+        if (!auto) return;
+        setStage(i + 1);
+        if (i < 3) autoT = window.setTimeout(step, 2600);
+      }, PRINT_MS + 1100);
+    };
+
+    // ---- the embed
+    const load = () => {
+      frame = document.createElement('iframe');
+      frame.src = `${ps.dataset.src}?stage=${keys[i]}&pad=${ps.clientWidth <= 640 ? 0 : PAD}`;
+      frame.title = 'The WhyClub drop pass, live';
+      frame.loading = 'lazy';
+      live.append(frame);
+    };
+    addEventListener('message', (e) => {
+      const d = e.data;
+      if (!d || d.wc !== 'pass' || e.source !== frame?.contentWindow) return;
+      if (d.ready) { ready = true; if (i) send({ stage: keys[i] }); if (armed && !started) start(); } // catch up if the reader scrubbed before it loaded
+      if (d.interact) stopAuto();
+      if (d.settled) {
+        parts = d.parts || {};
+        const n = keys.indexOf(d.stage);
+        if (n >= 0 && typeof d.height === 'number') heights[hk()][n] = d.height;
+        clearTimeout(moveT);
+        ps.classList.remove('moving');
+        layout();
+      }
+    });
+
+    // load the embed near the plane; start (print + walk) when it is properly on screen
+    new IntersectionObserver((e, io) => { if (e[0].isIntersecting) { io.disconnect(); load(); } }, { rootMargin: '500px' }).observe(ps);
+    new IntersectionObserver((e, io) => { if (e[0].isIntersecting) { io.disconnect(); armed = true; if (ready && !started) start(); } }, { threshold: 0.45 }).observe(box);
+
+    // ---- mode (phone / desktop layouts of the pass)
+    const setMode = (m: 'm' | 'd') => {
+      ps.dataset.mode = m;
+      ps.querySelectorAll<HTMLElement>('.seg [data-mode]').forEach((b) => { const on = b.dataset.mode === m; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
+      parts = {};
+    };
+    ps.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      const m = t.closest<HTMLElement>('.seg [data-mode]');
+      if (m && m.dataset.mode !== mode()) {
+        setMode(m.dataset.mode as 'm' | 'd');
+        moving(PRINT_MS + 900);
+        layout();
+        // the pass re-lays itself out at its new width, so print it again
+        setTimeout(() => send({ replay: true }), 80);
+      }
+      if (t.closest('.replay')) { moving(PRINT_MS + 900); send({ replay: true }); }
+    });
+    // the first touch anywhere on the plane hands control to the reader
+    // a mouse resting over the plane or focus landing in it also means the reader is here
+    ps.addEventListener('pointerenter', stopAuto);
+    ps.addEventListener('focusin', stopAuto);
+    // radiogroup: arrows move and select
+    $('.seg').addEventListener('keydown', (e) => {
+      const d = ({ ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 } as Record<string, number>)[e.key];
+      if (!d) return;
+      e.preventDefault();
+      const next = mode() === 'm' ? 'd' : 'm';
+      if (ps.clientWidth <= 640) return;
+      ps.querySelector<HTMLElement>(`.seg [data-mode=${next}]`)!.click();
+      ps.querySelector<HTMLElement>(`.seg [data-mode=${next}]`)!.focus();
+    });
+    ps.addEventListener('pointerdown', stopAuto, true);
+    ps.addEventListener('keydown', stopAuto, true);
+
+    // ---- the stages: tap one, or arrow along them (one tab stop; Home and End jump)
+    group.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[role=radio]');
+      if (b) setStage(Number(b.dataset.i));
+    });
+    group.addEventListener('keydown', (e) => {
+      const to = ({ ArrowLeft: i - 1, ArrowUp: i - 1, ArrowRight: i + 1, ArrowDown: i + 1, Home: 0, End: 3 } as Record<string, number>)[e.key];
+      if (to === undefined) return;
+      e.preventDefault();
+      setStage((to + 4) % 4);
+      stops[i].focus();
+    });
+    // the chip's place depends on the labels' widths, which settle once the font has loaded
+    document.fonts?.ready.then(placeChip);
+
+    new ResizeObserver(layout).observe(ps);
+    paint(false);
+    layout();
+  });
+</script>

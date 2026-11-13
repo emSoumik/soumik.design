@@ -1,0 +1,21 @@
+---
+// LAB: dev-only pages. /lab/case: ten directions for the whyclub case study (?v=1..10; /lab/whyclub is the overview lab). /lab/dock: four takes on the
+// live dock section, stacked to compare. a production build gets no paths from getStaticPaths, so nothing here reaches dist
+import Base from '../../layouts/Base.astro';
+import Lab from './_whyclub/Lab.astro';
+import DockLab from './_dock/DockLab.astro';
+
+export function getStaticPaths() {
+  return import.meta.env.DEV ? [{ params: { page: 'case' } }, { params: { page: 'dock' } }] : [];
+}
+const { page } = Astro.params;
+---
+{page === 'dock' ? (
+  <Base title="Dock lab" description="Four takes on the live dock. Dev only." noindex>
+    <DockLab />
+  </Base>
+) : (
+  <Base title="WhyClub lab" description="Ten directions for the WhyClub case study. Dev only." noindex>
+    <Lab />
+  </Base>
+)}

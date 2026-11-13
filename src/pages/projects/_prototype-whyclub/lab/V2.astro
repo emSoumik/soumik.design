@@ -1,0 +1,33 @@
+---
+// PROTOTYPE: 2 · spotlight. stageshow's bento rule: only one thing is in colour at a time. three phones in the
+// stage, the live one in the middle; under it a grid where the light moves tile to tile (hover takes it over)
+import Head from './Head.astro';
+import Phone from './Phone.astro';
+import Tile from './Tile.astro';
+import Hold from './Hold.astro';
+import { beats, A_ } from './data';
+const props = Astro.props as any;
+---
+<section class="v v2" data-variant="2" aria-label="Overview, spotlight">
+  <Head {...props} class="center" />
+  <div class="v2-stage fill t2">
+    <div class="side l" aria-hidden="true"><div class="glass"><img src={A_ + 'm-03.webp'} alt="" loading="lazy"></div></div>
+    <Phone class="v2-ph" />
+    <div class="side r" aria-hidden="true"><div class="glass"><img src={A_ + 'pass/confirmed-m.webp'} alt="" loading="lazy"></div></div>
+    <Hold />
+  </div>
+  <p class="now center" aria-hidden="true">{beats.map((b) => <span class="say" data-beat-id={b.id}><b>{b.n}</b> {b.t}. {b.d}</span>)}</p>
+
+  <div class="bento v2-bento">
+    <header class="bh"><h2>One thing at a time</h2><p>The store is quiet so the drops can be loud. The grid works the same way.</p></header>
+    <div class="grid" data-spot>
+      <Tile k="dock" class="a" tint={1} lit />
+      <Tile k="drops" class="b" tint={3} lit />
+      <Tile k="quote" class="c" />
+      <Tile k="loading" class="d" tint={2} lit />
+      <Tile k="sheet" class="e" tint={1} lit />
+      <Tile k="tests" class="f" />
+      <Tile k="doors" class="g" tint={2} lit />
+    </div>
+  </div>
+</section>

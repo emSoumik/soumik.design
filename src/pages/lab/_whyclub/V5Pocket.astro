@@ -1,0 +1,528 @@
+---
+// LAB direction 5, "Pocket": the case study is built out of the store's own patterns. a campaign photo fills the
+// first screen, the story is a white sheet that rises over it like the product sheet, the pass section uses the
+// sheet's tabs, and you get around with a rebuild of the morph dock (store sizes, springs and scroll distances,
+// shaped with clip-path so only clip-path, transform and opacity ever animate)
+import Shot from './Shot.astro';
+import TintToy from './TintToy.astro';
+import SoundKeys from './SoundKeys.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+const stages = [
+  ['confirmed', 'You’re in', 'You’re in.', 'Payment’s in and your pieces are set aside for you.', 'A stem grows and one bloom opens.'],
+  ['packed', 'All packed', 'All packed.', 'Folded, checked and sealed. Waiting on the courier.', 'A box drops in, folds shut and gets taped.'],
+  ['shipped', 'On its way', 'On its way.', 'With the courier now. New scans land on this pass.', 'The route draws itself and light runs it to a pin.'],
+  ['delivered', 'It’s home', 'It’s home.', 'Delivered. Go wear it loud.', 'Five blooms open, one after another.'],
+];
+const rows = [
+  ['#pk-tint', '03', 'Safari’s colour', 'A shade of each photo'],
+  ['#pk-wait', '04', 'Waiting', 'A page-shaped load'],
+  ['#pk-sound', '05', 'Sound', 'Contact, air, a fourth'],
+  ['#pk-counter', '06', 'Behind the counter', 'Convex, Razorpay, Shiprocket'],
+];
+const more = [
+  ['#pk-credits', 'Credits', 'Where the ideas came from'],
+  ['/projects/', 'All projects', 'Other case studies'],
+  ['/', 'Back to the garden', 'The home page'],
+];
+const icon = {
+  top: '<path d="M4.5 11 12 4.8l7.5 6.2v8.2a.8.8 0 0 1-.8.8H15v-5.5H9V20H5.3a.8.8 0 0 1-.8-.8z"/>',
+  chapters: '<path d="M9 7h10.5M9 12h10.5M9 17h10.5"/><circle cx="5" cy="7" r=".9" class="f"/><circle cx="5" cy="12" r=".9" class="f"/><circle cx="5" cy="17" r=".9" class="f"/>',
+  store: '<path d="M5.5 8.5h13l-1 11.5h-11z"/><path d="M9 8.5V7.4a3 3 0 0 1 6 0v1.1"/>',
+  sound: '<path d="M4.5 9.8h3l4.5-3.8v12l-4.5-3.8h-3z"/><path class="on" d="M15.5 9.6a3.4 3.4 0 0 1 0 4.8M18 7.2a6.8 6.8 0 0 1 0 9.6"/><path class="off" d="m15.5 10 4 4m0-4-4 4"/>',
+  more: '<circle cx="6" cy="12" r="1.5" class="f"/><circle cx="12" cy="12" r="1.5" class="f"/><circle cx="18" cy="12" r="1.5" class="f"/>',
+};
+const svg = (d: string) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+---
+<article class="pk" data-pk>
+  <div class="hero">
+    <picture>
+      <source media="(max-width: 700px)" srcset={`${A}lab/hero-star.avif`} type="image/avif">
+      <source media="(max-width: 700px)" srcset={`${A}lab/hero-star.webp`} type="image/webp">
+      <source srcset={`${A}cover/please-im-a-star-landscape-v2.avif`} type="image/avif">
+      <img src={`${A}cover/please-im-a-star-landscape-v2.webp`} alt="Campaign photo: a model in the black Please, I’m a Star tee." loading="lazy" decoding="async">
+    </picture>
+    <div class="htxt">
+      <p class="eyebrow">Case study<span aria-hidden="true">·</span>2026</p>
+      <h1>WhyClub</h1>
+      <p class="hline">A streetwear label from India. I designed and built its store.</p>
+    </div>
+  </div>
+
+  <div class="sheet">
+    <span class="grab" aria-hidden="true"></span>
+
+    <section class="intro" aria-label="Overview">
+      <p class="lede">WhyClub sells oversized graphic tees in small drops. I designed and built the store: the art direction, the design system, the frontend, and the backend that takes an order from payment to the door.</p>
+      <p class="how">This page is put together from the store’s own parts. The photo you scrolled past, this sheet, the tabs further down and the dock at the bottom all work the way they do in the store. Use the dock to get around.</p>
+      <dl class="spec">
+        <div><dt>Role</dt><dd>Design and engineering</dd></div>
+        <div><dt>Stack</dt><dd>Astro, React, Convex, Cloudflare Workers</dd></div>
+        <div><dt>Payments and shipping</dt><dd>Razorpay, Shiprocket</dd></div>
+        <div><dt>Live</dt><dd><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in<span aria-hidden="true"> ↗</span></a></dd></div>
+      </dl>
+    </section>
+
+    <section class="sec" id="pk-dock" aria-labelledby="pk-dock-h">
+      <div class="txt">
+        <p class="no">01</p>
+        <h2 id="pk-dock-h">The dock</h2>
+        <p>The store gets around with one bar that grows into each menu, instead of a page per tab that reloaded on every tap. Shop opens into Women and Men as photos with Sale and My collection below. Scroll down and the labels drop away, then the bar tucks into a pill at the left edge. Scroll back up and it comes back.</p>
+        <p class="detail">The dock at the bottom of this page is a rebuild in plain TypeScript with the store’s numbers: a 328 by 64 bar, a 60 by 56 pill, panels up to 360 wide, the same springs, and the same scroll distances. On the right is the real one, running the store’s code. The idea of a bar that unfolds into the menu is <a href="https://x.com/dannyjpwilliams/status/2099861544326848811" target="_blank" rel="noopener">Danny Williams’</a>.</p>
+      </div>
+      <figure class="med">
+        <div class="plane dockplane">
+          <div class="dockhold" data-dock-hold></div>
+          <button type="button" class="pill" data-act="open" aria-pressed="false">Open Shop</button>
+        </div>
+        <figcaption>The real one.</figcaption>
+      </figure>
+    </section>
+
+    <section class="sec" id="pk-pass" aria-labelledby="pk-pass-h">
+      <div class="txt">
+        <p class="no">02</p>
+        <h2 id="pk-pass-h">The pass</h2>
+        <p>Paying turns the bag into a printer slot, and the order’s pass feeds out of it. After that it only says what has happened. Like the product sheet keeps Details, Size & fit and Delivery as tabs, the stages are tabs here.</p>
+        <div class="tabs" role="tablist" aria-label="Order stage" data-own-keys>
+          {stages.map(([k, label], i) => (
+            <button type="button" role="tab" id={`pk-tab-${k}`} aria-controls="pk-stage" aria-selected={String(i === 0)} tabindex={i === 0 ? 0 : -1} data-stage={k}>{label}</button>
+          ))}
+        </div>
+        <div class="tabpanel" id="pk-stage" role="tabpanel" aria-labelledby="pk-tab-confirmed" tabindex="0">
+          {stages.map(([k, , head, line, scene], i) => (
+            <div class="stagecopy" data-copy={k} hidden={i !== 0}>
+              <p class="sh">{head}</p>
+              <p class="sl">“{line}”</p>
+              <p class="sc">{scene}</p>
+            </div>
+          ))}
+        </div>
+        <p class="detail">Razorpay confirms the payment and Shiprocket’s courier scans move it along. Each stage is its own scene in one WebGL shader, which pauses off screen and draws one still frame for reduced motion.</p>
+      </div>
+      <figure class="med">
+        <div class="plane passplane">
+          <div class="passhold" data-pass-hold></div>
+          <button type="button" class="pill" data-replay>Print it again</button>
+        </div>
+        <figcaption>The real pass.</figcaption>
+      </figure>
+    </section>
+
+    <section class="sec" id="pk-tint" aria-labelledby="pk-tint-h">
+      <div class="txt">
+        <p class="no">03</p>
+        <h2 id="pk-tint-h">Safari’s colour</h2>
+        <p>Safari on the iPhone tints its bars from the page behind them. The store reads the top edge of each campaign photo and hands Safari a muted shade of it, so the photo runs to the edges of the phone. It used to sit under a black status bar and a free shipping ticker.</p>
+        <p class="detail">Swipe the phone. Each photo is read once, and the bars wait 160ms after a swipe settles before they change.</p>
+      </div>
+      <figure class="med"><div class="plane"><TintToy /></div></figure>
+    </section>
+
+    <section class="sec" id="pk-wait" aria-labelledby="pk-wait-h">
+      <div class="txt">
+        <p class="no">04</p>
+        <h2 id="pk-wait-h">Waiting</h2>
+        <p>A slow page used to show a 2px line in the dock and nothing else. Now a tap covers the page with grey blocks at once, and at 350ms the next page draws itself as an outline in reading order, measured from the real page. No photos and no labels, so it never passes for the page.</p>
+      </div>
+      <figure class="med"><div class="plane solo"><Shot src={A + 'p-loading'} video alt="Tapping a product shows grey blocks, then an outline of the product page, then the page." /></div></figure>
+    </section>
+
+    <section class="sec" id="pk-sound" aria-labelledby="pk-sound-h">
+      <div class="txt">
+        <p class="no">05</p>
+        <h2 id="pk-sound-h">Sound</h2>
+        <p>You’ve heard the dock already: filtered air when a panel opens, a softer one when it closes. A tap is a short contact over a low body that settles in about 25ms, and only outcomes get notes, all in D.</p>
+        <p class="detail">The speaker in the dock turns this page’s sound off.</p>
+      </div>
+      <figure class="med"><div class="plane keys">
+        <SoundKeys keys={[
+          { name: 'tap', label: 'Tap', note: 'Any button' },
+          { name: 'success', label: 'Added to bag', note: 'A fourth' },
+          { name: 'complete', label: 'Order placed', note: 'A D major strum' },
+        ]} />
+      </div></figure>
+    </section>
+
+    <section class="sec solo-txt" id="pk-counter" aria-labelledby="pk-counter-h">
+      <div class="txt">
+        <p class="no">06</p>
+        <h2 id="pk-counter-h">Behind the counter</h2>
+        <p>Orders, the catalogue and coupons live in Convex. Razorpay and Shiprocket report back by webhook, and each report moves an order to its next stage, which is what the pass shows and what the emails say. I built that half too.</p>
+      </div>
+    </section>
+
+    <div id="pk-credits"><Credits items={['dock', 'sound', 'photos', 'stack']} /></div>
+  </div>
+
+  <!-- the dock: one clipped glass shape; the bar, the pill and each panel are layers inside it -->
+  <nav class="dk" aria-label="Case study" data-dk>
+    <div class="shell">
+      <div class="layer bar" data-layer="bar">
+        <span class="ind" aria-hidden="true"></span>
+        <button type="button" class="item" data-go="top"><span class="ic" set:html={svg(icon.top)} /><span class="lb">Top</span></button>
+        <button type="button" class="item" data-panel="chapters" aria-expanded="false" aria-controls="pk-p-chapters"><span class="ic" set:html={svg(icon.chapters)} /><span class="lb">Chapters</span></button>
+        <a class="item" href="https://whyclub.in" target="_blank" rel="noopener" aria-label="Store, opens whyclub.in"><span class="ic" set:html={svg(icon.store)} /><span class="lb">Store</span></a>
+        <button type="button" class="item" data-sound-toggle aria-pressed="true"><span class="ic" set:html={svg(icon.sound)} /><span class="lb">Sound</span></button>
+        <button type="button" class="item" data-panel="more" aria-expanded="false" aria-controls="pk-p-more"><span class="ic" set:html={svg(icon.more)} /><span class="lb">More</span></button>
+      </div>
+
+      <div class="layer pillay" data-layer="pill">
+        <button type="button" class="pillbtn" aria-label="Expand navigation" data-expand><span class="ic" data-pill-icon set:html={svg(icon.top)} /></button>
+      </div>
+
+      <div class="layer panel" data-layer="chapters" id="pk-p-chapters">
+        <div class="ph"><button type="button" class="back" aria-label="Close chapters" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg></button><p>Chapters</p></div>
+        <div class="tiles">
+          <a class="tile" href="#pk-dock"><img src={`${A}dock-panel.webp`} alt="" loading="lazy" decoding="async" style="object-position: 50% 12%"><span>The dock</span></a>
+          <a class="tile" href="#pk-pass"><img src={`${A}pass/confirmed-m.webp`} alt="" loading="lazy" decoding="async" style="object-position: 50% 6%"><span>The pass</span></a>
+        </div>
+        {rows.map(([href, n, t, s]) => (
+          <a class="row" href={href}><span class="gl">{n}</span><span class="rt"><span class="t">{t}</span><span class="s">{s}</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6" /></svg></a>
+        ))}
+      </div>
+
+      <div class="layer panel" data-layer="more" id="pk-p-more">
+        <div class="ph"><button type="button" class="back" aria-label="Close more" data-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg></button><p>More</p></div>
+        {more.map(([href, t, s]) => (
+          <a class="row" href={href}><span class="rt"><span class="t">{t}</span><span class="s">{s}</span></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6" /></svg></a>
+        ))}
+      </div>
+    </div>
+  </nav>
+</article>
+
+<style>
+  /* the photo runs edge to edge, under the page's own top padding */
+  .pk { --plane: #f4f3f0; margin: calc(-1 * clamp(48px, 9vw, 112px)) calc(-1 * var(--gut)) calc(-1 * clamp(64px, 10vw, 128px)); }
+  .hero { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #6f7c8a; color: #fff; }
+  .hero picture, .hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 40%; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, .5), rgba(0, 0, 0, 0) 55%); }
+  .htxt { position: absolute; left: clamp(20px, 5vw, 72px); bottom: calc(148px + clamp(24px, 4vw, 56px)); max-width: 520px; transition: opacity .3s var(--ease), transform .4s var(--ease); }
+  /* once the sheet is over the photo, the title steps back so it never peeks out beside the sheet */
+  .covered .htxt { opacity: 0; transform: translateY(-12px); }
+  .htxt .eyebrow { display: flex; gap: 8px; font: 500 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .78); }
+  .htxt h1 { margin-top: 12px; font: 500 clamp(52px, 8vw, 104px)/.95 var(--display); letter-spacing: -.035em; }
+  .hline { margin-top: 14px; font: 400 clamp(17px, 1.8vw, 20px)/1.45 var(--display); color: rgba(255, 255, 255, .88); text-wrap: balance; }
+  /* the photo dims a little as the sheet covers it */
+  @supports (animation-timeline: scroll()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hero::after { content: ''; position: absolute; inset: 0; background: #000; opacity: 0; animation: pk-dim linear both; animation-timeline: scroll(root); animation-range: 0 100vh; }
+      @keyframes pk-dim { to { opacity: .4; } }
+    }
+  }
+
+  /* the sheet: white, 28px top corners, peeking over the photo like the product sheet */
+  .sheet { position: relative; z-index: 1; max-width: 1080px; margin: -148px auto 0; padding: 12px clamp(20px, 5vw, 64px) 168px; background: #fff; border-radius: 28px 28px 0 0;
+    box-shadow: 0 -18px 40px -28px rgba(0, 0, 0, .45); }
+  .grab { display: block; width: 36px; height: 5px; margin: 0 auto; border-radius: 3px; background: rgba(31, 29, 27, .16); }
+  .intro { padding-top: 32px; max-width: 700px; }
+  .lede { font: 400 clamp(19px, 2vw, 22px)/1.5 var(--display); color: var(--ink); text-wrap: pretty; }
+  .how { margin-top: 14px; font: 400 16px/1.6 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .spec { margin-top: 26px; }
+  .spec div { display: grid; grid-template-columns: 11em 1fr; gap: 16px; padding: 12px 0; box-shadow: inset 0 1px 0 var(--line); font: 400 15px/1.45 var(--display); }
+  .spec dt { color: var(--ink-3); }
+  .spec dd { margin: 0; color: var(--ink); }
+  .sheet a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(31, 29, 27, .25); text-underline-offset: 3px; }
+
+  .sec { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 5vw, 72px); align-items: center; padding-top: clamp(80px, 10vw, 128px);
+    scroll-margin-top: 24px; outline: none; }
+  .solo-txt { grid-template-columns: minmax(0, 1fr); max-width: 640px; }
+  #pk-pass { align-items: start; }
+  .no { font: 500 12px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .sec h2 { margin-top: 10px; font: 500 clamp(28px, 3.2vw, 38px)/1.1 var(--display); letter-spacing: -.024em; }
+  .txt > p:not(.no) { margin-top: 16px; font: 400 17px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .txt > p.detail { font-size: 14.5px; line-height: 1.55; color: var(--ink-2); }
+  .med { margin: 0; min-width: 0; }
+  .med figcaption { margin-top: 10px; font: 400 13.5px/1.5 var(--display); color: var(--ink-2); }
+  .plane { display: grid; justify-items: center; gap: 16px; padding: clamp(28px, 4vw, 48px) clamp(18px, 3vw, 36px); border-radius: 24px; background: var(--plane); }
+  .solo :global(.shot) { width: min(250px, 100%); }
+  .keys { justify-items: stretch; }
+  #pk-credits { padding-top: clamp(80px, 10vw, 120px); scroll-margin-top: 24px; outline: none; }
+
+  .pill { all: unset; box-sizing: border-box; height: 44px; padding: 0 18px; border-radius: 99px; display: inline-grid; place-items: center; cursor: pointer;
+    font: 500 13.5px/1 var(--display); color: var(--ink); background: #fff; box-shadow: 0 1px 2px rgba(31, 29, 27, .08), 0 0 0 .5px rgba(31, 29, 27, .1);
+    -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease); }
+  .pill[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .pill:active { transform: scale(.96); }
+  .pill:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .dockhold { position: relative; width: min(290px, 100%); aspect-ratio: 392 / 760; border-radius: 38px; overflow: hidden;
+    background: #3a2c22 url(/assets/work/whyclub/lab/hero-inner.webp) center / cover; }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .passplane { background: #fff; }
+  .passhold { position: relative; width: min(290px, 100%); aspect-ratio: 392 / var(--ph, 672); overflow: hidden; border-radius: 18px; }
+  .passhold :global(iframe) { background: #fff; }
+
+  /* tabs, the product sheet's: an underline that slides under the chosen one */
+  .tabs { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 24px; box-shadow: inset 0 -1px 0 var(--line); }
+  .tabs button { all: unset; box-sizing: border-box; height: 44px; display: grid; place-items: center; font: 500 13.5px/1 var(--display); color: var(--ink-3); cursor: pointer;
+    text-align: center; -webkit-tap-highlight-color: transparent; }
+  .tabs button[aria-selected='true'] { color: var(--ink); }
+  .tabs button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; border-radius: 6px; }
+  .tabs::after { content: ''; position: absolute; left: 0; bottom: 0; width: 25%; height: 2px; background: var(--ink); transform: translateX(calc(var(--t, 0) * 100%));
+    transition: transform .34s var(--ease); }
+  .tabpanel { padding-top: 16px; min-height: 96px; outline: none; }
+  .tabpanel:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 6px; }
+  .sh { font: 500 19px/1.3 var(--display); color: var(--ink); }
+  .sl { margin-top: 4px; font: 400 15.5px/1.5 var(--display); color: var(--body); }
+  .sc { margin-top: 2px; font: 400 13.5px/1.5 var(--display); color: var(--ink-2); }
+
+  /* ---- the dock ---- */
+  .dk { --glass: rgb(232 232 235 / .6); position: fixed; z-index: 80; bottom: calc(16px + env(safe-area-inset-bottom)); left: var(--dk-left, 16px); width: var(--dk-w, 328px);
+    height: var(--dk-h, 64px); pointer-events: none; }
+  .shell { position: absolute; inset: 0; pointer-events: auto; background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(1.9) brightness(1.02);
+    backdrop-filter: blur(24px) saturate(1.9) brightness(1.02); clip-path: var(--clip, inset(calc(100% - 64px) calc(50% - 164px) 0 calc(50% - 164px) round 32px)); }
+  .layer { position: absolute; bottom: 0; transition: opacity 140ms ease-out, transform 140ms ease-out; }
+  .layer[data-visible='false'] { opacity: 0; transform: scale(.96); pointer-events: none; }
+  .layer[data-visible='true'] { transition-duration: 200ms; transition-delay: 80ms; }
+  .bar { display: grid; grid-template-columns: repeat(5, 64px); padding: 0 4px; height: 64px; transform-origin: 50% 100%; }
+  .pillay { left: 0; width: 60px; height: 56px; transform-origin: 0 100%; }
+  .panel { padding: 8px; transform-origin: 50% 100%; display: grid; align-content: start; }
+
+  .item, .pillbtn, .back, .row, .tile { all: unset; box-sizing: border-box; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .item { position: relative; z-index: 1; height: 64px; display: grid; justify-items: center; align-content: center; gap: 3px; color: #1c1c1e; }
+  .ic { display: grid; place-items: center; width: 24px; height: 24px; transition: transform .26s var(--ease), scale .16s var(--ease); }
+  .ic :global(svg) { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .ic :global(.f) { fill: currentColor; stroke: none; }
+  .lb { font: 500 10.5px/1 var(--ui); letter-spacing: .01em; transition: opacity .16s ease-out; }
+  [data-sound-toggle][aria-pressed='true'] .ic :global(.off), [data-sound-toggle][aria-pressed='false'] .ic :global(.on) { display: none; }
+  /* icons mode: the labels go and the icons settle into the middle of the shorter bar */
+  .dk[data-mode='icons'] .lb { opacity: 0; }
+  .dk[data-mode='icons'] .item .ic { transform: translateY(10px); }
+  .ind { position: absolute; left: 4px; bottom: 4px; width: 64px; height: 56px; border-radius: 28px; background: rgba(0, 0, 0, .07); transform-origin: 50% 100%;
+    transform: translateX(calc(var(--i, 0) * 64px)); transition: transform .34s var(--ease); }
+  .dk[data-mode='icons'] .ind { transform: translateX(calc(var(--i, 0) * 64px)) scaleY(.857); }
+  .pillbtn { width: 60px; height: 56px; display: grid; place-items: center; color: #1c1c1e; }
+  .item:focus-visible, .pillbtn:focus-visible, .back:focus-visible, .row:focus-visible, .tile:focus-visible { outline: 2px solid #1c1c1e; outline-offset: -3px; border-radius: 22px; }
+  /* press with scale, not transform, so it never fights the icons-mode offset */
+  .item:active .ic, .pillbtn:active .ic { scale: .96; }
+
+  .ph { height: 48px; display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 4px; }
+  .ph p { font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(28, 28, 30, .55); }
+  .back { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: #1c1c1e; }
+  .back svg, .chev { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; height: 184px; margin-bottom: 8px; }
+  .tile { position: relative; overflow: hidden; border-radius: 20px; background: #d8d6d2; }
+  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .tile::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, .55), transparent 55%); }
+  .tile span { position: absolute; left: 12px; bottom: 12px; z-index: 1; font: 500 14px/1 var(--display); color: #fff; }
+  .row { height: 56px; display: grid; grid-template-columns: auto 1fr 18px; align-items: center; gap: 12px; padding: 0 10px 0 6px; border-radius: 20px; color: #1c1c1e; }
+  #pk-p-more .row { grid-template-columns: 1fr 18px; padding-left: 12px; }
+  .gl { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: rgba(0, 0, 0, .05); font: 500 12px/1 var(--mono); color: rgba(28, 28, 30, .6); }
+  .rt { display: grid; gap: 3px; }
+  .t { font: 500 14px/1.1 var(--display); }
+  .s { font: 400 11.5px/1.2 var(--display); color: rgba(28, 28, 30, .55); }
+  .chev { color: rgba(28, 28, 30, .4); }
+  @media (hover: hover) and (pointer: fine) { .row:hover { background: rgba(0, 0, 0, .04); } }
+
+  @media (max-width: 760px) {
+    .hero img { object-position: 50% 30%; }
+    .htxt { left: 20px; right: 20px; bottom: calc(124px + 28px); text-align: center; }
+    .htxt .eyebrow { justify-content: center; }
+    .sheet { margin-top: -124px; padding: 10px 20px 150px; }
+    .sec { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 72px; }
+    .plane { margin-inline: -20px; border-radius: 0; padding: 28px 20px; }
+    .txt > p:not(.no) { font-size: 16.5px; }
+    .spec div { grid-template-columns: 1fr; gap: 2px; }
+    .dockhold { width: min(72vw, 290px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .layer, .layer[data-visible='true'] { transition: opacity 120ms ease; transition-delay: 0ms; transform: none !important; }
+    .ic, .ind, .lb, .tabs::after, .pill { transition: none; }
+    .htxt { transition: opacity .2s linear; }
+    .covered .htxt { transform: none; }
+  }
+</style>
+
+<script>
+  import { frame, reduced, springEasing, whenShown } from './lab';
+  import { play, type SoundName } from './sound';
+
+  const root = document.querySelector<HTMLElement>('[data-pk]')!;
+
+  // ---- the dock: store geometry (why-club src/components/react/morph-dock/dockModel.ts) ----
+  type Shape = 'bar' | 'pill' | 'squeeze' | 'panel';
+  type Mode = 'labeled' | 'icons' | 'compact';
+  const dk = root.querySelector<HTMLElement>('[data-dk]')!;
+  const shell = dk.querySelector<HTMLElement>('.shell')!;
+  const layers = Object.fromEntries([...dk.querySelectorAll<HTMLElement>('[data-layer]')].map((l) => [l.dataset.layer!, l]));
+  const PANEL_H: Record<string, number> = { chapters: 8 + 48 + 184 + 8 + 4 * 56 + 8, more: 8 + 48 + 3 * 56 + 8 };
+  const SPRING = {
+    resize: springEasing(0.3, 1), collapse: springEasing(0.42, 1), expand: springEasing(0.38, 1),
+    open: springEasing(0.4, 0.82), switch: springEasing(0.34, 0.9), close: springEasing(0.28, 1),
+    squeeze: { durationMs: 90, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+  };
+  const MAX_H = Math.max(...Object.values(PANEL_H));
+  let W = 328, shape: Shape = 'bar', mode: Mode = 'labeled', panel: string | null = null, opener: HTMLElement | null = null;
+  let soundOn = true;
+  const cue = (n: SoundName) => { if (soundOn) play(n); };
+
+  const geo = (s: Shape, p = panel) => {
+    const centre = (w: number) => Math.round((W - w) / 2);
+    if (s === 'pill') return { w: 60, h: 56, x: 0, r: 28 };
+    if (s === 'squeeze') return { w: 200, h: 32, x: centre(200), r: 16 };
+    if (s === 'panel' && p) { const w = Math.min(W, 360); return { w, h: PANEL_H[p], x: centre(w), r: 28 }; }
+    const w = Math.min(W, 5 * 64 + 8), h = mode === 'labeled' ? 64 : 56;
+    return { w, h, x: centre(w), r: h / 2 };
+  };
+  const clipFor = (g: { w: number; h: number; x: number; r: number }) => `inset(${MAX_H - g.h}px ${W - g.x - g.w}px 0px ${g.x}px round ${g.r}px)`;
+  const motion = (name: keyof typeof SPRING) => {
+    shell.style.transition = reduced() ? 'none' : `clip-path ${SPRING[name].durationMs}ms ${SPRING[name].easing}`;
+  };
+  const paint = () => {
+    shell.style.setProperty('--clip', clipFor(geo(shape)));
+    // nothing shows during the squeeze: it's just the glass, the way the store does it
+    const visible = shape === 'panel' ? panel! : shape;
+    for (const [k, el] of Object.entries(layers)) {
+      const on = k === visible;
+      el.dataset.visible = String(on);
+      el.inert = !on;
+    }
+    dk.dataset.mode = mode;
+    dk.querySelectorAll<HTMLElement>('[data-panel]').forEach((b) => b.setAttribute('aria-expanded', String(b.dataset.panel === panel)));
+  };
+  // lay the box out for this viewport: the region the store calls "available", anchored bottom-left
+  const layout = () => {
+    const vw = document.documentElement.clientWidth;
+    W = Math.max(Math.min(vw - 32, 420), 240);
+    dk.style.setProperty('--dk-w', `${W}px`);
+    dk.style.setProperty('--dk-h', `${MAX_H}px`);
+    dk.style.setProperty('--dk-left', `${Math.round((vw - W) / 2)}px`);
+    const bar = geo('bar');
+    Object.assign(layers.bar.style, { left: `${bar.x}px`, width: `${bar.w}px` });
+    for (const p of Object.keys(PANEL_H)) {
+      const g = geo('panel', p);
+      Object.assign(layers[p].style, { left: `${g.x}px`, width: `${g.w}px`, height: `${g.h}px` });
+    }
+    shell.style.transition = 'none';
+    paint();
+  };
+
+  let squeezeTimer = 0;
+  const open = (id: string, from: HTMLElement, viaKeys: boolean) => {
+    clearTimeout(squeezeTimer);
+    const switching = shape === 'panel' && panel !== id;
+    panel = id;
+    opener = from;
+    cue('dockOpen');
+    const land = () => { motion(switching ? 'switch' : 'open'); shape = 'panel'; paint(); layers[id].querySelector<HTMLElement>('[data-close]')?.focus({ preventScroll: true }); };
+    // squeeze, then spring out; keyboard and reduced motion skip the squeeze
+    if (!switching && !viaKeys && !reduced()) {
+      motion('squeeze'); shape = 'squeeze'; paint();
+      squeezeTimer = window.setTimeout(land, SPRING.squeeze.durationMs);
+    } else land();
+  };
+  const close = (refocus = true) => {
+    if (!panel && shape !== 'squeeze') return;
+    clearTimeout(squeezeTimer);
+    cue('dockClose');
+    motion('close');
+    shape = 'bar'; panel = null;
+    paint();
+    if (refocus && opener) opener.focus({ preventScroll: true });
+    opener = null;
+  };
+  const setMode = (m: Mode) => {
+    if (m === mode && !(m === 'compact' && shape !== 'pill')) return;
+    const was = mode;
+    mode = m;
+    if (panel) return;
+    if (m === 'compact') { motion('collapse'); shape = 'pill'; }
+    else { motion(was === 'compact' ? 'expand' : 'resize'); shape = 'bar'; }
+    paint();
+  };
+
+  // which item is "you are here": top near the start, chapters once you're reading
+  let wasTop: boolean | null = null;
+  const here = (atTop: boolean) => {
+    if (atTop === wasTop) return;
+    wasTop = atTop;
+    layers.bar.style.setProperty('--i', atTop ? '0' : '1');
+    const src = dk.querySelector(atTop ? '[data-go=top] .ic' : '[data-panel=chapters] .ic')!;
+    dk.querySelector('[data-pill-icon]')!.innerHTML = src.innerHTML;
+  };
+
+  dk.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const pb = t.closest<HTMLElement>('[data-panel]');
+    if (pb) { if (panel === pb.dataset.panel) close(); else open(pb.dataset.panel!, pb, (e as MouseEvent).detail === 0); return; }
+    if (t.closest('[data-close]')) return close();
+    if (t.closest('[data-expand]')) { cue('dockTap'); motion('expand'); mode = 'labeled'; shape = 'bar'; down = up = 0; paint(); dk.querySelector<HTMLElement>('[data-panel=chapters]')?.focus({ preventScroll: true }); return; }
+    if (t.closest('[data-go=top]')) { cue('dockTap'); scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' }); return; }
+    const snd = t.closest<HTMLElement>('[data-sound-toggle]');
+    if (snd) { soundOn = !soundOn; snd.setAttribute('aria-pressed', String(soundOn)); snd.querySelector('.lb')!.textContent = soundOn ? 'Sound' : 'Muted'; if (soundOn) play('dockTap'); return; }
+    const link = t.closest<HTMLAnchorElement>('a');
+    if (!link) return;
+    const hash = link.getAttribute('href')!;
+    if (!hash.startsWith('#')) return cue('dockTap');
+    // a chapter: fold the panel away, go there, and move focus with the reader
+    e.preventDefault();
+    close(false);
+    const to = document.querySelector<HTMLElement>(hash);
+    if (!to) return;
+    to.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+    to.tabIndex = -1;
+    to.focus({ preventScroll: true });
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && panel) { e.preventDefault(); close(); } });
+  addEventListener('pointerdown', (e) => { if (panel && !shell.contains(e.target as Node)) close(false); }, true);
+
+  // scroll distances, ported from why-club src/components/react/useMobileNavBehavior.ts
+  const TOP_RESET_Y = 80, ICONS_AFTER = 28, COMPACT_AFTER = 88, LABELED_AFTER_UP = 72, EXPAND_AFTER_UP = 150, DEADZONE = 4;
+  let lastY = Math.max(scrollY, 0), down = 0, up = 0, raf = 0;
+  const onScroll = () => {
+    raf = 0;
+    if (dk.closest<HTMLElement>('[data-dir]')!.hidden) return;
+    const y = Math.max(scrollY, 0), d = y - lastY;
+    here(y < innerHeight * 0.6);
+    hero.classList.toggle('covered', y > innerHeight * 0.3);
+    if (panel && Math.abs(d) > 40) close(false);
+    if (y < TOP_RESET_Y) { down = up = 0; setMode('labeled'); }
+    else if (Math.abs(d) >= DEADZONE) {
+      if (d > 0) { down += d; up = 0; } else { up -= d; down = 0; }
+      if (mode === 'compact') { if (up >= EXPAND_AFTER_UP) { setMode('labeled'); down = up = 0; } }
+      else if (down >= COMPACT_AFTER) { setMode('compact'); down = up = 0; }
+      else if (down >= ICONS_AFTER) setMode('icons');
+      else if (up >= LABELED_AFTER_UP) { setMode('labeled'); up = 0; }
+    }
+    lastY = y;
+  };
+  const hero = root.querySelector<HTMLElement>('.hero')!;
+  addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(onScroll); }, { passive: true });
+  addEventListener('resize', layout);
+  whenShown(root, () => { lastY = Math.max(scrollY, 0); down = up = 0; mode = 'labeled'; shape = 'bar'; panel = null; layout(); wasTop = null; here(true); });
+
+  // ---- the real dock and the real pass, side by side with the story ----
+  const dock = frame(root.querySelector<HTMLElement>('[data-dock-hold]')!, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  let realOpen = false;
+  const syncReal = () => { openB.setAttribute('aria-pressed', String(realOpen)); openB.textContent = realOpen ? 'Close Shop' : 'Open Shop'; };
+  dock.on((d) => { if (!d.moving && d.shape) { realOpen = d.shape === 'panel'; syncReal(); } });
+  openB.addEventListener('click', () => { realOpen = !realOpen; dock.send(realOpen ? { open: 'shop' } : { close: true }); syncReal(); });
+
+  const passHold = root.querySelector<HTMLElement>('[data-pass-hold]')!;
+  const pass = frame(passHold, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  pass.on((d) => { if (d.height) passHold.style.setProperty('--ph', String(Math.min(890, Math.ceil(d.height)))); });
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+
+  // tabs: arrow keys move between stages, the underline slides, the copy and the pass follow
+  const tablist = root.querySelector<HTMLElement>('[role=tablist]')!;
+  const tabs = [...tablist.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+  const tabpanel = root.querySelector<HTMLElement>('#pk-stage')!;
+  const pick = (b: HTMLButtonElement, focus = false) => {
+    tabs.forEach((t, i) => { const on = t === b; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on) tablist.style.setProperty('--t', String(i)); });
+    tabpanel.setAttribute('aria-labelledby', b.id);
+    tabpanel.querySelectorAll<HTMLElement>('[data-copy]').forEach((c) => (c.hidden = c.dataset.copy !== b.dataset.stage));
+    if (focus) b.focus();
+    pass.send({ stage: b.dataset.stage });
+  };
+  tablist.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=tab]'); if (b) pick(b); });
+  tablist.addEventListener('keydown', (e) => {
+    const i = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+    const n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (n === undefined) return;
+    e.preventDefault();
+    pick(tabs[(n + tabs.length) % tabs.length], true);
+  });
+</script>

@@ -1,0 +1,16 @@
+---
+// PROTOTYPE: the title block every overview opens with; each variant sets it differently
+interface Props { title: string; summary: string; year: number; role: string; tags: string[]; link?: string; class?: string }
+const { title, summary, year, role, tags, link, class: cls } = Astro.props;
+const domain = link && new URL(link).hostname;
+---
+<header class:list={['hd', cls]}>
+  <p class="eye">Case study <span aria-hidden="true">·</span> {year}</p>
+  <h1>{title}</h1>
+  <p class="lede">{summary}</p>
+  <dl class="facts">
+    <div><dt>Role</dt><dd>{role}</dd></div>
+    {tags.length > 0 && <div class="scope"><dt>Scope</dt><dd>{tags.join(', ')}</dd></div>}
+    {link && <div><dt>Live</dt><dd><a href={link} target="_blank" rel="noopener">{domain} <span aria-hidden="true">↗</span></a></dd></div>}
+  </dl>
+</header>

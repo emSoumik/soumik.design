@@ -1,0 +1,123 @@
+---
+// PROTOTYPE: the footer's index, live, as it looks on a laptop: three columns on black. one copy runs in the sheet; a
+// second sits in the card, scaled to it, where a small pointer walks from link to link and plays the same hover. on a
+// phone the card crops to the first two columns at a size you can read, the third running off the edge
+interface Props { card?: boolean }
+const { card = false } = Astro.props;
+const footer = [
+  ['Shop', ['All Products', 'Men', 'Women', 'New Arrivals']],
+  ['Help', ['Shipping', 'Exchange', 'Size Guide', 'FAQs', 'Track Order']],
+  ['Company', ['Our Story', 'Contact Us', 'Privacy Policy', 'Terms & Conditions']],
+] as const;
+let n = 0;
+const cols = footer.map(([title, links]) => ({ title, links: links.map((label) => ({ label, no: String(++n).padStart(2, '0') })) }));
+// in the card the links are spans (it sits inside a button) and the reader only sees them
+const Tag = card ? 'span' : 'a';
+---
+<div class:list={['fd', { 'fd-card': card }]} {...card ? { 'aria-hidden': 'true' } : {}}>
+  <div class="fdemo" data-foot={card ? undefined : ''} data-fdcard={card ? '' : undefined}>
+    <div class="cols">
+      {cols.map((c) => (
+        <div class="fcol">
+          <p class="ct">{c.title}</p>
+          <div class="links">
+            {c.links.map((l) => <Tag class="lk" {...card ? {} : { href: '#details-h' }}><span class="no" aria-hidden="true">{l.no}</span><span class="lb">{l.label}</span></Tag>)}
+          </div>
+        </div>
+      ))}
+    </div>
+    {card && <svg class="cursor" viewBox="0 0 20 22" width="20" height="22" aria-hidden="true"><path d="M3 2.2v15.6l4.1-3.9 2.7 6.1 2.9-1.3-2.7-6h5.8z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg>}
+    {!card && (
+      <ul class="specs" aria-label="Footer specs">
+        <li><b>Number</b> 10px, #777, slides 6px in over 180ms</li>
+        <li><b>Label</b> steps 1.35rem over 260ms</li>
+        <li><b>The rest</b> fall back to #666</li>
+      </ul>
+    )}
+  </div>
+</div>
+
+<style>
+  /* the footer, as shipped on a laptop: near-black with a little grain, white headings, grey links, the index on hover */
+  .fdemo { position: relative; max-width: 760px; margin: 0 auto; border-radius: clamp(14px, 2vw, 22px); color: #fff; padding: 52px 56px 56px; --ease-out: cubic-bezier(.23, 1, .32, 1);
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), #0b0b0b; }
+  .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 48px; }
+  .ct { color: #fff; font: 700 11px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; margin: 0 0 18px; }
+  .links { display: grid; }
+  .lk { position: relative; display: flex; align-items: center; min-height: 36px; color: #9a9a9a; font: 400 14.5px/1.4 var(--display); white-space: nowrap;
+    transition: color 150ms ease; -webkit-tap-highlight-color: transparent; outline: none; text-decoration: none; }
+  .no { position: absolute; left: 0; top: 50%; color: #777; font-size: 10px; font-variant-numeric: tabular-nums; letter-spacing: .06em;
+    opacity: 0; translate: -6px -50%; transition: opacity 180ms var(--ease-out), translate 180ms var(--ease-out); pointer-events: none; }
+  .lb { display: inline-block; transition: translate 260ms var(--ease-out); }
+  .lk:focus-visible, .lk.on { color: #fff; }
+  .lk:focus-visible .no, .lk.on .no { opacity: 1; translate: 0 -50%; }
+  .lk:focus-visible .lb, .lk.on .lb { translate: 1.35rem 0; }
+  .fdemo:has(.lk.on) .lk:not(.on) { color: #666; }
+  @media (hover: hover) and (pointer: fine) {
+    .fdemo:has(.lk:hover) .lk:not(:hover) { color: #666; }
+    .fdemo:has(.lk:hover) .lk.on:not(:hover) { color: #666; }
+    .fdemo:has(.lk:hover) .lk.on:not(:hover) :is(.no) { opacity: 0; translate: -6px -50%; }
+    .fdemo:has(.lk:hover) .lk.on:not(:hover) .lb { translate: 0 0; }
+    .lk:hover { color: #fff; }
+    .lk:hover .no { opacity: 1; translate: 0 -50%; }
+    .lk:hover .lb { translate: 1.35rem 0; }
+  }
+  .specs { list-style: none; margin: 36px 0 0; padding: 18px 0 0; display: flex; flex-wrap: wrap; gap: 8px 28px;
+    border-top: 1px solid rgba(255, 255, 255, .1); font: 400 12px/1.5 var(--display); color: #8a8a8a; }
+  .specs b { font-weight: 600; color: #ddd; margin-right: 4px; }
+
+  /* the card's copy: the footer at its natural width, scaled to the card (--fs is set from the card's width) */
+  .fd-card .fdemo { position: absolute; left: 50%; top: 50%; width: 720px; max-width: none; margin: 0; translate: -50% -50%; scale: var(--fs, .65); }
+  /* the pointer: walks from link to link; it never takes a click */
+  .cursor { position: absolute; left: 0; top: 0; pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .45)); opacity: 0;
+    transition: transform 700ms cubic-bezier(.65, 0, .35, 1), opacity 200ms ease; }
+  .fdemo.walking .cursor { opacity: 1; }
+  /* a person pointing at the card takes over from the pointer */
+  @media (hover: hover) and (pointer: fine) { .fdemo:has(.lk:hover) .cursor { opacity: 0; } }
+
+  /* the sheet on a phone: the first column across the top, the other two side by side */
+  @media (max-width: 640px) {
+    .fd:not(.fd-card) .fdemo { padding: 32px 22px; }
+    .fd:not(.fd-card) .cols { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
+    .fd:not(.fd-card) .fcol:first-child { grid-column: 1 / -1; }
+    .fd:not(.fd-card) .fcol:first-child .links { grid-template-columns: 1fr 1fr; column-gap: 1rem; }
+    /* the card on a phone: a crop of the same footer, Shop and Help at a size you can read, Company running off the edge */
+    .fd-card .fdemo { left: 6%; top: 12%; translate: none; transform-origin: 0 0; border-radius: 22px 0 0 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .no, .lb, .lk, .cursor { transition: none; } }
+</style>
+
+<script>
+  // the card's pointer: moves to a link, rests, lights it the way a hover would, then on to the next. only while the card
+  // is on screen and the page is visible; with reduced motion it rests on one link, already lit
+  const ORDER = [3, 6, 8, 9, 11, 1, 4, 12];
+  document.querySelectorAll<HTMLElement>('[data-fdcard]').forEach((demo) => {
+    const links = [...demo.querySelectorAll<HTMLElement>('.lk')];
+    const cursor = demo.querySelector<SVGElement>('.cursor')!;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let i = 0, timer = 0, on = false, seen = false;
+    // the pointer's tip lands just inside the label, a little below its middle (unscaled px, inside the demo)
+    const aim = (a: HTMLElement) => {
+      const lb = a.querySelector<HTMLElement>('.lb')!;
+      let x = lb.offsetLeft + Math.min(lb.offsetWidth * .55, 60), y = 0;
+      for (let el: HTMLElement | null = a; el && el !== demo; el = el.offsetParent as HTMLElement | null) { x += el.offsetLeft; y += el.offsetTop; }
+      return `translate(${x - 3}px, ${y + a.offsetHeight * .55 - 2}px)`;
+    };
+    const light = (a: HTMLElement | null) => links.forEach((l) => l.classList.toggle('on', l === a));
+    const step = () => {
+      const a = links[ORDER[i++ % ORDER.length]];
+      light(null);
+      cursor.style.transform = aim(a);
+      timer = window.setTimeout(() => { light(a); timer = window.setTimeout(step, 1300); }, 760);
+    };
+    const start = () => { if (on || !seen || document.hidden) return; on = true; demo.classList.add('walking'); step(); };
+    const stop = () => { on = false; clearTimeout(timer); };
+    if (reduced) {
+      const a = links[8];
+      demo.classList.add('walking'); cursor.style.transform = aim(a); light(a);
+      return;
+    }
+    new IntersectionObserver((e) => { seen = e[0].isIntersecting; if (seen) start(); else stop(); }, { threshold: .3 }).observe(demo);
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  });
+</script>

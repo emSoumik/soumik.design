@@ -1,0 +1,15 @@
+---
+// PROTOTYPE: dev-only lab pages. no paths exist in a production build, so nothing here ever ships
+import { getEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Lab from '../projects/_prototype-whyclub/lab/Lab.astro';
+
+export function getStaticPaths() {
+  return import.meta.env.DEV ? [{ params: { name: 'whyclub' } }] : [];
+}
+const entry = await getEntry('work', 'whyclub');
+const d = entry!.data;
+---
+<Base title="WhyClub lab" description="Five takes on the WhyClub overview, then the case study." noindex>
+  <Lab title={d.title} summary={d.summary} year={d.date.getUTCFullYear()} role={d.role} tags={d.tags} link={d.link} />
+</Base>

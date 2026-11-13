@@ -1,0 +1,25 @@
+---
+// PROTOTYPE (dev only): resolves the vault's proto dials before first paint. the bar (ProtoBar.astro) switches them.
+// the picks are the defaults: window to open, focus for the wall, white cards. page transitions are no longer a dial:
+// the real ones live in components/transitions and run in dev and production alike
+---
+<script is:inline>
+// dials: url param > localStorage > default, set on <html> before first paint
+(function () {
+  var dials = {
+    open: { p: 'o', v: ['morph', 'window', 'sheet', 'stitch', 'zoom'], d: 'window' },
+    enter: { p: 'e', v: ['skeleton', 'rise', 'stitch', 'cascade', 'focus'], d: 'focus' },
+    surface: { p: 's', v: ['white', 'grey'], d: 'white' }
+  };
+  var root = document.documentElement;
+  var q = null;
+  try { q = new URLSearchParams(location.search); } catch (e) {}
+  Object.keys(dials).forEach(function (k) {
+    var d = dials[k], v = q && q.get(d.p), fromUrl = d.v.indexOf(v) >= 0;
+    if (!fromUrl) { v = null; try { v = localStorage.getItem('proto.' + k); } catch (e) {} }
+    if (d.v.indexOf(v) < 0) v = d.d;
+    else if (fromUrl) { try { localStorage.setItem('proto.' + k, v); } catch (e) {} }
+    root.setAttribute('data-proto-' + k, v);
+  });
+})();
+</script>

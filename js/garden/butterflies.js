@@ -1,6 +1,8 @@
-// Butterflies: the moodboard's three, drawn as pixel sprites. they turn up once the garden has grown,
-// wander lazily, loop the name now and then, sit on flowers with slow wingbeats, and startle when you get close.
-// One rAF loop for all of them, transform-only moves, no layout reads per frame; it sleeps while they all sit still.
+// Butterflies: the moodboard's drawings, as pixel sprites. they turn up once the garden has grown and fly the way real
+// ones do (flight.js): bursts of beats and glides, a path that kinks on every beat, rising on the downstroke and sinking
+// between. they loop the name now and then, come in to land on flowers, sit breathing their wings, and startle when you
+// get close. One rAF loop for all of them, transform-only moves, no layout reads per frame; it sleeps while they all
+// sit still, and wakes for each breath.
 //
 //   const bf = createButterflies({ host, spots, count, busy })
 //   bf.add()          // one more flies in from a side edge (up to count)
@@ -11,6 +13,7 @@
 //
 // spots() -> [{ x, y }] flower heads in host px. busy() -> [{ x, y }] places someone else (the bee) is sitting.
 import { BUTTERFLIES } from './flora.js';
+import { flyer, fly, land, settle, rest, takeoff, crouching, breeze, TEMPER } from './flight.js';
 import { feel } from '../feel.js';
 
 export const BUTTERFLY_CSS = `
@@ -22,7 +25,6 @@ export const BUTTERFLY_CSS = `
 .bf-i { width: 100%; height: 100%; transition: transform .22s cubic-bezier(.3, 1.4, .5, 1); }
 .bf.l .bf-i { transform: scaleX(-1); }
 .bf canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
-.bf .c, .bf.shut .o { visibility: hidden; } .bf.shut .c { visibility: visible; }
 .bf-j { width: 100%; height: 100%; }
 /* startled: the wings flare wide, then snap in as it pushes off (scale only, so the facing flip stays put) */
 .bf.spin .bf-j { animation: bf-startle .28s cubic-bezier(.2, .9, .3, 1); }
@@ -30,16 +32,23 @@ export const BUTTERFLY_CSS = `
 .bf.out { opacity: 0; transition: opacity .4s; }
 `;
 
-// a little personality each: who's skittish, who's playful, who's lazy
+// a little personality each: who's skittish, who's playful, who's lazy. fore: which side of the drawing the
+// forewing is on (-1 left, 1 right), so the hind wing can follow it a beat late
 const KIN = [
-  { name: 'flyblue', speed: 92, shy: 92, loops: .14, sit: 1, flap: 105, glide: .35 },
-  { name: 'flypink', speed: 104, shy: 70, loops: .3, sit: .8, flap: 95, glide: .25 },
-  { name: 'flybig', speed: 74, shy: 62, loops: .1, sit: 1.5, flap: 135, glide: .6 },
+  { name: 'flyblue', temper: 'skittish', speed: 92, shy: 92, loops: .14, sit: 1, fore: -1 },
+  { name: 'flypink', temper: 'playful', speed: 100, shy: 70, loops: .3, sit: .8, fore: 1 },
+  { name: 'flybig', temper: 'lazy', speed: 80, shy: 62, loops: .1, sit: 1.5, fore: -1 },
+  { name: 'flylemon', temper: 'playful', speed: 96, shy: 80, loops: .22, sit: .9, fore: -1 },
+  { name: 'flylilac', temper: 'skittish', speed: 98, shy: 86, loops: .18, sit: .8, fore: 1 },
 ];
 
-// draw a sprite into a little canvas; squash > 0 folds the wings in toward the body.
+// how far each side folds, in steps: 0 flat open … 5 nearly edge-on
+const FOLD = [0, .14, .28, .42, .56, .7];
+const step = open => Math.max(0, Math.min(5, Math.round((1 - open) * .8 / .14)));
+
+// draw a sprite into a little canvas, each side folded in toward the body by its own amount (sl left, sr right).
 // cells pile up as they fold, and the darker one wins, so the outline stays whole
-function frame(s, squash = 0) {
+function frame(s, sl = 0, sr = 0) {
   const W = s.rows[0].length, H = s.rows.length;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
@@ -50,11 +59,18 @@ function frame(s, squash = 0) {
   const bx = cells.reduce((a, q) => a + q[0], 0) / cells.length;
   const top = {};
   for (const [i, y, k] of cells) {
-    const key = Math.round(bx + (i - bx) * (1 - squash)) + ',' + y;
+    const key = Math.round(bx + (i - bx) * (1 - (i < bx ? sl : sr))) + ',' + y;
     if (top[key] === undefined || lum[k] < lum[top[key]]) top[key] = k;
   }
   for (const key in top) { const [i, y] = key.split(',').map(Number); x.fillStyle = s.pal[top[key]]; x.fillRect(i, y, 1, 1); }
   return c;
+}
+// every fold, once per drawing: 6 x 6 tiny canvases
+const frames = {};
+function framesOf(name) {
+  if (frames[name]) return frames[name];
+  const s = BUTTERFLIES[name];
+  return (frames[name] = FOLD.map(l => FOLD.map(r => frame(s, l, r))));
 }
 // where the body is, in sprite cells: that's the point that sits on a flower
 function body(s) {
@@ -73,9 +89,11 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
 
   const flies = [];
   let W = 0, H = 0, hx = 0, hy = 0, avoid = [], mark = null, raf = 0, sleepT = 0, last = 0, t = 0, visible = true, dead = false, kinN = 0;
-  const cursor = { x: -999, y: -999, at: -9 };
+  const cursor = { x: -999, y: -999, at: -9, speed: 0, ms: 0 };
   const rnd = (a, b) => a + Math.random() * (b - a);
   const any = a => a[Math.floor(Math.random() * a.length)];
+  // the world is smaller on a phone, so they fly a little slower there
+  const scale = () => W && W <= 640 ? .75 : 1;
 
   // the only layout reads: on resize, and once the type has settled in
   function measure() {
@@ -111,18 +129,18 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
     const k = kin.name === 'flybig' ? (W <= 640 ? 2 : 3) : (W <= 640 ? 3 : 5);
     const [bx, by] = body(s);
     const el = document.createElement('div');
-    el.className = 'bf';
+    el.className = 'bf'; el.dataset.kin = kin.name;
     el.style.width = sw * k + 'px'; el.style.height = sh * k + 'px';
     const inner = document.createElement('div'), jolt = document.createElement('div');
     inner.className = 'bf-i'; jolt.className = 'bf-j';
-    const o = frame(s), c = frame(s, kin.name === 'flybig' ? .5 : .4);
-    o.className = 'o'; c.className = 'c';
-    jolt.append(o, c);
+    const cv = document.createElement('canvas');
+    cv.width = sw; cv.height = sh;
+    jolt.append(cv);
     inner.appendChild(jolt);
     el.appendChild(inner);
     wrap.appendChild(el);
-    const f = { kin, el, w: sw * k, h: sh * k, ax: bx * k, ay: by * k, x: 0, y: 0, vx: 0, vy: 0, mode: 'wander', tx: 0, ty: 0, timer: 0, ph: Math.random() * 9,
-      spot: null, shut: false, left: false, flapAt: 0, glideTill: 0, landT: 0, theta: 0, swept: 0, dir: 1, px: NaN, py: NaN };
+    const f = Object.assign(flyer(TEMPER[kin.temper]), { kin, el, cv, cx: cv.getContext('2d'), frames: framesOf(kin.name), w: sw * k, h: sh * k, ax: bx * k, ay: by * k,
+      mode: 'wander', tx: 0, ty: 0, timer: 0, spot: null, left: false, lean: 0, look: 0, fl: -1, fr: -1, px: NaN, py: NaN, hurry: 0 });
     // pointerdown, not click: it's off the moment a finger lands, the way a real one would be
     // (a touch only counts as a gesture for sound and haptics once it lifts, so on phones the flutter plays on click)
     el.addEventListener('pointerdown', e => { e.stopPropagation(); f.hush = e.pointerType !== 'mouse'; tap(f, e.pageX - hx, e.pageY - hy); });
@@ -132,20 +150,21 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
 
   function add() {
     if (dead || flies.filter(f => f.mode !== 'leave').length >= count || !W) return;
-    // three different ones before anyone repeats
-    const kin = KIN[kinN++ % KIN.length];
+    // five different ones before anyone repeats
+    const kin = KIN[kinN++ % Math.min(KIN.length, Math.max(3, count))];
     const f = make(kin);
     flies.push(f);
     if (reduced) {
       const s = any(freeSpots(f));
       if (!s) { f.el.remove(); flies.splice(flies.indexOf(f), 1); return; }
-      f.spot = s; f.x = s.x; f.y = s.y; f.mode = 'perch';
-      place(f, 0);
+      // it's simply there, sitting, wings open
+      f.spot = s; f.x = s.x; f.y = s.y; f.mode = 'perch'; f.fore = f.hind = 1;
+      draw(f); place(f);
       return;
     }
     const side = Math.random() < .5 ? -1 : 1;
     f.x = side < 0 ? -f.w : W + f.w; f.y = rnd(H * .15, H * .5);
-    f.vx = -side * kin.speed; f.vy = 0;
+    f.vx = -side * kin.speed * .8; f.vy = 0; f.head = side < 0 ? 0 : Math.PI;
     const p = sky(); f.tx = p.x; f.ty = p.y; f.mode = 'wander'; f.timer = rnd(3, 5);
     wake();
   }
@@ -155,19 +174,23 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
   // escaping: a burst away from whatever startled it, biased upwards, that jinks every few wingbeats
   // (that zig-zag is how real ones shake off a bird) and eases back to a lazy pace over a second or so
   function lift(f, why, from = cursor) {
-    f.spot = null;
+    const was = f.mode;
+    f.spot = null; f.landing = null;
     if (why === 'flee' || why === 'tap') {
       // sideways away from the finger or the cursor, and always up: a startled one climbs
       const dx = f.x - from.x, side = Math.abs(dx) < 4 ? (Math.random() < .5 ? -1 : 1) : Math.sign(dx);
-      const base = up(Math.atan2(-1.1 - Math.random() * .5, side * (.7 + Math.random() * .5))), burst = why === 'tap' ? 620 : 470;
+      const base = up(Math.atan2(-1.1 - Math.random() * .5, side * (.7 + Math.random() * .5))), burst = why === 'tap' ? 1 : .8;
       f.esc = { t0: t, base, head: base, next: t + .05, burst };
-      // no wind-up: it's already moving on the first frame
-      f.vx = Math.cos(base) * burst * .8; f.vy = Math.sin(base) * burst * .8;
+      // no wind-up and no crouch: it's already moving on the first frame
+      takeoff(f, base, 1); f.crouch = 0;
+      const v = f.kin.speed * 2.6 * burst * scale();
+      f.vx = Math.cos(base) * v; f.vy = Math.sin(base) * v;
       face(f, f.vx < 0);
-      f.mode = 'flee'; f.timer = why === 'tap' ? 1.5 : 1.1; f.flapAt = 0;
+      f.mode = 'flee'; f.timer = why === 'tap' ? 1.5 : 1.1;
       return;
     }
-    f.vy = -60;
+    // an easy lift-off: a small crouch, then up and away
+    if (was === 'perch') takeoff(f, -Math.PI / 2 + (f.left ? -.5 : .5) * Math.random(), .5);
     pick(f);
   }
 
@@ -178,7 +201,7 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
       const list = freeSpots(f);
       if (list.length) {
         list.sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y));
-        return land(f, list[Math.floor(Math.random() * Math.min(6, list.length))]);
+        return goLand(f, list[Math.floor(Math.random() * Math.min(6, list.length))]);
       }
     }
     if (mark && r < .42 + f.kin.loops) {
@@ -190,9 +213,10 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
     const p = sky(); f.tx = p.x; f.ty = p.y; f.mode = 'wander'; f.timer = rnd(2.5, 5);
   }
 
-  function land(f, s) {
+  function goLand(f, s) {
+    if (f.mode === 'perch') takeoff(f, -Math.PI / 2, .5);
+    f.landing = null;
     f.spot = s; f.mode = 'land';
-    // sit on the bloom: the body's middle just above the head
     f.tx = s.x; f.ty = s.y;
   }
 
@@ -205,44 +229,87 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
     wake();
   }
 
-  function place(f, bob) {
-    const x = Math.round(f.x - (f.left ? f.w - f.ax : f.ax)), y = Math.round(f.y - f.ay - f.h * .12 + bob);
+  // stepped and pixel-snapped: whole px only, so the sprite never blurs
+  function place(f) {
+    const x = Math.round(f.x + (f.sx || 0) - (f.left ? f.w - f.ax : f.ax)), y = Math.round(f.y + (f.sy || 0) + (f.crouch > 0 ? 1 : 0) - f.ay - f.h * .12);
     if (x === f.px && y === f.py) return;
     f.px = x; f.py = y;
     f.el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
   }
   function face(f, left) { if (left !== f.left) { f.left = left; f.px = NaN; f.el.classList.toggle('l', left); } }
-  function shut(f, v) { if (v !== f.shut) { f.shut = v; f.el.classList.toggle('shut', v); } }
+  // the wings: each side folds by its own step. the hind wing trails the forewing, and the near wing shows more on a
+  // lean (into a turn, or toward a cursor it's watching): a swapped frame, never a rotation that would smear the pixels
+  function draw(f) {
+    const lean = Math.max(-1, Math.min(1, f.bank * .8 + f.look)) * (f.left ? -1 : 1);
+    const side = sgn => {
+      const open = sgn === f.kin.fore ? f.fore : f.hind;
+      return step(open * (1 - .38 * Math.max(0, -lean * sgn)));
+    };
+    const l = side(-1), r = side(1);
+    if (l === f.fl && r === f.fr) return;
+    f.fl = l; f.fr = r;
+    f.cx.clearRect(0, 0, f.cv.width, f.cv.height);
+    f.cx.drawImage(f.frames[l][r], 0, 0);
+  }
+
+  // where it means to go, plus the type and the buttons pushing it off, plus the edges of the garden
+  function want(f, tx, ty, edges) {
+    const dx = tx - f.x, dy = ty - f.y, d = Math.hypot(dx, dy) || 1;
+    let ax = dx / d, ay = dy / d;
+    if (f.mode !== 'land' && f.mode !== 'leave') for (const r of avoid) if (inRect(f.x, f.y, r, 30)) {
+      const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2, q = Math.hypot(f.x - cx, f.y - cy) || 1;
+      ax += (f.x - cx) / q * 1.3; ay += (f.y - cy) / q * 1.8;
+    }
+    if (edges) {
+      if (f.x < 30) ax += 1.2; if (f.x > W - 30) ax -= 1.2;
+      if (f.y < 50) ay += 1.2; if (f.y > H * .86) ay -= 1.4;
+    }
+    return [ax, ay];
+  }
 
   // returns when this one next needs a frame (0 = every frame)
-  function step(f, dt, now) {
-    const k = f.kin;
+  function stepFly(f, dt, now) {
+    const k = f.kin, s = now / 1000;
     if (f.mode === 'perch') {
-      const e = (now - f.landAt) / 1000;
-      // settles a pixel or two, with a little bounce
-      place(f, e < .7 ? 2.4 * Math.exp(-6 * e) * Math.sin(15 * e) : 0);
-      // slow wingbeats: open, then a slow close every second or two, sometimes twice
-      if (now >= f.flapAt) {
-        if (f.shut) { shut(f, false); f.flapAt = now + (f.double ? 160 : rnd(1100, 2200)); f.double = !f.double && Math.random() < .3; }
-        else { shut(f, true); f.flapAt = now + 260; }
+      let next = rest(f, s);
+      // a slow cursor nearby: it turns its near wing toward it. a fast one, or one right on top of it, sends it off
+      let look = 0;
+      if (fine && t - cursor.at < .3) {
+        const d = Math.hypot(cursor.x - f.x, cursor.y - f.y);
+        if (d < k.shy * .5 || (d < k.shy && cursor.speed > 450)) { lift(f, 'flee'); return 0; }
+        if (d < k.shy * 1.6) look = Math.sign(cursor.x - f.x) * (1 - d / (k.shy * 1.6));
       }
-      if (fine && t - cursor.at < .3 && Math.hypot(cursor.x - f.x, cursor.y - f.y) < k.shy * .75) { lift(f, 'flee'); return 0; }
+      f.look += (look - f.look) * Math.min(1, dt * 8);
+      if (Math.abs(f.look - look) > .03 || t - cursor.at < .3) next = 0;
+      else f.look = look;
+      // a moment after it lands, it turns round to sit along the flower
+      if (f.turnAt && now >= f.turnAt) { f.turnAt = 0; face(f, !f.left); }
+      draw(f); place(f);
       if (now >= f.liftAt) { lift(f); return 0; }
-      return e < .7 ? 0 : Math.min(f.flapAt, f.liftAt);
+      return next ? Math.min(now + next * 1000, f.liftAt, f.turnAt || Infinity) : 0;
     }
+    if (f.mode === 'settle') {
+      if (settle(f, s)) {
+        f.mode = 'perch'; f.liftAt = now + rnd(2600, 7000) * k.sit;
+        f.turnAt = Math.random() < .4 ? now + rnd(700, 1400) : 0;
+      }
+      draw(f); place(f);
+      return 0;
+    }
+    // a crouch before an easy take-off: a px lower, wings shut
+    if (crouching(f, dt)) { draw(f); place(f); return 0; }
 
-    let tx = f.tx, ty = f.ty, speed = k.speed, turn = 2.4;
+    let tx = f.tx, ty = f.ty, speed = k.speed, hurry = 0, calm = 0;
     if (f.mode === 'orbit') {
       const cx = (mark[0] + mark[2]) / 2, cy = (mark[1] + mark[3]) / 2, rx = (mark[2] - mark[0]) / 2 + 70, ry = (mark[3] - mark[1]) / 2 + 60;
-      f.theta += f.dir * 1.05 * dt; f.swept += 1.05 * dt;
+      f.theta += f.dir * .95 * dt; f.swept += .95 * dt;
       tx = cx + Math.cos(f.theta) * rx; ty = cy + Math.sin(f.theta) * ry;
-      speed *= 1.25; turn = 3.2;
+      speed *= 1.2;
       if (f.swept > Math.PI * 2) pick(f);
     } else if (f.mode === 'leave') {
-      speed = 300; turn = 2.6;
+      speed = 150; hurry = .5;
     }
-    const dx = tx - f.x, dy = ty - f.y, dist = Math.hypot(dx, dy) || 1;
-    let ax, ay;
+    let dir;
     if (f.mode === 'flee') {
       const e = f.esc, age = t - e.t0;
       // the jinks: a new heading every 70–150ms, never swinging too far off the getaway line
@@ -252,63 +319,30 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
         // and the getaway line itself drifts, so it curls off rather than flying a ruler-straight line, but keeps climbing
         e.base = up(e.base + rnd(-.25, .25));
       }
-      const sp = k.speed + (e.burst - k.speed) * Math.exp(-age * 2.1);
-      ax = Math.cos(e.head) * sp; ay = Math.sin(e.head) * sp;
-      turn = 11;
-      f.timer -= dt;
-      if (f.timer <= 0) {
-        const p = sky(); f.tx = p.x; f.ty = p.y; f.mode = 'wander'; f.timer = rnd(2, 4);
-      }
-    } else {
-      // lazy heading noise, so it never flies straight at anything
-      const wob = f.mode === 'land' ? Math.min(1, dist / 120) : f.mode === 'leave' ? .25 : 1;
-      const head = Math.atan2(dy, dx) + (Math.sin(t * 1.3 + f.ph) * .7 + Math.sin(t * 3.1 + f.ph * 2) * .35) * wob;
-      const sp = f.mode === 'land' ? Math.min(speed, dist * 2.2 + 12) : speed;
-      ax = Math.cos(head) * sp; ay = Math.sin(head) * sp;
-    }
-    // the type and the buttons push gently, unless it's landing beside them
-    if (f.mode !== 'land' && f.mode !== 'leave') for (const r of avoid) if (inRect(f.x, f.y, r, 30)) {
-      const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2, d = Math.hypot(f.x - cx, f.y - cy) || 1;
-      ax += (f.x - cx) / d * 160; ay += (f.y - cy) / d * 220;
-    }
-    // stay in the garden while wandering
-    if (f.mode === 'wander' || f.mode === 'orbit') {
-      if (f.x < 30) ax += 120; if (f.x > W - 30) ax -= 120;
-      if (f.y < 50) ay += 120; if (f.y > H * .86) ay -= 120;
-    } else if (f.mode === 'flee') {
       // near an edge it veers along it instead of vanishing: across the top, back in from the sides
-      const e = f.esc;
-      if (f.y < 60) { ay = Math.max(ay, 0) + (60 - f.y) * 6; e.base = Math.cos(e.base) < 0 ? -2.75 : -.4; }
-      if (f.x < 30) { ax += (30 - f.x) * 8; e.base = -.7; }
-      if (f.x > W - 30) { ax -= (f.x - W + 30) * 8; e.base = -2.45; }
+      if (f.y < 60) e.base = Math.cos(e.base) < 0 ? -2.75 : -.4;
+      if (f.x < 30) e.base = -.7;
+      if (f.x > W - 30) e.base = -2.45;
+      dir = [Math.cos(e.head), Math.sin(e.head) + (f.y < 60 ? (60 - f.y) / 30 : 0)];
+      hurry = e.burst * Math.exp(-age * 1.8);
+      f.timer -= dt;
+      if (f.timer <= 0) { const p = sky(); f.tx = p.x; f.ty = p.y; f.mode = 'wander'; f.timer = rnd(2, 4); }
+    } else {
+      dir = want(f, tx, ty, f.mode === 'wander' || f.mode === 'orbit');
+      // steadier as it comes in to land
+      if (f.mode === 'land') calm = 1 - Math.min(1, Math.hypot(tx - f.x, ty - f.y) / 160);
     }
-    const kk = Math.min(1, dt * turn);
-    f.vx += (ax - f.vx) * kk; f.vy += (ay - f.vy) * kk;
-    f.x += f.vx * dt; f.y += f.vy * dt;
+    fly(f, dt, dir, { wind: breeze(f.x, f.y, s), hurry, speed, scale: scale(), calm });
     // it turns to face where it's going; mid-escape only for a real change of direction, so the jinks don't flicker it
-    if (Math.abs(f.vx) > (f.mode === 'flee' ? 90 : 14)) face(f, f.vx < 0);
+    if (Math.abs(f.vx) > (f.mode === 'flee' ? 90 : 18)) face(f, f.vx < 0);
+    f.look *= .9;
+    draw(f); place(f);
 
-    // wings: quick stepped beats, with the odd glide; the body lifts a pixel on each downstroke
-    const fast = f.mode === 'flee' || f.mode === 'leave';
-    if (now >= f.flapAt) {
-      if (!fast && !f.shut && now > f.glideTill && Math.random() < k.glide * .06) f.glideTill = now + rnd(300, 600);
-      const gliding = now < f.glideTill || (f.mode === 'land' && dist < 36);
-      shut(f, gliding ? false : !f.shut);
-      // a beat as fast as a frame or two while it bolts, slowing back to its own rhythm as it calms down
-      const calm = f.mode === 'flee' ? 1 - Math.exp(-(t - f.esc.t0) * 1.6) : 1;
-      f.flapAt = now + (f.mode === 'flee' ? 34 + (k.flap - 34) * calm : fast ? 62 : k.flap);
-      if (f.mode === 'flee' && !f.shut) f.vy -= 40 * (1 - calm);
-    }
-    const bob = Math.sin(t * 2.2 + f.ph) * 4 + (f.shut ? -2 : 0);
-    place(f, f.mode === 'land' ? bob * Math.min(1, dist / 30) : bob);
-
-    if (fine && f.mode !== 'flee' && f.mode !== 'leave' && t - cursor.at < .3 && Math.hypot(cursor.x - f.x, cursor.y - f.y) < k.shy) lift(f, 'flee');
-    if (f.mode === 'land' && dist < 3) {
-      f.x = tx; f.y = ty; f.vx = f.vy = 0;
-      f.mode = 'perch'; f.landAt = now; f.liftAt = now + rnd(2000, 6000) * k.sit; f.flapAt = now + rnd(500, 900);
-      shut(f, false);
-    }
-    if (f.mode === 'wander') { f.timer -= dt; if (f.timer <= 0 || dist < 20) pick(f); }
+    const dist = Math.hypot(tx - f.x, ty - f.y);
+    if (fine && f.mode !== 'flee' && f.mode !== 'leave' && t - cursor.at < .3 && Math.hypot(cursor.x - f.x, cursor.y - f.y) < k.shy && cursor.speed > 250) lift(f, 'flee');
+    // close in: it slows, flares and drops onto the flower
+    if (f.mode === 'land' && dist < 46) { land(f, tx, ty, s); f.mode = 'settle'; }
+    if (f.mode === 'wander') { f.timer -= dt; if (f.timer <= 0 || dist < 24) pick(f); }
     if (f.mode === 'leave' && (f.x < -f.w * 2 || f.x > W + f.w * 2 || f.y < -f.h * 2)) {
       f.el.remove(); flies.splice(flies.indexOf(f), 1);
     }
@@ -320,10 +354,10 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
     if (dead || !visible || document.hidden || !flies.length) return;
     const dt = Math.min(.05, (now - (last || now)) / 1000); last = now; t += dt;
     let next = Infinity;
-    for (const f of [...flies]) { const n = step(f, dt, now); next = n ? Math.min(next, n) : 0; }
+    for (const f of [...flies]) { const n = stepFly(f, dt, now); next = n ? Math.min(next, n) : 0; }
     if (!flies.length) return;
-    // everyone's sitting still: sleep until the next wingbeat or lift-off
-    if (next > now + 40) { clearTimeout(sleepT); sleepT = setTimeout(wake, Math.min(next, now + 4000) - now); return; }
+    // everyone's sitting still: sleep until the next breath, flick or lift-off
+    if (next > now + 40) { clearTimeout(sleepT); last = 0; sleepT = setTimeout(wake, Math.min(next, now + 4000) - now); return; }
     raf = requestAnimationFrame(loop);
   }
   function wake() {
@@ -333,7 +367,10 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
 
   const onMove = e => {
     if (e.pointerType !== 'mouse') return;
-    cursor.x = e.pageX - hx; cursor.y = e.pageY - hy; cursor.at = t;
+    const x = e.pageX - hx, y = e.pageY - hy, ms = e.timeStamp, gap = Math.max(8, ms - cursor.ms);
+    // how fast it's moving (px/s), smoothed, so a slow hand can come close and a quick one scares them
+    cursor.speed = gap > 200 ? 0 : cursor.speed + (Math.hypot(x - cursor.x, y - cursor.y) / gap * 1000 - cursor.speed) * .4;
+    cursor.x = x; cursor.y = y; cursor.at = t; cursor.ms = ms;
     if (flies.length && e.pageY < H + 200) wake();
   };
   if (fine && !reduced) addEventListener('pointermove', onMove, { passive: true });
@@ -342,6 +379,8 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
   const onVis = () => { if (!document.hidden) wake(); };
   document.addEventListener('visibilitychange', onVis);
   measure();
+  // dev: the flyers themselves, for measuring the flight from the console
+  if (import.meta.env?.DEV) window.__butterflies = flies;
 
   /** The nearest one that's free may wander over to a new flower. */
   function visit(spot) {
@@ -349,14 +388,15 @@ export function createButterflies({ host, spots, count = 3, busy = () => [] }) {
     const ok = flies.filter(f => f.mode !== 'leave' && f.mode !== 'flee');
     if (!ok.length || busy().some(o => Math.hypot(o.x - spot.x, o.y - spot.y) < 34) || flies.some(f => f.spot && Math.hypot(f.spot.x - spot.x, f.spot.y - spot.y) < 34)) return;
     ok.sort((a, b) => Math.hypot(a.x - spot.x, a.y - spot.y) - Math.hypot(b.x - spot.x, b.y - spot.y));
-    land(ok[0], spot);
+    goLand(ok[0], spot);
     wake();
   }
   /** Everyone off-screen, out the nearest side and up a little. */
   function scatter() {
     for (const f of [...flies]) {
       if (reduced) { f.el.classList.add('out'); setTimeout(() => f.el.remove(), 400); flies.splice(flies.indexOf(f), 1); continue; }
-      f.spot = null; f.mode = 'leave';
+      if (f.mode === 'perch' || f.mode === 'settle') takeoff(f, -Math.PI / 2, .7);
+      f.spot = null; f.landing = null; f.crouch = 0; f.mode = 'leave';
       f.tx = f.x < W / 2 ? -f.w * 3 : W + f.w * 3; f.ty = f.y - rnd(80, 200);
       f.vx += (f.x < W / 2 ? -1 : 1) * 120; f.vy -= 80;
     }

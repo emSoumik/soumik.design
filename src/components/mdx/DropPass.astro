@@ -1,0 +1,76 @@
+---
+// <DropPass />: the live drop pass in a browser window. it loads on tap, so it never traps a scrolling thumb,
+// and the page inside picks its own phone or desktop layout from the window's width
+import Phone from './Phone.astro';
+
+interface Props { src?: string; caption?: string }
+const { src = 'https://prototype.whyclub.in/', caption } = Astro.props;
+const host = new URL(src).hostname;
+---
+<figure class="dp wide">
+  <div class="win">
+    <div class="bar" aria-hidden="true">
+      <span class="dots"><i></i><i></i><i></i></span>
+      <span class="url"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a3.2 3.2 0 0 0-3.2 3.2V7H4a1 1 0 0 0-1 1v5.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-.8V4.7A3.2 3.2 0 0 0 8 1.5Zm-1.8 3.2a1.8 1.8 0 1 1 3.6 0V7H6.2V4.7Z"/></svg>{host}</span>
+      <span></span>
+    </div>
+    <div class="view" data-src={src}>
+      <button type="button" class="go" aria-label="Load the live drop pass here">
+        <Phone src="/assets/work/whyclub/p-pass" alt="" class="poster" />
+        <span class="cta"><b>try it live</b><span>loads the real thing, right here</span></span>
+      </button>
+    </div>
+  </div>
+  {caption && <figcaption>{caption} <a href={src} target="_blank" rel="noopener">open it in a new tab <span aria-hidden="true">↗</span></a></figcaption>}
+</figure>
+
+<style>
+  .win { border-radius: clamp(12px, 1.6vw, 16px); overflow: hidden; background: #fff;
+    box-shadow: 0 0 0 .5px rgba(22, 20, 15, .16), 0 1px 1px rgba(22, 20, 15, .08), 0 6px 14px -4px rgba(40, 30, 15, .14), 0 28px 52px -18px rgba(40, 30, 15, .34); }
+  .bar { height: clamp(22px, 2.6vw, 30px); display: grid; grid-template-columns: 1fr minmax(0, 44%) 1fr; align-items: center; padding: 0 clamp(8px, 1.1vw, 12px);
+    background: #fff; border-bottom: .5px solid rgba(22, 20, 15, .1); }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 7px; aspect-ratio: 1; border-radius: 50%; background: #d3d0ca; box-shadow: inset 0 0 0 .5px rgba(22, 20, 15, .12); }
+  .url { height: 62%; display: flex; align-items: center; justify-content: center; gap: .45em; border-radius: 99px; background: rgba(22, 20, 15, .055);
+    font: 500 11px/1 var(--ui); color: rgba(22, 20, 15, .8); white-space: nowrap; overflow: hidden; }
+  .url svg { width: .8em; height: .8em; opacity: .45; flex: none; }
+  .view { position: relative; aspect-ratio: 16 / 10; background: #fff; }
+  .view :global(iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+  .go { all: unset; box-sizing: border-box; position: absolute; inset: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: clamp(20px, 5vw, 64px); overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    background: radial-gradient(70% 80% at 18% 10%, rgba(127, 208, 196, .5), transparent 66%), radial-gradient(70% 80% at 92% 96%, rgba(240, 168, 200, .5), transparent 64%), #fff; }
+  .go:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+  .go :global(.poster) { width: clamp(108px, 19%, 200px); transition: transform .6s var(--ease); }
+  .cta { display: grid; gap: 8px; }
+  .cta b { justify-self: start; padding: 12px 18px; border-radius: 99px; background: var(--ink); color: #fff; font: 500 14px/1 var(--ui); transition: transform .16s var(--ease); }
+  .cta span { font: 400 11px/1.4 var(--mono); color: var(--ink-2); }
+  .go:active .cta b { transform: scale(.97); }
+  @media (hover: hover) and (pointer: fine) { .go:hover :global(.poster) { transform: translateY(-4px) rotate(-1.5deg); } }
+  .view.live .go { display: none; }
+  figcaption { font: 400 13px/1.5 var(--mono); color: var(--ink-2); margin-top: 14px; text-wrap: pretty; }
+  figcaption a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  /* tall enough to use, short enough to scroll past */
+  @media (max-width: 640px) {
+    .view { aspect-ratio: auto; height: min(68svh, 560px); }
+    .go { flex-direction: column; gap: 18px; }
+    .go :global(.poster) { width: 38%; max-width: 150px; }
+    .cta { justify-items: center; text-align: center; }
+    .cta b { justify-self: center; }
+  }
+  @media (prefers-reduced-motion: reduce) { .go :global(.poster), .cta b { transition: none; } }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.dp .view').forEach((view) => {
+    view.querySelector('.go')!.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.src = view.dataset.src!;
+      f.title = 'WhyClub drop pass, live';
+      f.allow = 'fullscreen';
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+      view.appendChild(f);
+      view.classList.add('live');
+      f.focus();
+    }, { once: true });
+  });
+</script>

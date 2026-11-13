@@ -1,0 +1,132 @@
+---
+// the dock, live (variant B): numbered hotspots sit on the parts themselves, and one note opens as a tooltip anchored
+// to its hotspot. the tour walks hotspot to hotspot, then on to the next shape. tap a hotspot to read it
+import './dock-ui.css';
+const shapes = [['pill', 'Pill'], ['bar', 'Bar'], ['panel', 'Panel']];
+interface Props { caption?: string }
+const { caption } = Astro.props;
+---
+<figure class="dkx dkb" data-shape="bar" data-moving="true" data-mode="tour">
+  <div class="top">
+    <div class="seg shapes" role="radiogroup" aria-label="Dock shape">
+      {shapes.map(([k, label], i) => <button type="button" role="radio" aria-checked={String(i === 1)} tabindex={i === 1 ? 0 : -1} data-go={k}>{label}</button>)}
+    </div>
+    <p class="ask"><span class="say" aria-hidden="true"><i></i><span class="t-tour">Tour playing. Tap the dock to take over</span><span class="t-you">Your turn. Tap a dot, or the dock</span></span><button type="button" class="replay">Replay tour</button></p>
+  </div>
+  <div class="stage">
+    <div class="win"></div>
+    <div class="spots"></div>
+    <div class="tip" role="status"><span class="caret" aria-hidden="true"></span><p class="tt"></p></div>
+  </div>
+  <p class="sline" aria-hidden="true"></p>
+  <div class="seg glass" role="radiogroup" aria-label="Glass">
+    <button type="button" role="radio" aria-checked="true" tabindex="0" data-glass="light">Light glass</button>
+    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-glass="dark">Dark glass</button>
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .dkb { display: grid; justify-items: center; gap: 10px; }
+  .top { display: grid; justify-items: center; gap: 4px; }
+  /* room above the dock for the note to open into */
+  .stage { position: relative; width: min(392px, 100%); padding-top: 112px; }
+  .spots { position: absolute; inset: 0; pointer-events: none; }
+  .glass { margin-top: 6px; }
+
+  /* a hotspot: a 44px target around a small numbered dot, with a ring that breathes while it's the one being read */
+  .spots :global(button) { all: unset; position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: grid; place-items: center; cursor: pointer; pointer-events: auto;
+    -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: opacity .2s cubic-bezier(.23, 1, .32, 1); }
+  .spots :global(button span) { position: relative; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--ink);
+    font: 600 12px/1 var(--display); box-shadow: 0 0 0 1.5px var(--ink), 0 2px 8px rgba(0, 0, 0, .16); transition: background-color .15s, color .15s, scale .15s cubic-bezier(.23, 1, .32, 1); }
+  .spots :global(button[aria-pressed='true'] span) { background: var(--ink); color: #fff; }
+  .spots :global(button[aria-pressed='true'] span::after) { content: ''; position: absolute; inset: -6px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--ink); animation: ring 1.6s cubic-bezier(.23, 1, .32, 1) infinite; }
+  .spots :global(button:active span) { scale: .92; }
+  .spots :global(button:focus-visible span) { outline: 2px solid var(--ink); outline-offset: 3px; }
+  @keyframes ring { from { opacity: .7; scale: .8; } to { opacity: 0; scale: 1.5; } }
+
+  /* the note: a white card with a hairline, pointing at its hotspot */
+  .tip { position: absolute; left: 0; top: 0; width: min(272px, calc(100% - 8px)); padding: 11px 14px 12px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px rgba(31, 29, 27, .1), 0 8px 24px -10px rgba(31, 29, 27, .2);
+    pointer-events: none; transition: opacity .18s cubic-bezier(.23, 1, .32, 1), translate .18s cubic-bezier(.23, 1, .32, 1); }
+  .tip:empty, .dkb:not([data-tip]) .tip { opacity: 0; }
+  .tt { margin: 0; font: 400 13px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .tt :global(b) { font-weight: 600; color: var(--ink); }
+  .tt :global(em) { font-style: normal; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .caret { position: absolute; bottom: -6px; left: var(--cx, 50%); width: 12px; height: 12px; margin-left: -6px; background: #fff; rotate: 45deg; box-shadow: 1px 1px 0 0 rgba(31, 29, 27, .1); }
+  .dkb[data-moving='true'] :is(.spots, .tip) { opacity: 0; translate: 0 4px; transition-duration: .1s; }
+  .dkb[data-moving='true'] .spots :global(button) { pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spots :global(button[aria-pressed='true'] span::after) { animation: none; opacity: .4; scale: 1; }
+    .tip, .spots :global(button), .spots :global(button span) { transition: none; }
+    .dkb[data-moving='true'] :is(.spots, .tip) { translate: none; }
+  }
+</style>
+
+<script>
+  import { liveDock, markShape, notesFor, springName, type Report, type Note } from './dock';
+  // where on its part each hotspot sits: an empty corner or edge, so it never hides what it names
+  const SPOT: Record<string, [number, number]> = {
+    pill: [.92, .08], cell: [.5, 0], shell: [.97, .03],
+    header: [.5, .5], tile: [.14, .14], row: [.72, .5], panel: [.04, .02],
+  };
+  const PER = 2300; // how long each note is read during the tour
+
+  document.querySelectorAll<HTMLElement>('figure.dkb').forEach((dk) => {
+    const stage = dk.querySelector<HTMLElement>('.stage')!;
+    const spots = dk.querySelector<HTMLElement>('.spots')!;
+    const tip = dk.querySelector<HTMLElement>('.tip')!;
+    const tt = dk.querySelector<HTMLElement>('.tt')!;
+    const sline = dk.querySelector<HTMLElement>('.sline')!;
+    let notes: Note[] = [];
+    let pts: { x: number; y: number }[] = [];
+    let ni = 0;
+    let cycle = 0;
+    let shown: Report | null = null;
+
+    const d = liveDock(dk, {
+      host: dk.querySelector<HTMLElement>('.win')!,
+      dwell: () => Math.max(3200, notes.length * PER + 400),
+      onSettle: (r) => { markShape(dk, r.shape); draw(r); },
+      onFit: () => { if (shown && dk.dataset.moving !== 'true') draw(shown); },
+      onSpring: (sp) => { sline.innerHTML = `Last move: <b>${springName(sp)}</b> · response ${sp.response.toFixed(2)} · damping ${sp.damping.toFixed(2)} · ${sp.durationMs} ms`; },
+      onMode: (m) => { if (m === 'free') clearInterval(cycle); },
+    });
+
+    function draw(r: Report) {
+      const same = shown?.shape === r.shape && notes.length;
+      shown = r;
+      notes = notesFor(r).filter((nt) => SPOT[nt.part]);
+      if (!same) ni = 0;
+      pts = notes.map((nt) => { const [fx, fy] = SPOT[nt.part]; return d.at(r.parts[nt.part]!, fx, fy, stage); });
+      spots.replaceChildren(...notes.map((nt, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('aria-label', `Note ${i + 1}: ${nt.title}`);
+        b.innerHTML = `<span>${i + 1}</span>`;
+        b.style.left = `${pts[i].x}px`; b.style.top = `${pts[i].y}px`;
+        b.addEventListener('click', () => { d.takeOver(); clearInterval(cycle); show(i); });
+        return b;
+      }));
+      show(ni, false);
+      clearInterval(cycle);
+      if (dk.dataset.mode !== 'free' && !d.reduced.matches && notes.length > 1) cycle = window.setInterval(() => show(ni + 1, false), PER);
+    }
+
+    // opens note i above its hotspot, kept inside the stage, with the caret pointing at the dot
+    function show(i: number, speak = true) {
+      if (!notes.length) { dk.removeAttribute('data-tip'); return; }
+      ni = (i + notes.length) % notes.length;
+      const nt = notes[ni], pt = pts[ni];
+      spots.querySelectorAll('button').forEach((b, k) => b.setAttribute('aria-pressed', String(k === ni)));
+      tt.innerHTML = `<b>${nt.title}</b> <em>${nt.size}</em><br>${nt.text}`;
+      tip.setAttribute('aria-live', speak ? 'polite' : 'off');
+      const w = tip.offsetWidth, h = tip.offsetHeight, sw = stage.clientWidth;
+      const x = Math.min(sw - w - 4, Math.max(4, pt.x - w / 2));
+      tip.style.translate = '';
+      tip.style.left = `${x}px`; tip.style.top = `${pt.y - h - 20}px`;
+      tip.style.setProperty('--cx', `${pt.x - x}px`);
+      dk.dataset.tip = '';
+    }
+  });
+</script>

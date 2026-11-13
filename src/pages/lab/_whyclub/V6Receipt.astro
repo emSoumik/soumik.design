@@ -1,0 +1,508 @@
+---
+// LAB direction 6, "Receipt": the case study printed as the store's own order receipt for itself. each decision is
+// a line item with a real number for a price; press a row and the paper unfolds under it with the story and the thing.
+// phone: one full-width receipt, an opened item's media runs edge to edge inside it. desktop: a ~460px receipt with
+// the most recently opened item's media stapled in a sticky panel on its right (the receipt slides left to make room)
+import Shot from './Shot.astro';
+import TintToy from './TintToy.astro';
+import SoundKeys from './SoundKeys.astro';
+import FooterIndex from './FooterIndex.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+const stages = [
+  ['confirmed', 'You’re in'],
+  ['packed', 'All packed'],
+  ['shipped', 'On its way'],
+  ['delivered', 'It’s home'],
+];
+
+// a barcode for whyclub.in: bar widths come from the letters, so it's the same every build
+const code = 'whyclub.in';
+const barsOut: { x: number; w: number }[] = [];
+let cx = 4;
+for (let i = 0; i < 40; i++) {
+  const w = 1 + ((code.charCodeAt(i % code.length) * (i + 3)) % 4);
+  if (i % 2 === 0) barsOut.push({ x: cx, w });
+  cx += w;
+}
+const barW = cx + 4;
+---
+<article class="rc" data-rc>
+  <div class="printer">
+    <div class="slotline" aria-hidden="true"></div>
+    <div class="sheet" data-sheet>
+      <div class="paper" aria-hidden="true"><i></i></div>
+
+      <header class="head">
+        <p class="eyebrow"><a href="/projects/">case study</a></p>
+        <h1>WHYCLUB<span class="dot" aria-hidden="true"> · </span><span class="sub">ORDER OF ONE</span></h1>
+        <p class="addr">Oversized graphic tees, small drops<br>Made in India · whyclub.in</p>
+        <hr class="rule">
+        <dl class="fields">
+          <div><dt>Role</dt><dd>Design and engineering</dd></div>
+          <div><dt>Stack</dt><dd>Astro, React, Convex, WebGL</dd></div>
+          <div><dt>Since</dt><dd>March 2026</dd></div>
+          <div><dt>Served by</dt><dd>Soumik Halder</dd></div>
+          <div><dt>Live</dt><dd><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in ↗</a></dd></div>
+        </dl>
+        <hr class="rule">
+        <div class="note">
+          <p class="nl">Note</p>
+          <p>I designed and built the WhyClub store end to end: the art direction, the design system, the frontend and the backend that runs every order. One person doing the brand, the store and the backend means nothing got lost in handovers.</p>
+        </div>
+        <hr class="rule">
+      </header>
+
+      <section class="lines" aria-labelledby="rc-items-h">
+        <div class="linehead">
+          <h2 id="rc-items-h"><span>Qty</span><span>Item</span><span class="r">Spec</span></h2>
+        </div>
+        <div class="tools">
+          <button type="button" class="tool" data-all aria-pressed="false">Open all</button>
+          <button type="button" class="tool" data-snd aria-pressed="false" aria-label="Sound when an item opens: off">Sound: off</button>
+        </div>
+
+        <ol class="items">
+          <!-- 01: the dock -->
+          <li class="item" data-item="dock">
+            <h3><button type="button" class="row" id="rc-dock-b" aria-expanded="false" aria-controls="rc-dock">
+              <span class="q">01</span><span class="n">Dock</span><span class="dots" aria-hidden="true"></span><span class="p">3 shapes</span><span class="pm" aria-hidden="true"></span>
+            </button></h3>
+            <div class="fold" id="rc-dock" role="region" aria-labelledby="rc-dock-b"><div class="foldin">
+              <p class="story">Navigation sits at the bottom, where the thumb is. One surface, three shapes: a bar of five at the top of a page, a pill at the left edge once you scroll so it stays clear of the buy button, and a panel when you tap Shop, Account or More. Springs are plain transitions, so a tap mid-move picks up from wherever the dock is.</p>
+              <div class="pane"><div class="mc">
+                <p class="stamp"><b>01 · Dock</b><span>Live</span></p>
+                <div class="dockhold" data-dock-hold></div>
+                <div class="ctrls">
+                  <button type="button" class="pill" data-act="open" aria-pressed="false">Open Shop</button>
+                  <button type="button" class="pill" data-act="scroll" aria-pressed="false">Scroll the page</button>
+                </div>
+                <p class="spring" aria-live="polite" data-spring>Tap the dock, or use the buttons.</p>
+              </div></div>
+            </div></div>
+          </li>
+
+          <!-- 02: the sheets -->
+          <li class="item" data-item="sheets">
+            <h3><button type="button" class="row" id="rc-sheets-b" aria-expanded="false" aria-controls="rc-sheets">
+              <span class="q">02</span><span class="n">Sheets</span><span class="dots" aria-hidden="true"></span><span class="p">2 sheets</span><span class="pm" aria-hidden="true"></span>
+            </button></h3>
+            <div class="fold" id="rc-sheets" role="region" aria-labelledby="rc-sheets-b"><div class="foldin">
+              <p class="story">The + on every shop card opens a sheet with photos, price and size, so you never leave the shop. Add to bag and the bag in the dock counts it. On a product page the details sheet rises over the tee photo, so the tee stays on screen while you read.</p>
+              <div class="pane"><div class="mc">
+                <p class="stamp"><b>02 · Sheets</b><span>Recorded</span></p>
+                <div class="duo">
+                  <Shot src={A + 'p-quickadd'} video alt="Tapping the + on a shop card: a sheet opens with photos, price and sizes, and the bag in the dock counts the add." caption="Quick add" />
+                  <Shot src={A + 'p-sheets'} video alt="On a product page, the details sheet rising over the tee photo." caption="Details" />
+                </div>
+              </div></div>
+            </div></div>
+          </li>
+
+          <!-- 03: safari's colour -->
+          <li class="item" data-item="tint">
+            <h3><button type="button" class="row" id="rc-tint-b" aria-expanded="false" aria-controls="rc-tint">
+              <span class="q">03</span><span class="n">Safari tint</span><span class="dots" aria-hidden="true"></span><span class="p">16px</span><span class="pm" aria-hidden="true"></span>
+            </button></h3>
+            <div class="fold" id="rc-tint" role="region" aria-labelledby="rc-tint-b"><div class="foldin">
+              <p class="story">Safari 26 tints its bars from the page behind them. With a white page edge every hero looked pasted in, and a free shipping bar sat on top. I took the bar out. The store reads the top 16px of each photo and hands a shade of it to the browser 160ms after a swipe settles.</p>
+              <div class="pane"><div class="mc">
+                <p class="stamp"><b>03 · Safari tint</b><span>Rebuilt</span></p>
+                <TintToy />
+                <div class="real">
+                  <Shot src={A + 'ios/before'} ratio="720 / 1565" alt="Before, on an iPhone: a free shipping bar above the photo, and Safari’s toolbar on white under the dock." caption="Before" />
+                  <Shot src={A + 'ios/light'} ratio="720 / 1565" alt="After, light mode: the status bar in a muted shade of the photo’s top edge, the photo running under the toolbar." caption="After" />
+                  <Shot src={A + 'ios/dark'} ratio="720 / 1565" alt="After, dark mode: the same page with the dock in dark glass." caption="Dark" />
+                </div>
+              </div></div>
+            </div></div>
+          </li>
+
+          <!-- 04: waiting -->
+          <li class="item" data-item="wait">
+            <h3><button type="button" class="row" id="rc-wait-b" aria-expanded="false" aria-controls="rc-wait">
+              <span class="q">04</span><span class="n">Waiting</span><span class="dots" aria-hidden="true"></span><span class="p">350ms</span><span class="pm" aria-hidden="true"></span>
+            </button></h3>
+            <div class="fold" id="rc-wait" role="region" aria-labelledby="rc-wait-b"><div class="foldin">
+              <p class="story">Tap a link and the store works out from the address what kind of page is coming. Grey blocks cover the old page at once. At 350ms they draw themselves into an outline of that page, and the real one fades in over the same lines, so nothing jumps. Still nothing after 10s and you get the old page back.</p>
+              <div class="pane"><div class="mc">
+                <p class="stamp"><b>04 · Waiting</b><span>Recorded</span></p>
+                <div class="solo"><Shot src={A + 'p-loading'} video alt="Tapping Shop, then Women, on a slow connection: grey blocks, then an outline of the grid, then the photos land in the same places." /></div>
+                <ol class="steps">
+                  <li><b>Press</b><span>Grey blocks cover the old page.</span></li>
+                  <li><b>350ms</b><span>They draw an outline of the page.</span></li>
+                  <li><b>Ready</b><span>The real page fades in over it.</span></li>
+                  <li><b>10s</b><span>You get the old page back.</span></li>
+                </ol>
+              </div></div>
+            </div></div>
+          </li>
+
+          <!-- 05: sound -->
+          <li class="item" data-item="sound">
+            <h3><button type="button" class="row" id="rc-sound-b" aria-expanded="false" aria-controls="rc-sound">
+              <span class="q">05</span><span class="n">Sound</span><span class="dots" aria-hidden="true"></span><span class="p">24 cues</span><span class="pm" aria-hidden="true"></span>
+            </button></h3>
+            <div class="fold" id="rc-sound" role="region" aria-labelledby="rc-sound-b"><div class="foldin">
+              <p class="story">The first sounds were short pitched blips and the store felt like an arcade. Now a press is a few milliseconds of soft noise over a low thump that settles in about 25ms, detuned a little at random so a run of taps never sounds stamped. Only rare moments carry a note, and every note is in D.</p>
+              <div class="pane"><div class="mc">
+                <p class="stamp"><b>05 · Sound</b><span>Rebuilt</span></p>
+                <SoundKeys class="keys" keys={[
+                  { name: 'tap', label: 'Tap', note: 'Any button' },
+                  { name: 'dockOpen', label: 'Dock opens', note: 'Filtered air, no note' },
+                  { name: 'success', label: 'Added to bag', note: 'A fourth, struck almost together' },
+                  { name: 'complete', label: 'Order placed', note: 'A slow D major strum' },
+                ]} />
+              </div></div>
+            </div></div>
+          </li>
+
+          <!-- 06: footer -->
+          <li class="item" data-item="footer">
+            <h3><button type="button" class="row" id="rc-footer-b" aria-expanded="false" aria-controls="rc-footer">
+              <span class="q">06</span><span class="n">Footer</span><span class="dots" aria-hidden="true"></span><span class="p">13 links</span><span class="pm" aria-hidden="true"></span>
+            </button></h3>
+            <div class="fold" id="rc-footer" role="region" aria-labelledby="rc-footer-b"><div class="foldin">
+              <p class="story">Every link in the footer carries a number running across three columns, 01 to 13. Point at one: the number slides 6px in over 180ms, the label steps right 1.35rem over 260ms, and the rest fall back. On a phone, tap a link.</p>
+              <div class="pane"><div class="mc">
+                <p class="stamp"><b>06 · Footer</b><span>Rebuilt</span></p>
+                <FooterIndex class="ftr" />
+              </div></div>
+            </div></div>
+          </li>
+
+          <!-- 07: behind the counter (no media) -->
+          <li class="item" data-item="back">
+            <h3><button type="button" class="row" id="rc-back-b" aria-expanded="false" aria-controls="rc-back">
+              <span class="q">07</span><span class="n">Backend</span><span class="dots" aria-hidden="true"></span><span class="p">2 webhooks</span><span class="pm" aria-hidden="true"></span>
+            </button></h3>
+            <div class="fold" id="rc-back" role="region" aria-labelledby="rc-back-b"><div class="foldin">
+              <p class="story">Behind the counter, Convex holds the catalogue and the orders the pass reads from. Razorpay and Shiprocket each call a webhook, and each one moves an order to its next stage. Doing both halves meant nothing had to be explained to anyone before it was built.</p>
+            </div></div>
+          </li>
+        </ol>
+
+        <hr class="rule thick">
+        <dl class="sum">
+          <div><dt>Subtotal</dt><dd></dd></div>
+          <div><dt>Commits</dt><dd>251</dd></div>
+          <div><dt>Test files</dt><dd>201</dd></div>
+          <div><dt>Sound cues</dt><dd>24</dd></div>
+          <div class="total"><dt>Total</dt><dd>1 store, start to finish</dd></div>
+        </dl>
+        <hr class="rule thick">
+      </section>
+
+      <section class="thanks" data-feed aria-labelledby="rc-thanks-h">
+        <h2 id="rc-thanks-h">Thank you for your order</h2>
+        <p class="small">Your pass is printing. It follows the parcel, so it only says what has happened.</p>
+        <div class="passwrap">
+          <div class="passhold" data-pass-hold>
+            <picture><source srcset={`${A}pass/confirmed-m.avif`} type="image/avif"><img src={`${A}pass/confirmed-m.webp`} alt="" loading="lazy" decoding="async"></picture>
+          </div>
+        </div>
+        <div class="chips" role="radiogroup" aria-label="Order stage">
+          {stages.map(([k, t], i) => (
+            <button type="button" role="radio" aria-checked={String(i === 0)} tabindex={i === 0 ? 0 : -1} data-stage={k}>{t}</button>
+          ))}
+        </div>
+        <button type="button" class="tool again" data-replay>Print it again</button>
+        <p class="small tail">Courier updates from Shiprocket move it along. The colour band is one fragment shader, a different scene per stage.</p>
+
+        <a class="barcode" href="https://whyclub.in" target="_blank" rel="noopener" aria-label="Visit whyclub.in">
+          <svg viewBox={`0 0 ${barW} 60`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            {barsOut.map((b) => <rect x={b.x} y="0" width={b.w} height="60" />)}
+          </svg>
+          <span>WHYCLUB.IN ↗</span>
+        </a>
+
+        <hr class="rule">
+        <div id="rc-credits"><Credits class="credits" items={['dock', 'sound', 'photos', 'stack']} /></div>
+      </section>
+    </div>
+  </div>
+</article>
+
+<style>
+  .rc { --paper: #fff; --z: 9px; --pad: 20px; --pw: clamp(340px, 30vw, 420px); --gap: 40px;
+    max-width: 1120px; margin: 0 auto; padding-bottom: 80px; font-family: var(--mono); color: var(--ink); }
+  .rc :global(a) { color: inherit; }
+
+  /* the printer: a slot line, and a clip so the paper comes out from behind it */
+  .printer { position: relative; max-width: 460px; margin: 0 auto; clip-path: inset(0 -100vw -100vw -100vw); translate: 0 0; }
+  .slotline { height: 6px; margin-bottom: -6px; position: relative; z-index: 3; border-radius: 3px; background: var(--ink); }
+  .sheet { position: relative; padding: calc(var(--z) + 34px) var(--pad) calc(var(--z) + 30px); font-size: 13px; line-height: 1.5; margin-top: 10px; isolation: isolate; }
+  .rc[data-printing] .sheet { animation: feed .9s steps(14, jump-end) both; }
+  @keyframes feed { from { translate: 0 -420px; } to { translate: 0 0; } }
+
+  /* the paper itself: pure white, a zigzag torn edge top and bottom (a mask), a soft shadow behind */
+  .paper { position: absolute; inset: 0; z-index: -1; pointer-events: none; filter: drop-shadow(0 0 .6px rgba(31, 29, 27, .55)) drop-shadow(0 16px 26px rgba(31, 29, 27, .1)); }
+  .paper i { position: absolute; inset: 0; background: var(--paper);
+    -webkit-mask:
+      linear-gradient(#000, #000) 0 var(--z) / 100% calc(100% - var(--z) * 2) no-repeat,
+      conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / calc(var(--z) * 2) var(--z) repeat-x,
+      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / calc(var(--z) * 2) var(--z) repeat-x;
+    mask:
+      linear-gradient(#000, #000) 0 var(--z) / 100% calc(100% - var(--z) * 2) no-repeat,
+      conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) 50% 0 / calc(var(--z) * 2) var(--z) repeat-x,
+      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% 100% / calc(var(--z) * 2) var(--z) repeat-x; }
+
+  .rule { border: 0; height: 0; margin: 16px 0; border-top: 1px dashed rgba(31, 29, 27, .32); }
+  .rule.thick { border-top-style: solid; border-top-color: var(--ink); margin: 14px 0; }
+
+  /* header */
+  .head { text-align: center; }
+  .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .eyebrow a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .head h1 { margin-top: 16px; font: 700 clamp(20px, 5.6vw, 25px)/1.2 var(--mono); letter-spacing: .04em; text-wrap: balance; }
+  .head h1 .sub { white-space: nowrap; }
+  .addr { margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+  .fields { display: grid; gap: 6px; text-align: left; }
+  .fields div { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; }
+  .fields dt, .sum dt { text-transform: uppercase; letter-spacing: .05em; font-size: 12px; color: var(--ink-2); flex: none; }
+  .fields dd, .sum dd { margin: 0; text-align: right; color: var(--ink); }
+  .fields a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+  .note { text-align: left; border: 1px dashed rgba(31, 29, 27, .32); padding: 14px 14px 16px; }
+  .note .nl { font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .note p + p { margin-top: 10px; font: 400 15.5px/1.55 var(--display); color: var(--ink); text-wrap: pretty; }
+
+  /* line items */
+  .linehead h2 { display: grid; grid-template-columns: 2.6em 1fr auto; font: 700 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; padding: 8px 0; }
+  .tool { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 12px; display: inline-grid; place-items: center; cursor: pointer; border: 1px dashed rgba(31, 29, 27, .4);
+    font: 500 11.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); -webkit-tap-highlight-color: transparent; transition: background .16s var(--ease); }
+  .tool[aria-pressed='true'] { background: var(--ink); color: #fff; border-style: solid; border-color: var(--ink); }
+  .tool:active { transform: translateY(1px); }
+  .rc button:focus-visible, .rc a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .items { list-style: none; margin: 0; padding: 0; }
+  .item { border-bottom: 1px dashed rgba(31, 29, 27, .22); }
+  .item h3 { margin: 0; font: inherit; }
+  .row { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 0; width: 100%; min-height: 52px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .row .q { width: 2.6em; flex: none; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .row .n { flex: none; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  .row .dots { flex: 1; min-width: 14px; margin: 0 6px; height: 1px; align-self: center; translate: 0 5px; border-bottom: 2px dotted rgba(31, 29, 27, .35); }
+  .row .p { flex: none; font-variant-numeric: tabular-nums; }
+  .row .pm { position: relative; flex: none; width: 24px; height: 24px; margin-left: 6px; }
+  .row .pm::before, .row .pm::after { content: ''; position: absolute; left: 50%; top: 50%; width: 10px; height: 1.5px; margin: -.75px 0 0 -5px; background: currentColor; transition: rotate .35s var(--ease); }
+  .row .pm::after { rotate: 90deg; }
+  .item.is-open .pm::after { rotate: 0deg; }
+  @media (hover: hover) and (pointer: fine) { .row:hover .n { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; } }
+
+  /* the paper unfolds: 0fr to 1fr */
+  .fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .55s var(--ease); }
+  .item.is-open .fold { grid-template-rows: 1fr; }
+  .foldin { min-height: 0; overflow: hidden; visibility: hidden; transition: visibility 0s .55s; }
+  .item.is-open .foldin { visibility: visible; transition-delay: 0s; }
+  .story { padding: 2px 0 14px; font: 400 15px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .item:last-child .foldin > .story:last-child { padding-bottom: 18px; }
+
+  /* the media: inline and edge to edge on a phone */
+  .pane { margin: 0 calc(var(--pad) * -1); }
+  .mc { padding: 14px var(--pad) 26px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: #fff; display: grid; gap: 16px; justify-items: center; }
+  .stamp { justify-self: stretch; display: flex; justify-content: space-between; font: 500 10.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .stamp b { font-weight: 500; color: var(--ink-2); }
+  .stamp span { padding: 3px 6px; background: rgba(31, 29, 27, .06); color: var(--ink-2); }
+
+  .dockhold { position: relative; width: min(300px, 78%); aspect-ratio: 392 / 760; border-radius: 36px; overflow: hidden;
+    background: #3a2c22 url(/assets/work/whyclub/lab/hero-star.webp) center / cover; box-shadow: 0 24px 44px -30px rgba(40, 30, 15, .5); }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .ctrls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+  .pill { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 16px; display: inline-grid; place-items: center; cursor: pointer; flex: 1 1 130px; max-width: 200px;
+    border-radius: 99px; background: #fff; box-shadow: 0 1px 2px rgba(31, 29, 27, .08), 0 0 0 .5px rgba(31, 29, 27, .14); font: 500 13px/1 var(--display); color: var(--ink);
+    -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease); }
+  .pill[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .pill:active { transform: scale(.97); }
+  .spring { min-height: 18px; font: 400 11.5px/1.5 var(--mono); color: var(--ink-2); text-align: center; text-wrap: balance; }
+
+  .duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 420px; }
+  .solo { width: min(240px, 66%); }
+  .mc :global(.shot figcaption) { text-align: center; font-size: 12px; }
+  .real { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; }
+  .real :global(figcaption) { font-size: 12px; text-align: center; }
+  .mc :global(.tt) { width: 100%; }
+  .mc :global(.tt .phone) { width: min(200px, 100%); }
+  .steps { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; }
+  .steps li { display: grid; grid-template-columns: 5em 1fr; gap: 8px; padding: 10px 0; border-top: 1px dashed rgba(31, 29, 27, .22); font: 400 14px/1.45 var(--display); color: var(--body); }
+  .steps b { font: 500 12px/1.9 var(--mono); color: var(--ink); }
+  .mc :global(.sk) { width: 100%; grid-template-columns: 1fr 1fr; }
+  .mc :global(.fi) { width: 100%; padding: 22px 16px; gap: 12px; }
+
+  /* subtotal */
+  .sum { display: grid; gap: 6px; }
+  .sum div { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; }
+  .sum div:first-child dt { color: var(--ink-3); }
+  .sum dd { font-variant-numeric: tabular-nums; }
+  .sum .total { margin-top: 6px; padding-top: 10px; border-top: 1px dashed rgba(31, 29, 27, .32); }
+  .sum .total dt { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .sum .total dd { font-weight: 700; font-size: 15px; }
+
+  /* the end: thanks, the live pass, the barcode */
+  .thanks { margin-top: 26px; text-align: center; display: grid; justify-items: center; gap: 14px; }
+  .thanks h2 { font: 700 clamp(18px, 5vw, 21px)/1.25 var(--mono); letter-spacing: .05em; text-transform: uppercase; text-wrap: balance; }
+  .small { font: 400 13.5px/1.55 var(--display); color: var(--ink-2); max-width: 36ch; text-wrap: pretty; }
+  .small.tail { max-width: 40ch; }
+  .passwrap { width: min(260px, 72%); padding: 12px; margin-top: 4px; border: 1px dashed rgba(31, 29, 27, .32); background: #fff; }
+  .passhold { position: relative; width: 100%; aspect-ratio: 392 / 760; overflow: hidden; }
+  .passhold picture, .passhold img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .passhold :global(iframe) { opacity: 0; transition: opacity .3s var(--ease); background: #fff; }
+  .passhold:global(.is-live) :global(iframe) { opacity: 1; }
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
+  .chips button { all: unset; box-sizing: border-box; min-height: 44px; display: grid; place-items: center; padding: 0 10px; cursor: pointer;
+    border: 1px dashed rgba(31, 29, 27, .4); font: 500 12px/1.2 var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); -webkit-tap-highlight-color: transparent; }
+  .chips button[aria-checked='true'] { background: var(--ink); border: 1px solid var(--ink); color: #fff; }
+  .again { margin-top: 2px; }
+  .barcode { display: grid; justify-items: center; gap: 8px; width: min(300px, 100%); margin-top: 18px; padding: 6px 0; text-decoration: none; color: var(--ink); }
+  .barcode svg { width: 100%; height: 64px; fill: var(--ink); display: block; shape-rendering: crispEdges; }
+  .barcode span { font: 500 12px/1 var(--mono); letter-spacing: .3em; }
+  @media (hover: hover) and (pointer: fine) { .barcode:hover span { text-decoration: underline; text-underline-offset: 4px; } .tool:hover, .chips button:hover { background: rgba(31, 29, 27, .05); } .tool[aria-pressed='true']:hover, .chips button[aria-checked='true']:hover { background: var(--ink); } }
+  #rc-credits { width: 100%; text-align: left; }
+  #rc-credits :global(.credits h2) { font: 700 11px/1 var(--mono); letter-spacing: .08em; text-align: left; }
+  #rc-credits :global(dl div) { grid-template-columns: 1fr; gap: 1px; }
+  #rc-credits :global(dd), #rc-credits :global(dt) { font-size: 13px; }
+
+  /* the thanks block prints in as it scrolls into view (where the browser can drive it by scroll) */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .thanks { animation: slip linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+      @keyframes slip { from { translate: 0 60px; opacity: 0; } to { translate: 0 0; opacity: 1; } }
+    }
+  }
+
+  /* desktop: receipt left of centre, the opened item's media stapled to its right */
+  @media (min-width: 900px) {
+    .printer { translate: 0 0; transition: translate .6s var(--ease); }
+    .rc[data-pinned] .printer { translate: calc((var(--pw) + var(--gap)) / -2) 0; }
+    .pane { position: absolute; left: calc(100% + var(--gap)); top: 0; bottom: 0; width: var(--pw); margin: 0; pointer-events: none; visibility: hidden; opacity: 0;
+      transition: opacity .35s var(--ease), visibility 0s .35s; }
+    .item.is-open.is-pin .pane { pointer-events: auto; visibility: visible; opacity: 1; transition-delay: 0s; }
+    .mc { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow: auto; overscroll-behavior: contain; padding: 22px 18px 22px; border: 0; border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--line), 0 18px 40px -22px rgba(31, 29, 27, .28); }
+    /* the staple */
+    .mc::before { content: ''; position: sticky; top: 0; display: block; justify-self: start; width: 22px; height: 4px; margin: -22px 0 -4px; background: var(--ink-3); border-radius: 1px; rotate: -8deg; translate: 4px 8px; }
+    .story { padding-bottom: 18px; }
+  }
+  @media (min-width: 900px) and (max-height: 760px) { .dockhold { width: min(240px, 70%); } }
+
+  @media (max-width: 640px) {
+    .rc { --pad: 16px; --z: 8px; }
+    .head h1 { font-size: clamp(19px, 5.6vw, 22px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fold, .foldin, .row .pm::before, .row .pm::after, .printer, .pane, .tool, .pill, .passhold :global(iframe) { transition: none; }
+    .rc[data-printing] .sheet { animation: none; }
+  }
+</style>
+
+<script>
+  import { frame, reduced, whenShown } from './lab';
+  import { play } from './sound';
+
+  const root = document.querySelector<HTMLElement>('[data-rc]')!;
+  const items = [...root.querySelectorAll<HTMLElement>('.item')];
+  const allB = root.querySelector<HTMLButtonElement>('[data-all]')!;
+  const sndB = root.querySelector<HTMLButtonElement>('[data-snd]')!;
+  let soundOn = false;
+  // items with media, most recently opened last
+  const order: HTMLElement[] = [];
+
+  const repin = () => {
+    const open = order.filter((it) => it.classList.contains('is-open'));
+    const pin = open[open.length - 1];
+    items.forEach((it) => it.classList.toggle('is-pin', it === pin));
+    root.toggleAttribute('data-pinned', !!pin);
+  };
+  const sync = () => {
+    const n = items.filter((it) => it.classList.contains('is-open')).length;
+    const all = n === items.length;
+    allB.setAttribute('aria-pressed', String(all));
+    allB.textContent = all ? 'Close all' : 'Open all';
+  };
+  const set = (it: HTMLElement, open: boolean) => {
+    it.classList.toggle('is-open', open);
+    it.querySelector('.row')!.setAttribute('aria-expanded', String(open));
+    if (open && it.querySelector('.pane')) { const i = order.indexOf(it); if (i > -1) order.splice(i, 1); order.push(it); }
+  };
+
+  items.forEach((it) => {
+    it.querySelector('.row')!.addEventListener('click', () => {
+      const open = !it.classList.contains('is-open');
+      set(it, open);
+      if (open && soundOn) play('tap');
+      repin(); sync();
+    });
+  });
+  allB.addEventListener('click', () => {
+    const open = allB.getAttribute('aria-pressed') !== 'true';
+    items.forEach((it) => set(it, open));
+    if (soundOn) play('tap');
+    repin(); sync();
+  });
+  sndB.addEventListener('click', () => {
+    soundOn = !soundOn;
+    sndB.setAttribute('aria-pressed', String(soundOn));
+    sndB.textContent = soundOn ? 'Sound: on' : 'Sound: off';
+    sndB.setAttribute('aria-label', `Sound when an item opens: ${soundOn ? 'on' : 'off'}`);
+    if (soundOn) play('tap');
+  });
+
+  // the first item starts open so the page isn't a closed list
+  set(items[0], true);
+  repin(); sync();
+
+  // the paper feeds out of the slot each time this direction is shown (not under reduced motion)
+  let printed = false;
+  whenShown(root, () => {
+    if (printed || reduced()) return;
+    printed = true;
+    root.setAttribute('data-printing', '');
+    setTimeout(() => root.removeAttribute('data-printing'), 1000);
+  });
+
+  // the live dock
+  const hold = root.querySelector<HTMLElement>('[data-dock-hold]')!;
+  const dock = frame(hold, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  const scrollB = root.querySelector<HTMLButtonElement>('[data-act=scroll]')!;
+  const readout = root.querySelector<HTMLElement>('[data-spring]')!;
+  const NAMES: Record<string, string> = { open: 'Open', close: 'Close', switch: 'Switch', collapse: 'Into the pill', expand: 'Out of the pill', resize: 'Resize' };
+  let panelOpen = false, scrolled = false;
+  const paint = () => {
+    openB.setAttribute('aria-pressed', String(panelOpen));
+    openB.textContent = panelOpen ? 'Close Shop' : 'Open Shop';
+    scrollB.setAttribute('aria-pressed', String(scrolled));
+    scrollB.textContent = scrolled ? 'Back to the top' : 'Scroll the page';
+  };
+  dock.on((d) => {
+    if (d.moving) return;
+    if (d.shape) { panelOpen = d.shape === 'panel'; paint(); }
+    if (d.spring) readout.textContent = `${NAMES[d.spring.name] ?? d.spring.name}: response ${d.spring.response.toFixed(2)}, damping ${d.spring.damping.toFixed(2)}, ${d.spring.durationMs}ms`;
+  });
+  openB.addEventListener('click', () => { panelOpen = !panelOpen; dock.send(panelOpen ? { open: 'shop' } : { close: true }); paint(); });
+  scrollB.addEventListener('click', () => {
+    scrolled = !scrolled;
+    if (panelOpen) { panelOpen = false; dock.send({ close: true }); }
+    dock.send({ scroll: scrolled ? 'down' : 'top' });
+    paint();
+  });
+
+  // the live pass, stage chips and a replay
+  const pass = frame(root.querySelector<HTMLElement>('[data-pass-hold]')!, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  const chips = root.querySelector<HTMLElement>('.chips')!;
+  const radios = [...chips.querySelectorAll<HTMLButtonElement>('[role=radio]')];
+  const pick = (b: HTMLButtonElement, focus = false) => {
+    radios.forEach((r) => { r.setAttribute('aria-checked', String(r === b)); r.tabIndex = r === b ? 0 : -1; });
+    if (focus) b.focus();
+    pass.send({ stage: b.dataset.stage });
+  };
+  chips.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=radio]'); if (b) pick(b); });
+  chips.addEventListener('keydown', (e) => {
+    const i = radios.findIndex((r) => r.getAttribute('aria-checked') === 'true');
+    const k = ({ ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 } as Record<string, number>)[e.key];
+    if (!k) return;
+    e.preventDefault();
+    pick(radios[(i + k + radios.length) % radios.length], true);
+  });
+  chips.setAttribute('data-own-keys', '');
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+</script>

@@ -1,0 +1,34 @@
+---
+// <Ref id="webaudio" />: a numbered reference, its number taken from the post's refs list. the number jumps to the list
+// at the foot; on a desktop, hovering or focusing it previews the source first
+import { REFS } from '../blog/refs';
+interface Props { id: string }
+const { id } = Astro.props;
+const list = (Astro.locals as { refs?: string[] }).refs ?? [];
+const n = list.indexOf(id) + 1;
+const r = REFS[id];
+if (!r || !n) throw new Error(`<Ref id="${id}">: add "${id}" to the post's refs (and to components/blog/refs.ts)`);
+const tip = `ref-tip-${id}`;
+---
+<span class="ref"><a href={`#ref-${n}`} aria-describedby={tip}>{n}</a><span class="tip" role="tooltip" id={tip}><b>{r.title}</b> <i>{r.site}</i><span>{r.note}</span></span></span>
+
+<style>
+  .ref { position: relative; display: inline-block; vertical-align: .55em; margin-left: 2px; line-height: 1; }
+  .ref a { position: relative; display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 3px; font: 500 10px/1 var(--pixel); color: #fff !important; background: var(--ink); text-decoration: none !important; font-variant-numeric: tabular-nums; transition: transform .16s var(--ease); }
+  /* a finger's worth to hit, without moving the line */
+  .ref a::before { content: ""; position: absolute; inset: -15px -12px; }
+  .ref a:active { transform: scale(.94); }
+  .ref a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .tip { display: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .tip { display: block; position: absolute; z-index: 5; left: 50%; bottom: calc(100% + 10px); width: 264px; translate: -50% 0; padding: 12px 14px 13px; background: #fff; border-radius: 10px;
+      box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgba(31, 29, 27, .1); font: 400 13px/1.45 var(--display); color: var(--ink-2); text-align: left; white-space: normal; vertical-align: baseline;
+      opacity: 0; transform: translateY(4px) scale(.97); transform-origin: 50% 100%; pointer-events: none; visibility: hidden;
+      transition: opacity .15s var(--ease), transform .15s var(--ease), visibility 0s .15s; }
+    .tip b { font: 500 13px/1.3 var(--display); color: var(--ink); }
+    .tip i { font: 500 11px/1 var(--pixel); font-style: normal; color: var(--ink-3); margin-left: 4px; }
+    .tip span { display: block; margin-top: 4px; }
+    .ref:hover .tip, .ref a:focus-visible + .tip { opacity: 1; transform: none; visibility: visible; transition: opacity .15s var(--ease), transform .15s var(--ease), visibility 0s; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tip { transform: none !important; } }
+</style>

@@ -1,0 +1,80 @@
+---
+// one thing in the vault: its live demo on a canvas, a name and a line under it, and a quiet fold that says how it
+// works and why it exists. the demo is the slot, so a canvas can hold a shader, a component in a frame, anything
+interface Props {
+  n: string;
+  id: string;
+  kind: string;
+  from?: string;
+  title: string;
+  line: string;
+  links?: [string, string][];
+  how: string[];
+  story: string[];
+  /** the canvas colour: paper for components that sit on a page, ink for things made of light */
+  tone?: 'paper' | 'ink';
+}
+const { n, id, kind, from, title, line, links = [], how, story, tone = 'paper' } = Astro.props;
+const ext = (href: string) => href.startsWith('http');
+---
+<li class="vt" id={id}>
+  <div class:list={['vt-canvas', tone]}><slot /></div>
+  <div class="vt-meta">
+    <div>
+      <p class="eyebrow"><span>{n}</span>{kind}{from && <><span aria-hidden="true">·</span>{from}</>}</p>
+      <h2>{title}</h2>
+      <p class="vt-line">{line}</p>
+    </div>
+    {links.length > 0 && (
+      <p class="vt-links">
+        {links.map(([label, href]) => <a href={href} {...(ext(href) ? { target: '_blank', rel: 'noopener' } : {})}>{label} <span aria-hidden="true">{ext(href) ? '↗' : '→'}</span></a>)}
+      </p>
+    )}
+  </div>
+  <details class="vt-more">
+    <summary><span>How it works, and why</span><i aria-hidden="true"></i></summary>
+    <div class="vt-cols">
+      <section><h3>How it works</h3>{how.map((p) => <p>{p}</p>)}</section>
+      <section><h3>The story</h3>{story.map((p) => <p>{p}</p>)}</section>
+    </div>
+  </details>
+</li>
+
+<style>
+  .vt { list-style: none; }
+  .vt-canvas { position: relative; border-radius: clamp(20px, 2.4vw, 28px); overflow: hidden; background: #fff; box-shadow: 0 0 0 1px rgba(31, 29, 27, .07), 0 1px 2px rgba(31, 29, 27, .04); }
+  .vt-canvas.ink { background: #050505; box-shadow: none; }
+  .vt-meta { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px 40px; flex-wrap: wrap; margin-top: 22px; padding: 0 4px; }
+  .vt-meta .eyebrow span:first-child { color: var(--ink); }
+  h2 { margin-top: 12px; font: 500 clamp(26px, 3vw, 34px)/1.1 var(--display); letter-spacing: -.02em; }
+  .vt-line { margin-top: 8px; max-width: 36em; font: 400 16.5px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .vt-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .vt-links a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 99px; font: 500 12px/1 var(--mono); color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--line); transition: background-color .2s, box-shadow .2s, transform .16s var(--ease); }
+  .vt-links a:active { transform: scale(.97); }
+
+  /* the fold: one quiet line until it's asked for */
+  .vt-more { margin-top: 18px; border-top: 1px solid var(--line); }
+  .vt-more summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 0 4px; cursor: pointer; list-style: none;
+    font: 500 12px/1 var(--mono); color: var(--ink-2); transition: color .2s; }
+  .vt-more summary::-webkit-details-marker { display: none; }
+  .vt-more summary i { position: relative; width: 12px; height: 12px; flex: none; }
+  .vt-more summary i::before, .vt-more summary i::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; margin-top: -.75px; border-radius: 1px; background: currentColor; transition: transform .3s var(--ease); }
+  .vt-more summary i::after { transform: rotate(90deg); }
+  .vt-more[open] summary i::after { transform: rotate(0deg); }
+  .vt-more[open] summary { color: var(--ink); }
+  .vt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px clamp(32px, 5vw, 72px); padding: 8px 4px 28px; }
+  h3 { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .vt-cols p { margin-top: 12px; font: 400 16px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .vt-cols h3 + p { margin-top: 14px; }
+
+  @media (hover: hover) and (pointer: fine) {
+    .vt-links a:hover { background: rgba(31, 29, 27, .04); box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .24); }
+    .vt-more summary:hover { color: var(--ink); }
+  }
+  @media (max-width: 640px) {
+    .vt-meta { margin-top: 18px; }
+    .vt-cols { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .vt-more summary i::before, .vt-more summary i::after { transition: none; } }
+</style>

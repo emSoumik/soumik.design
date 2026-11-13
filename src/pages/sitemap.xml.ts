@@ -6,9 +6,8 @@ export const GET: APIRoute = async ({ site }) => {
   const [work, blog] = await Promise.all([published('work'), published('blog')]);
   const urls: [string, Date?][] = [
     ['/'],
-    // a list only counts once there's something in it
-    ...(work.length ? [['/work/', work[0].data.date] as [string, Date]] : []),
-    ...work.map((e): [string, Date] => [`/work/${e.id}/`, e.data.date]),
+    ...work.map((e): [string, Date] => [`/projects/${e.id}/`, e.data.date]),
+    ['/vault/'],
     ...(blog.length ? [['/blog/', blog[0].data.date] as [string, Date]] : []),
     ...blog.map((e): [string, Date] => [`/blog/${e.id}/`, e.data.updated ?? e.data.date]),
   ];

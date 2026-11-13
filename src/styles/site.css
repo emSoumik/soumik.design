@@ -1,7 +1,7 @@
 /* The reading pages: work and blog. Same paper, ink and type as the garden, tuned for long text. */
 :root {
-  --paper: #ffffff; --ink: #1f1d1b; --ink-2: rgba(31, 29, 27, .56); --ink-3: rgba(31, 29, 27, .46); --line: rgba(31, 29, 27, .12);
-  --body: rgba(31, 29, 27, .86); --wash: #f6f4ef;
+  --paper: #ffffff; --ink: #1f1d1b; --ink-2: rgba(31, 29, 27, .68); --ink-3: rgba(31, 29, 27, .62); --line: rgba(31, 29, 27, .12);
+  --body: rgba(31, 29, 27, .86); --wash: #fff;
   --ease: cubic-bezier(.23, 1, .32, 1); --spring: cubic-bezier(.3, 1.4, .5, 1);
   --display: "Instrument Sans", -apple-system, system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace; --ui: -apple-system, system-ui, sans-serif;
@@ -29,21 +29,30 @@ img, video { display: block; max-width: 100%; height: auto; }
 .me picture { display: contents; }
 .me img { width: 36px; height: 36px; object-fit: contain; mix-blend-mode: multiply; transition: transform .5s var(--spring); }
 .me small { display: block; color: var(--ink-2); font-size: 11px; }
+/* the back button on case-study pages: a round chevron in place of the pill */
+.back { display: inline-grid; place-items: center; width: 44px; height: 44px; margin: -2px 0 -2px -4px; border-radius: 50%; background: #fff; color: var(--ink); box-shadow: 0 0 0 1px var(--line);
+  transition: box-shadow .2s var(--ease), transform .16s var(--ease); }
+.back svg { transition: transform .3s var(--spring); }
+.back:active { transform: scale(.92); }
+.back:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 50%; }
+@media (prefers-reduced-motion: reduce) { .back, .back svg { transition: none; } .back:active { transform: none; } }
 .sections { display: flex; gap: 4px; font: 500 14px/1 var(--pixel); }
 .sections a { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink-2); transition: color .2s; }
 .sections a[aria-current=page] { color: var(--ink); }
-.sections a[aria-current=page]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 10px; height: 3px; background: #ffd84d; }
+.sections a[aria-current=page]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 10px; height: 2px; background: var(--ink); }
 @media (hover: hover) and (pointer: fine) {
   .me:hover { background: rgba(255, 255, 255, .7); box-shadow: 0 0 0 1px var(--line); }
   .me:hover img { transform: rotate(-8deg) scale(1.08); }
+  .back:hover { box-shadow: 0 0 0 1px var(--ink-3); }
+  .back:hover svg { transform: translateX(-2px); }
   .sections a:hover { color: var(--ink); }
 }
 
-.page { flex: 1; width: 100%; padding: clamp(48px, 9vw, 112px) var(--gut) clamp(64px, 10vw, 128px); }
+.page { flex: 1; width: 100%; padding: clamp(20px, 9vw, 112px) var(--gut) clamp(48px, 10vw, 128px); }
 
 /* ---- shared bits */
 .eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
-.draft { font: 500 11px/1 var(--pixel); letter-spacing: .02em; text-transform: lowercase; color: var(--ink); background: #ffd84d; padding: 4px 7px 5px; }
+.draft { font: 500 11px/1 var(--pixel); letter-spacing: .02em; text-transform: lowercase; color: #fff; background: var(--ink); padding: 4px 7px 5px; }
 .col { max-width: var(--measure); margin: 0 auto; }
 .wide-col { max-width: var(--wide); margin: 0 auto; }
 
@@ -121,4 +130,148 @@ img, video { display: block; max-width: 100%; height: auto; }
   .foot { justify-content: center; }
   .foot > span { display: none; }
   .prose { font-size: 17px; }
+}
+/* three sections and the avatar pill share one row on a phone: tighter links, the pill's two lines never wrap */
+@media (max-width: 440px) {
+  .me span { white-space: nowrap; }
+  .sections { gap: 0; }
+  .sections a { padding: 0 8px; }
+  .sections a[aria-current=page]::after { left: 8px; right: 8px; }
+}
+@media (max-width: 380px) { .me small { display: none; } }
+
+/* ======================================================================================================== */
+/* ---- the blog: the wordmark's serif for titles, pixel labels for the small things of the garden, and a
+   text column with a real margin beside it on a wide screen. everything here sits under .blog */
+:root { --serif: "Instrument Serif", "Instrument Serif fallback", Georgia, serif; }
+/* holds the serif's place while it loads, so titles don't jump when it lands */
+@font-face { font-family: "Instrument Serif fallback"; src: local("Georgia"), local("Times New Roman"); size-adjust: 88%; ascent-override: 98%; descent-override: 26%; }
+
+.blog { --text: 660px; --gap: 56px; --side: 212px; --comp: calc(var(--text) + var(--gap) + var(--side)); font-synthesis: none; }
+.blog :where(h1, h2, h3) { text-wrap: balance; }
+.blog :where(p, li, figcaption) { text-wrap: pretty; hanging-punctuation: first; }
+.blog .px { font-family: var(--pixel); font-weight: 500; letter-spacing: .01em; }
+.blog :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+
+/* a post: the head, the header band, the text, the end matter. all share one composition width */
+.bp > * { width: min(100%, var(--comp)); margin-inline: auto; }
+.bp-head { margin-bottom: clamp(28px, 4vw, 44px); }
+.bp-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font: 500 13px/1 var(--pixel); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.bp-meta a { display: inline-flex; align-items: center; min-height: 44px; margin-block: -14px; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; text-decoration-color: var(--line); transition: text-decoration-color .2s var(--ease), color .2s var(--ease); }
+.bp-meta > * + *::before { content: ""; display: inline-block; width: 3px; height: 3px; margin-right: 14px; vertical-align: middle; background: currentColor; opacity: .5; }
+.bp-meta .draft { color: #fff; }
+.bp-meta .draft::before { display: none; }
+.bp-title { font: 400 clamp(46px, 8.2vw, 96px)/.98 var(--serif); letter-spacing: -.012em; color: var(--ink); margin-top: 22px; max-width: 11.5em; }
+.bp-title em { font-style: italic; letter-spacing: -.02em; }
+.bp-lede { font: 400 clamp(19px, 2.1vw, 22px)/1.5 var(--display); color: var(--ink-2); margin-top: 20px; max-width: 32em; }
+
+/* the text: 18px on 1.7, about 66 characters a line */
+.blog .prose { max-width: none; margin: 0 auto; color: var(--body); }
+.blog .prose > * { max-width: var(--text); }
+.blog .prose > p, .blog .prose > ul, .blog .prose > ol { font-size: 18px; line-height: 1.7; }
+.blog .prose h2 { font: 400 clamp(32px, 4vw, 44px)/1.04 var(--serif); letter-spacing: -.008em; color: var(--ink); margin-top: 2.1em; }
+.blog .prose h2 em { font-style: italic; }
+.blog .prose h3 { font: 500 13px/1.2 var(--pixel); letter-spacing: .02em; color: var(--ink-2); margin-top: 3.2em; }
+.blog .prose h3 + h2 { margin-top: .35em; }
+.blog .prose a { text-decoration-color: rgba(31, 29, 27, .3); text-underline-offset: .22em; text-decoration-skip-ink: auto; }
+.blog .prose code { font-size: .84em; background: none; padding: 0; box-shadow: none; color: var(--ink); }
+.blog .prose pre { font: 13.5px/1.65 var(--mono); padding: 20px 22px; border-radius: 12px; background: #fff !important; box-shadow: inset 0 0 0 1px var(--line); tab-size: 2; }
+.blog .prose pre code { font-size: inherit; }
+.blog .prose blockquote { border: 0; padding: 0; font: 400 clamp(26px, 3vw, 32px)/1.2 var(--serif); color: var(--ink); }
+.blog .prose hr { margin: 3em 0; }
+/* wide things (demos, comparisons, decisions) run under the margin too, and never sit beside a margin note */
+.blog .prose > .wide, .blog .prose > .bx { max-width: none; width: 100%; clear: both; margin-top: 2.4em; margin-bottom: 2.4em; translate: none; margin-left: 0; }
+
+/* the end: references, then the next and previous posts */
+.bp-end { margin-top: clamp(56px, 8vw, 96px); }
+.bp-end > * { max-width: var(--text); }
+.bp-end h2 { font: 500 13px/1 var(--pixel); color: var(--ink-2); letter-spacing: .02em; }
+.bp-refs { list-style: none; padding: 0; margin-top: 16px; border-top: 1px solid var(--line); counter-reset: ref; }
+.bp-refs li { display: grid; grid-template-columns: 32px 1fr; gap: 0 8px; padding: 14px 0; border-bottom: 1px solid var(--line); font: 400 15px/1.5 var(--display); color: var(--ink-2); scroll-margin-top: 24px; }
+.bp-refs li > span { font: 500 13px/1.6 var(--pixel); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.bp-refs a { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: rgba(31, 29, 27, .3); }
+.bp-refs li:target { background: linear-gradient(#fff3c2, #fff3c2) 0 0 / 3px 100% no-repeat; }
+.bp-refs small { display: block; font: 400 12px/1.4 var(--mono); color: var(--ink-3); margin-top: 2px; overflow-wrap: anywhere; }
+.bp-near { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: clamp(48px, 7vw, 72px); }
+.bp-near a { display: block; padding: 18px 0 4px; border-top: 1px solid var(--ink); transition: transform .16s var(--ease); }
+.bp-near a:active { transform: scale(.98); }
+.bp-near .next { text-align: right; grid-column: 2; }
+.bp-near span { display: block; font: 500 12px/1 var(--pixel); color: var(--ink-2); }
+.bp-near strong { display: block; font: 400 26px/1.1 var(--serif); color: var(--ink); margin-top: 10px; text-wrap: balance; }
+.bp-near a:only-child { grid-column: 1 / -1; }
+@media (hover: hover) and (pointer: fine) {
+  .bp-meta a:hover { color: var(--ink); text-decoration-color: var(--ink); }
+  .bp-refs a:hover { text-decoration-color: var(--ink); }
+  .bp-near strong { background: linear-gradient(var(--ink), var(--ink)) 0 100% / 0 1px no-repeat; transition: background-size .25s var(--ease); display: inline; }
+  .bp-near a:hover strong { background-size: 100% 1px; }
+}
+
+/* reading progress: a hairline across the top that follows the scroll. no script; browsers without scroll timelines skip it */
+.bp-progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  .bp-progress { display: block; position: fixed; inset: 0 0 auto; height: 2px; z-index: 20; pointer-events: none; background: var(--ink); transform-origin: 0 50%; transform: scaleX(0);
+    animation: bp-read linear both; animation-timeline: scroll(root); }
+}
+@keyframes bp-read { to { transform: scaleX(1); } }
+
+/* a wide screen has room for a margin: notes and reference previews live there, beside the text they belong to */
+@media (min-width: 1120px) {
+  .bp-head > :not(.bp-title) { max-width: var(--text); }
+}
+@media (max-width: 1119px) {
+  .blog { --comp: var(--text); }
+}
+@media (max-width: 640px) {
+  .blog .prose > p, .blog .prose > ul, .blog .prose > ol { font-size: 17px; line-height: 1.68; }
+  .bp-title { margin-top: 18px; }
+  .blog .prose h2 { margin-top: 1.9em; }
+  /* on a phone the wide things run edge to edge */
+  .blog .prose > .wide, .blog .prose > .bx { width: calc(100% + var(--gut) * 2); margin-inline: calc(var(--gut) * -1); }
+  .bp-near { grid-template-columns: 1fr; }
+  .bp-near .next { grid-column: 1; }
+}
+
+/* ---- the blog's list of posts */
+.bi > * { width: min(100%, 980px); margin-inline: auto; }
+.bi-head { margin-bottom: clamp(36px, 6vw, 72px); }
+.bi-head p:first-child { font: 500 13px/1 var(--pixel); color: var(--ink-2); }
+.bi-head h1 { font: 400 clamp(64px, 11vw, 128px)/.9 var(--serif); letter-spacing: -.015em; margin-top: 14px; }
+.bi-head h1 em { font-style: italic; }
+.bi-head p:last-child { font: 400 19px/1.5 var(--display); color: var(--ink-2); margin-top: 16px; max-width: 30em; }
+.bi-list { list-style: none; padding: 0; border-top: 1px solid var(--line); }
+.bi-list li { border-bottom: 1px solid var(--line); }
+.bi-post { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 24px 48px; align-items: center; padding: 28px 0; }
+.bi-post .meta { font: 500 12px/1 var(--pixel); color: var(--ink-2); font-variant-numeric: tabular-nums; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bi-post h2 { font: 400 clamp(32px, 3.6vw, 44px)/1.02 var(--serif); letter-spacing: -.008em; margin-top: 14px; text-wrap: balance; }
+.bi-post h2 em { font-style: italic; }
+.bi-post p { font: 400 16px/1.55 var(--display); color: var(--ink-2); margin-top: 12px; max-width: 34em; text-wrap: pretty; }
+.bi-post .go { display: inline-flex; gap: 8px; align-items: center; margin-top: 18px; font: 500 13px/1 var(--pixel); color: var(--ink); }
+.bi-post .go i { font-style: normal; display: inline-block; transition: transform .2s var(--ease); }
+.bi-post .meta > * + *:not(.draft)::before { content: ""; display: inline-block; width: 3px; height: 3px; margin-right: 10px; vertical-align: middle; background: currentColor; opacity: .5; }
+.bi-post .shot { position: relative; border-radius: 12px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); aspect-ratio: 380 / 200; transition: transform .2s var(--ease); }
+.bi-post .shot img { width: 100%; height: 100%; object-fit: cover; }
+.bi-post:active .shot { transform: scale(.985); }
+/* the still comes alive under the pointer, in the garden's stepped frames: the bed sways in a breeze, the scale plays
+   up its five notes, the rose stitches itself in again */
+@property --bi-k { syntax: "<number>"; inherits: true; initial-value: 9999; }
+@media (hover: hover) and (pointer: fine) {
+  .bi-post:hover h2 { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; text-decoration-color: rgba(31, 29, 27, .35); }
+  .bi-post:hover .go i { transform: translateX(4px); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .bi-post:hover .ph-mini-garden g { animation: bi-sway 1.4s steps(1) calc(var(--i) * -170ms) infinite; }
+  .bi-post:hover svg.ph-mini:not(.ph-mini-garden) g { animation: bi-hop 1.5s steps(1) calc(var(--i) * 140ms) infinite; }
+  .bi-post:hover .ph-mini .xr { --k: var(--bi-k); animation: bi-stitch 2.4s steps(100, jump-none) both; }
+}
+@keyframes bi-sway { 0%, 100% { transform: none; } 25% { transform: translateX(1px); } 50% { transform: none; } 75% { transform: translateX(-1px); } }
+@keyframes bi-hop { 0% { transform: translateY(-3px); } 14%, 100% { transform: none; } }
+@keyframes bi-stitch { from { --bi-k: 0; } to { --bi-k: 100; } }
+/* a phone gets cards: the still on top, full width, then the words. nothing waits on a hover */
+@media (max-width: 760px) {
+  .bi-list { border-top: 0; display: grid; gap: 40px; }
+  .bi-list li { border-bottom: 0; }
+  .bi-post { grid-template-columns: 1fr; gap: 0; padding: 0; }
+  .bi-post .shot { order: -1; margin-bottom: 18px; aspect-ratio: 16 / 9; }
+  .bi-post h2 { margin-top: 12px; }
+  .bi-post .go { min-height: 44px; margin-top: 4px; }
 }

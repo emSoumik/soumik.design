@@ -1,0 +1,630 @@
+---
+// the vayu page. the film first, growing to a wide, rounded frame as you scroll; then the problem, the idea as a before
+// and after, a walk you can step through, the phone app, the decisions you can flip, the alerts you can feel, the look,
+// and who did what.
+// nothing here is a still from the film: every screen and drawing is made for the page
+import '../project/project.css';
+import Watch from './Watch.astro';
+import Phone from './Phone.astro';
+import BodyChart from './BodyChart.astro';
+import WalkMap from './WalkMap.astro';
+import Player from '../project/Player.astro';
+
+const DEVPOST = 'https://devpost.com/software/vayu-ro0jfd';
+const BRIEF = 'https://figbuild2026.devpost.com/';
+const NOISE = 'https://support.apple.com/en-us/102315';
+const A = '/assets/work/vayu/';
+const C = { sindoor: '#E0301E', neem: '#22A04B', neel: '#2F3FBF', kesar: '#FF8A00', rani: '#E3197E' };
+
+const walk = [
+  { s: 'vitals', clock: '8:40', name: 'Leaving home', d: 3800, path: 'a', from: 0, to: .58, cap: '<b>8:40.</b> Vayu runs in the background. One score for how you’re breathing, the AQI under it.' },
+  { s: 'air', clock: '8:52', name: 'The air turns', d: 3600, path: 'a', from: .58, to: 1, air: true, aqi: [64, 168], cap: '<b>8:52.</b> Rush hour at the junction. The AQI climbs, and a minute later so does your breathing.' },
+  { s: 'alert-aqi', clock: '8:53', name: 'A tap', d: 3200, path: 'a', from: 1, to: 1, air: true, tap: C.sindoor, cap: '<b>8:53.</b> A strong tap on the wrist, like Noise in a loud room. The alert says what’s wrong in words.' },
+  { s: 'routes', clock: '8:53', name: 'The way out', d: 3600, path: 'a', from: 1, to: 1, air: true, routes: true, cap: '<b>8:53.</b> The same alert offers routes. The park is cleaner and four minutes longer, and it says so.' },
+  { s: 'turn', clock: '8:54', name: 'Follow the taps', d: 5200, path: 'b', from: 0, to: .82, air: true, cap: '<b>8:54.</b> Turn by turn on the wrist, called by taps, so your arm can stay down.' },
+  { s: 'alert-clean', clock: '9:05', name: 'Clean air', d: 3400, path: 'b', from: .82, to: 1, tap: C.neem, cap: '<b>9:05.</b> A soft tap once you’re through. Then it goes quiet again.' },
+];
+
+// each decision: the idea it replaced (a: drawn as it was described, never shipped), what we kept (b), why, the cost
+const calls = [
+  { t: 'One glance, one decision.', a: 'x-all', b: 'vitals',
+    la: 'The dropped idea: a watch screen crowded with the AQI, breathing, oxygen, a score, a chart and two routes.',
+    lb: 'What we kept: one comfort score, 81, and where you are.',
+    why: 'You look at a watch for a second or two, mid-walk. So the watch detects and acts, and the phone is where you go deeper: charts, history, the full map.',
+    cost: 'most of what the app knows never reaches your wrist.' },
+  { t: 'Never an alert without a way out.', a: 'x-number', b: 'alert-aqi',
+    la: 'The dropped idea: an alert that only says AQI 160, unhealthy, with an OK button.',
+    lb: 'What we kept: air is unhealthy, your breathing is up, with a button to see a cleaner way.',
+    why: 'An AQI of 160 doesn’t change what you do. A tap that says your heart has been working hard for six minutes, with a cleaner route four minutes longer, does.',
+    cost: 'every alert needs a route, a breathe or a direction ready, which makes alerts harder to design than numbers.' },
+  { t: 'Show the trade honestly.', a: 'x-routes', b: 'routes',
+    la: 'The dropped idea: one recommended route through the park, with no time and no other option.',
+    lb: 'What we kept: the cleanest route at AQI 42 and four minutes longer, above the fastest at AQI 168.',
+    why: 'The cleanest route can be slower, and the fastest usually runs through the worst air. Each route shows its air and its time side by side, and you choose.',
+    cost: 'we can’t promise the healthiest choice is also the easy one.' },
+  { t: 'No map on the watch.', a: 'x-map', b: 'turn',
+    la: 'The dropped idea: a full street map squeezed onto the watch, with the haze, two routes and labels.',
+    lb: 'What we kept: turn left, 120 metres into the park, air ahead 48.',
+    why: 'Maps are dense; health screens are calm. Mid-commute we cut each moment down to one thing: the next turn and the air ahead.',
+    cost: 'anyone who wants the full map has to take out their phone.' },
+];
+
+const alerts = [
+  { s: 'alert-aqi', name: 'Air is unhealthy', when: 'The AQI crosses the line near you.', feel: 'Two strong taps', tone: C.sindoor, buzz: [220, 120, 220], n: 2 },
+  { s: 'alert-breath', name: 'Slow your breath', when: 'Your breathing stays high.', feel: 'Three light taps', tone: C.neel, buzz: [70, 140, 70, 140, 70], n: 3 },
+  { s: 'alert-spo2', name: 'Oxygen dipped', when: 'Your blood oxygen drops.', feel: 'Three long taps', tone: C.kesar, buzz: [320, 120, 320, 120, 320], n: 3 },
+  { s: 'alert-clean', name: 'Clean air zone', when: 'You walk into clean air.', feel: 'One soft tap', tone: C.neem, buzz: [60], n: 1 },
+];
+const longest = Math.max(...alerts.map((a) => a.buzz.reduce((x, y) => x + y, 0)));
+
+
+// the phone app's three tabs: which watch screen is beside each, how long each plays, what it says
+const tabs = [
+  { s: 'summary', w: 'vitals', name: 'Summary', hi: 'सारांश', d: 5600, cap: '<b>Summary.</b> One score for the air, 64 of 100, then the AQI on a single spectrum. Four pollutants sit under it, each against its guide value, and the watch shows the same moment.' },
+  { s: 'routes', w: 'routes', name: 'Routes', hi: 'रास्ते', d: 5600, cap: '<b>Routes.</b> Two ways home, coloured by the air along them. The cleanest is seven minutes longer, the fastest runs through worse air, and each says so.' },
+  { s: 'trends', w: 'air', name: 'Trends', hi: 'रुझान', d: 5600, cap: '<b>Trends.</b> The AQI for today: a solid line for what was measured, dotted for what’s modelled ahead, with the peak and the low called out.' },
+];
+const pigments = [
+  { name: 'Mor', hi: 'मोर', hex: '#00A39A', role: 'Primary, calm' },
+  { name: 'Rani', hi: 'रानी', hex: '#E3197E', role: 'Accent, hot pair of mor' },
+  { name: 'Kesar', hi: 'केसर', hex: '#FF8A00', role: 'Sensitive · 101–150' },
+  { name: 'Neel', hi: 'नील', hex: '#2F3FBF', role: 'Night, cool pair of kesar' },
+  { name: 'Neem', hi: 'नीम', hex: '#22A04B', role: 'Good · 0–50' },
+  { name: 'Haldi', hi: 'हल्दी', hex: '#F5B700', role: 'Moderate · 51–100' },
+  { name: 'Sindoor', hi: 'सिंदूर', hex: '#E0301E', role: 'Unhealthy · 151–200' },
+  { name: 'Jamun', hi: 'जामुन', hex: '#7A2F9A', role: 'Very unhealthy · 201–300' },
+  { name: 'Manjistha', hi: 'मंजिष्ठा', hex: '#7A1F3D', role: 'Hazardous · 301+' },
+  { name: 'Sona', hi: 'सोना', hex: '#C9971C', role: 'Hairlines and rings' },
+];
+
+const chapters: [number, string][] = [[0, 'The street'], [27, 'Your body knows'], [41, 'Designing for India'], [82, 'Vayu'], [92, 'The app and the watch']];
+const json = (steps: object[]) => JSON.stringify(steps.map(({ cap, ...rest }: any) => rest));
+---
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Tiro+Devanagari+Hindi&display=swap">
+
+<article class="pj vy">
+  <header class="vy-head">
+    <div class="vy-head-in">
+      <div>
+        <h1>Vayu <span lang="hi">वायु</span></h1>
+        <p class="vy-one">A watch app that taps your wrist when the air turns bad and shows you a cleaner way through, and a phone app for the detail.</p>
+      </div>
+      <dl class="vy-facts">
+        <div><dt>role</dt><dd>UX and interaction design</dd></div>
+        <div class="vy-crew"><dt>team</dt><dd><a class="vy-person" href="https://x.com/soumikkhalder" target="_blank" rel="noopener"><picture><source srcset="/assets/work/vayu/people/soumik.avif" type="image/avif" /><img src="/assets/work/vayu/people/soumik.webp" alt="" width="30" height="30" loading="lazy" decoding="async" /></picture><span>Soumik Halder</span></a><a class="vy-person" href="https://x.com/pracosm" target="_blank" rel="noopener"><picture><source srcset="/assets/work/vayu/people/shardul.avif" type="image/avif" /><img src="/assets/work/vayu/people/shardul.webp" alt="" width="30" height="30" loading="lazy" decoding="async" /></picture><span>Shardul N</span></a></dd></div>
+        <div><dt>for</dt><dd><a href={BRIEF} target="_blank" rel="noopener">FigBuild 2026</a></dd></div>
+        <div><dt>when</dt><dd>March 2026</dd></div>
+        <div><dt>kind</dt><dd>Concept</dd></div>
+        <div><dt>write-up</dt><dd><a class="vy-site" href={DEVPOST} target="_blank" rel="noopener"><img src="/assets/brand/sites/devpost.png" alt="" width="16" height="16" decoding="async" />Devpost <span aria-hidden="true">↗</span></a></dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <Player src={A + 'film.mp4'} poster={A + 'title.webp'} duration={116} chapters={chapters} expand
+    label="The Vayu film, 1 minute 56 seconds, with burned-in subtitles."
+    caption="The film we made for the submission: the street, the science, the design language, then the product. Shardul shaped its look. It has sound, and subtitles burned in." />
+
+  <!-- 01: the problem -->
+  <section class="vy-sec" aria-labelledby="vy-h1">
+    <div class="vy-cols">
+      <div class="vy-text">
+        <p class="vy-k"><span>01</span>the problem</p>
+        <h2 id="vy-h1">You can’t feel bad air.</h2>
+        <p>Bad air is part of the commute in most Indian cities. On a bad day the AQI sits in the hundreds, and a green park and a choked junction can be one street apart.</p>
+        <ol class="vy-list">
+          <li><strong>You can’t feel it.</strong> Your breathing speeds up and your heart works harder before you notice anything. You feel it later, as a tired evening.</li>
+          <li><strong>The numbers don’t help.</strong> An AQI of 168 on your phone doesn’t tell you what to do at the next corner.</li>
+          <li><strong>Maps don’t care.</strong> Navigation sends you down the same road whether the air on it is clean or not.</li>
+        </ol>
+      </div>
+      <aside class="vy-note">
+        <b>the brief</b>
+        <p><a href={BRIEF} target="_blank" rel="noopener">FigBuild 2026</a>, Figma’s student design-a-thon, asked for a tool that tracks a human sense. We picked chemoreception: your body senses carbon dioxide building up in your blood and makes you breathe harder. Bad air makes that stronger, and a smartwatch already reads most of the signals.</p>
+      </aside>
+    </div>
+    <figure class="vy-fig">
+      <div class="vy-stage" data-in><BodyChart /></div>
+      <figcaption class="vy-cap">One walk to work. The air turns at the junction, and your body follows within a minute. That minute is where Vayu acts.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 02: the idea, the first before and after -->
+  <section class="vy-sec" aria-labelledby="vy-h2">
+    <div class="vy-cols is-side">
+      <div class="vy-text">
+        <p class="vy-k"><span>02</span>the idea</p>
+        <h2 id="vy-h2">Do for the air what the watch already does for noise.</h2>
+        <p>It came from a feature already on my wrist. Apple Watch’s <a href={NOISE} target="_blank" rel="noopener">Noise app</a> listens to the sound around you, and if it stays loud long enough to hurt your hearing, it taps your wrist. No app to open, no number to read.</p>
+        <p>Nothing like that exists for the air. A watch already has the sensors and the GPS. Add the air at that spot, and it can warn you the same way, then show you a way out.</p>
+      </div>
+      <figure class="vy-fig vy-pair-fig">
+        <div class="vy-stage vy-pair" data-in>
+          <div><Watch screens={['noise']} label="A noise alert on a watch: it's loud here, 92 decibels for 3 minutes" /><p><small>before</small>Noise, today</p></div>
+          <div><Watch screens={['alert-aqi']} label="A Vayu alert on a watch: air is unhealthy, AQI crossed 150 near you" /><p><small>after</small>Vayu, for the air</p></div>
+        </div>
+        <figcaption class="vy-cap">Same move, different sense: notice it, tap the wrist, say it in words.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 03: the walk, the centrepiece -->
+  <section class="vy-sec" aria-labelledby="vy-h3">
+    <div class="vy-cols">
+      <div class="vy-text">
+        <p class="vy-k"><span>03</span>a walk with vayu</p>
+        <h2 id="vy-h3">One walk to the office.</h2>
+        <p>From the first glance at 8:40 to the last tap at 9:05. The map is the street; the watch is what you see on your wrist.</p>
+      </div>
+    </div>
+    <figure class="vy-stage vy-walk" data-walk={json(walk)} tabindex="-1" aria-label="A walk with Vayu, step by step. The left and right arrow keys step through it." data-in>
+      <div class="vy-walk-vis">
+        <div class="vy-walk-map"><WalkMap /></div>
+        <div class="vy-walk-watch"><Watch screens={walk.map((w) => w.s)} label="The Vayu watch during the walk" /></div>
+      </div>
+      <div class="vy-walk-foot">
+        <div class="vy-steps">
+          <div class="vy-steps-row" role="group" aria-label="Steps of the walk">
+            {walk.map((w, i) => <button type="button" data-step={i} aria-current={i === 0 ? 'step' : undefined} tabindex={i ? -1 : 0}><span class="t">{w.clock}</span>{w.name}</button>)}
+          </div>
+        </div>
+        <div class="vy-walk-ctl">
+          <span class="vy-keys" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd> to step</span>
+          <button type="button" class="vy-pp" data-pp aria-label="Pause the walk">
+            <svg class="i-pause" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".8"/><rect x="9.4" y="3" width="2.6" height="10" rx=".8"/></svg>
+            <svg class="i-play" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5 3.3v9.4a.6.6 0 0 0 .92.5l7.3-4.7a.6.6 0 0 0 0-1l-7.3-4.7A.6.6 0 0 0 5 3.3Z"/></svg>
+          </button>
+        </div>
+        <div class="vy-caps" data-live aria-live="off">
+          {walk.map((w, i) => <p data-cap class:list={{ on: i === 0 }} set:html={w.cap} />)}
+        </div>
+      </div>
+    </figure>
+  </section>
+
+  <!-- 04: the phone app -->
+  <section class="vy-sec" aria-labelledby="vy-h4">
+    <div class="vy-cols">
+      <div class="vy-text">
+        <p class="vy-k"><span>04</span>the phone app</p>
+        <h2 id="vy-h4">The watch decides. The phone is where you look closer.</h2>
+        <p>Shardul designed the first phone app at FigBuild, below. It goes for a retro, bold, unapologetically Indian look: truck-art energy, chunky outlines, big Devanagari. It makes a great poster. It’s hard to live with every day, because every card is loud and the contrast and the hierarchy fight each other.</p>
+      </div>
+    </div>
+    <figure class="vy-fig">
+      <div class="vy-stage vy-concept" data-in>
+        <picture>
+          <source srcset="/assets/work/vayu/concept-v1.avif" type="image/avif">
+          <img src="/assets/work/vayu/concept-v1.webp" width="1310" height="936" loading="lazy" decoding="async" alt="The first Vayu phone concept: three screens on a cream ground with chunky black outlines and hard offset shadows. Home shows breathing comfort in rani pink, Navigate shows route options on a map in kesar orange, and Profile has a Hindi and Kannada language switch and smartwatch pairing in haldi and jamun.">
+        </picture>
+      </div>
+      <figcaption class="vy-cap">The first concept, FigBuild 2026. The pigments and the two scripts came from here.</figcaption>
+    </figure>
+    <div class="vy-cols vy-after">
+      <div class="vy-text">
+        <p>Afterwards I redesigned it on the structure of Apple Health: a Summary, the Routes, the Trends, and a floating dock. The pigments and the two scripts stayed, and the app got the calm of a health app. It runs on the same pigments as the watch.</p>
+      </div>
+    </div>
+    <figure class="vy-stage vy-walk vy-app" data-app={json(tabs)} tabindex="-1" aria-label="The Vayu phone app, tab by tab. The left and right arrow keys step through it." data-in>
+      <div class="vy-app-vis">
+        <div class="vy-app-phone"><Phone /></div>
+        <div class="vy-app-watch">
+          <Watch screens={['vitals', 'routes', 'air']} data="app" label="The Vayu watch showing the same moment as the phone" />
+          <p><small>on the wrist</small>the same moment</p>
+        </div>
+      </div>
+      <div class="vy-walk-foot">
+        <div class="vy-steps">
+          <div class="vy-steps-row" role="group" aria-label="Tabs of the phone app">
+            {tabs.map((t, i) => <button type="button" data-step={i} aria-current={i === 0 ? 'step' : undefined} tabindex={i ? -1 : 0}><span class="t">{String(i + 1).padStart(2, '0')}</span>{t.name} <span lang="hi">{t.hi}</span></button>)}
+          </div>
+        </div>
+        <div class="vy-walk-ctl">
+          <span class="vy-keys" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd> to step</span>
+          <button type="button" class="vy-pp" data-pp aria-label="Pause the phone app">
+            <svg class="i-pause" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx=".8"/><rect x="9.4" y="3" width="2.6" height="10" rx=".8"/></svg>
+            <svg class="i-play" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5 3.3v9.4a.6.6 0 0 0 .92.5l7.3-4.7a.6.6 0 0 0 0-1l-7.3-4.7A.6.6 0 0 0 5 3.3Z"/></svg>
+          </button>
+        </div>
+        <div class="vy-caps" data-live aria-live="off">
+          {tabs.map((t, i) => <p data-cap class:list={{ on: i === 0 }} set:html={t.cap} />)}
+        </div>
+      </div>
+    </figure>
+  </section>
+
+  <!-- 05: decisions, each a before and after you can flip -->
+  <section class="vy-sec" aria-labelledby="vy-h5">
+    <div class="vy-cols">
+      <div class="vy-text">
+        <p class="vy-k"><span>05</span>decisions</p>
+        <h2 id="vy-h5">Most of the work was deciding what not to show.</h2>
+        <p>Each card shows an idea we dropped, redrawn for this page, then what we kept and what it cost. Flip them.</p>
+      </div>
+    </div>
+    <div class="vy-calls">
+      {calls.map((c, n) => (
+        <article class="vy-call" data-call data-state="first">
+          <div class="vy-call-stage" data-in>
+            <span class="vy-tag" data-tag aria-hidden="true">the idea we dropped</span>
+            <Watch screens={[c.a, c.b]} label={c.la} />
+            <div class="vy-seg" role="radiogroup" aria-label={`${c.t} Show the first idea or what we kept`}>
+              <button type="button" role="radio" aria-checked="true" data-s={c.a} data-label={c.la}>First idea</button>
+              <button type="button" role="radio" aria-checked="false" tabindex="-1" data-s={c.b} data-label={c.lb}>What we kept</button>
+            </div>
+          </div>
+          <h3><span>{String(n + 1).padStart(2, '0')}</span>{c.t}</h3>
+          <p>{c.why}</p>
+          <p class="vy-cost"><b>The cost:</b> {c.cost}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <!-- 05: four alerts, four taps -->
+  <section class="vy-sec" aria-labelledby="vy-h6">
+    <div class="vy-cols">
+      <div class="vy-text">
+        <p class="vy-k"><span>06</span>four alerts</p>
+        <h2 id="vy-h6">Four alerts you can tell apart without looking.</h2>
+        <p>Each alert has its own tap. Tap a watch to see it buzz and its rhythm play; on a phone, you’ll feel it too.</p>
+      </div>
+    </div>
+    <div class="vy-stage vy-alerts" data-in>
+      {alerts.map((a) => {
+        const total = a.buzz.reduce((x, y) => x + y, 0);
+        const segs = a.buzz.map((ms, k) => (k % 2 ? <b style={`flex: ${ms}`}></b> : <i style={`flex: ${ms}`}></i>));
+        return (
+          <button type="button" class="vy-alert" data-buzz={JSON.stringify(a.buzz)} data-tone={a.tone} style={`--buzz: ${a.n}; --tone: ${a.tone}`} aria-label={`${a.name}: ${a.feel}. Play it`}>
+            <Watch screens={[a.s]} label={a.name} />
+            <span class="vy-alert-t">{a.name}</span>
+            <span class="vy-alert-w">{a.when}</span>
+            <span class="vy-pat" style={`width: ${Math.max(6, (total / longest) * 100).toFixed(1)}%`} aria-hidden="true"><span>{segs}</span><span class="is-lit">{segs}</span></span>
+            <span class="vy-alert-f">{a.feel}</span>
+          </button>
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- 06: the look -->
+  <section class="vy-sec" aria-labelledby="vy-h7">
+    <div class="vy-cols">
+      <div class="vy-text">
+        <p class="vy-k"><span>07</span>the look</p>
+        <h2 id="vy-h7">Indian roots, calmed down for daily use.</h2>
+        <p>Shardul built the film and the first phone app on Indian pop art: truck art, old film posters, hand-painted shop signs. Bold colour, high contrast, two scripts on every screen.</p>
+        <p>After FigBuild I redesigned the watch in Figma Make, then the phone app. I kept the roots and calmed them down for something you look at all day. The pigments are saturated and come in hot and cool pairs, rani with mor, kesar with neel, tied together with sona gold. The air isn’t five blocks of colour but one continuous spectrum. Devanagari runs at full weight beside the Latin, and a modern serif and a lotus for alerts finish it.</p>
+      </div>
+      <aside class="vy-note">
+        <b>the name</b>
+        <p><span class="vy-word" lang="hi" aria-hidden="true">वायु</span>Vayu is Sanskrit for air and wind. In Hindu stories Vayu is the god of the wind, and in yoga the five vayus are the ways breath moves through the body. A word most people in India already know.</p>
+      </aside>
+    </div>
+    <figure class="vy-fig" data-look>
+      <div class="vy-stage vy-look" data-in>
+        <div class="vy-look-watch"><Watch screens={['vitals', 'air', 'routes', 'breathe']} label="The Vayu watch face" /></div>
+        <div class="vy-look-side">
+          <div class="vy-look-ctl">
+            <div class="vy-ctl"><span aria-hidden="true">face</span>
+              <div class="vy-seg" role="radiogroup" aria-label="Face" data-switch="face">
+                <button type="button" role="radio" aria-checked="true" data-v="din">Day <span lang="hi">दिन</span></button>
+                <button type="button" role="radio" aria-checked="false" tabindex="-1" data-v="raat">Night <span lang="hi">रात</span></button>
+              </div>
+            </div>
+            <div class="vy-ctl"><span aria-hidden="true">case</span>
+              <div class="vy-seg" role="radiogroup" aria-label="Watch" data-switch="shape">
+                <button type="button" role="radio" aria-checked="true" data-v="sq">Square</button>
+                <button type="button" role="radio" aria-checked="false" tabindex="-1" data-v="ci">Round</button>
+              </div>
+            </div>
+            <div class="vy-ctl"><span aria-hidden="true">screen</span>
+              <div class="vy-seg" role="radiogroup" aria-label="Screen" data-switch="screen">
+                {['vitals', 'air', 'routes', 'breathe'].map((s, i) => <button type="button" role="radio" aria-checked={String(i === 0)} tabindex={i ? -1 : undefined} data-v={s}>{['Vitals', 'Air', 'Routes', 'Breathe'][i]}</button>)}
+              </div>
+            </div>
+          </div>
+          <ul class="vy-pig" aria-label="The palette">
+            {pigments.map((p) => <li style={`--c: ${p.hex}`}><i></i><b>{p.name} <span lang="hi">{p.hi}</span></b><small>{p.role}</small></li>)}
+          </ul>
+          <div class="vy-spec" aria-hidden="true"><i></i><p><span>0</span><span>50</span><span>100</span><span>150</span><span>200</span><span>300</span></p></div>
+        </div>
+      </div>
+      <figcaption class="vy-cap">Air runs on one continuous spectrum, from neem for good to manjistha for hazardous. The accents come in pairs, and sona ties them together.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 07: who did what, and what's left -->
+  <section class="vy-sec" aria-labelledby="vy-h8">
+    <div class="vy-cols">
+      <div class="vy-text">
+        <p class="vy-k"><span>08</span>credits</p>
+        <h2 id="vy-h8">Who did what, and what’s left.</h2>
+      </div>
+    </div>
+    <dl class="vy-by">
+      <div><dt>Shardul N</dt><dd>The design language and the story: the bold, Indian-rooted look of the film and the original phone app.</dd></div>
+      <div><dt>Soumik Halder</dt><dd>The experience: navigation, onboarding, and how it all moves. After FigBuild, the watch redesign and the phone app redesign on this page.</dd></div>
+    </dl>
+    <div class="vy-cols">
+      <div class="vy-text vy-left">
+        <p>We didn’t build sensors or test this with people in a weekend. What’s here is the thinking, the flows and the screens. Three questions we couldn’t settle:</p>
+        <ol class="vy-list">
+          <li>When should it reroute? A route that starts clean can turn bad three minutes in.</li>
+          <li>How do you say “turn here” mid-walk without becoming one more buzz to ignore?</li>
+          <li>When is a small change in the air worth a longer walk?</li>
+        </ol>
+        <p>Next would be profiles for people with asthma or COPD, so alerts match their body rather than an average, and pooled, anonymous readings that map the hotspots official stations miss.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="pj-end">Vayu is a concept from FigBuild 2026. The full submission is on <a href={DEVPOST} target="_blank" rel="noopener">Devpost</a>.</p>
+</article>
+
+<script>
+  import { stories } from './vayu';
+  stories();
+</script>
+
+<style>
+  /* the page: white everywhere, one column of text, stages wider, the film widest. hairlines, not boxes */
+  .pj.vy { --pj-stage: #fff; --vy-w: 1080px; --vy-text: 620px; --vy-gap: clamp(56px, 7vw, 96px); }
+  .pj.vy > :global(*) { width: min(100%, var(--vy-w)); }
+  .vy [lang="hi"] { font-family: "Tiro Devanagari Hindi", "Kohinoor Devanagari", serif; font-weight: 400; }
+
+  /* the head: the name large, one line, and the facts in small type beside it */
+  .vy-head-in { display: grid; gap: 32px; margin-top: 28px; }
+  .vy h1 { margin: 0; font: 500 clamp(48px, 7.4vw, 76px)/1 var(--display); letter-spacing: -.035em; color: var(--pj-ink); }
+  .vy h1 [lang="hi"] { margin-left: .1em; font-size: .84em; letter-spacing: 0; color: var(--pj-3); }
+  .vy-one { margin-top: 18px; max-width: 26em; font-size: clamp(19px, 1.9vw, 22px); line-height: 1.4; color: var(--pj-ink); text-wrap: balance; }
+  .vy-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin: 0; padding-top: 20px; border-top: 1px solid var(--pj-line); }
+  .vy-facts dt { font: 500 11px/1 var(--mono); color: var(--pj-3); }
+  .vy-facts dd { margin: 7px 0 0; font-size: 15px; line-height: 1.35; color: var(--pj-ink); }
+  .vy-site { display: inline-flex; align-items: center; gap: 7px; }
+  .vy-site img { width: 16px; height: 16px; border-radius: 4px; }
+  .vy-crew { grid-column: 1 / -1; }
+  .vy-crew dd { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 3px; }
+  .vy-person { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: var(--pj-ink); text-decoration: none; }
+  .vy-person img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; background: #fff; box-shadow: 0 0 0 1px var(--pj-line); }
+  .vy-person:focus-visible { outline: 2px solid var(--pj-ink); outline-offset: 2px; border-radius: 22px; }
+  @media (hover: hover) and (pointer: fine) { .vy-person:hover span { text-decoration: underline; text-underline-offset: 3px; } }
+  /* the film sits in the column, centred, so it can grow evenly to both edges */
+  .pj.vy > :global(.pl) { margin: clamp(40px, 6vw, 72px) auto 0; }
+
+  /* sections open on a hairline with a small number, then a real heading */
+  .vy-sec { margin-top: clamp(80px, 9vw, 120px); padding-top: 18px; border-top: 1px solid var(--pj-line); }
+  .vy-cols { display: grid; gap: 32px; }
+  .vy-k { display: flex; gap: 12px; font: 500 12px/1 var(--mono); color: var(--pj-3); }
+  .vy-k span { color: var(--pj-ink); }
+  .vy .vy-sec h2 { display: block; margin: 28px 0 0; font: 500 clamp(28px, 3.3vw, 38px)/1.12 var(--display); letter-spacing: -.025em; color: var(--pj-ink); text-wrap: balance; }
+  .vy .vy-sec h2::after { content: none; }
+  .vy-text > h2 + p { margin-top: 24px; }
+  .vy-text > p { text-wrap: pretty; }
+  .vy-list { margin: 20px 0 0; padding: 0; list-style: none; counter-reset: vy; }
+  .vy-list li { position: relative; padding: 14px 0 14px 36px; border-top: 1px solid var(--pj-line); counter-increment: vy; text-wrap: pretty; }
+  .vy-list li:last-child { border-bottom: 1px solid var(--pj-line); }
+  .vy-list li::before { content: counter(vy, decimal-leading-zero); position: absolute; left: 0; top: 18px; font: 500 12px/1.4 var(--mono); color: var(--pj-3); }
+  .vy-left > p + .vy-list, .vy-list + p { margin-top: 24px; }
+
+  /* asides: the brief and the name, small, in the margin on a wide screen */
+  .vy-note { font-size: 14.5px; line-height: 1.6; color: var(--pj-2); padding: 2px 0 2px 16px; border-left: 1px solid var(--pj-line); max-width: 34em; }
+  .vy-note b { display: block; margin-bottom: 8px; font: 500 12px/1 var(--mono); color: var(--pj-ink); }
+  .vy-word { display: block; margin-bottom: 4px; font-size: 56px; line-height: 1.1; color: #B80F62; }
+
+  /* stages: white, a hairline frame, and room */
+  .vy-fig { margin: 40px 0 0; }
+  .vy-stage { position: relative; margin: 0; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--pj-line); }
+  section > .vy-stage { margin-top: 40px; }
+  .vy-cap { margin-top: 14px; max-width: 40em; font: 400 14px/1.55 var(--display); color: var(--pj-3); text-wrap: pretty; }
+
+  /* the idea: the same move, before and after */
+  .vy-pair { display: flex; justify-content: center; gap: clamp(20px, 5vw, 48px); padding: clamp(32px, 5vw, 48px) 16px 28px;
+    background-image: linear-gradient(rgba(31, 29, 27, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(31, 29, 27, .035) 1px, transparent 1px); background-size: 24px 24px; background-position: -1px -1px; }
+  .vy-pair > div { display: grid; justify-items: center; gap: 18px; --vw-w: clamp(140px, 22vw, 176px); }
+  .vy-pair p { display: grid; justify-items: center; gap: 4px; font-size: 14px; line-height: 1.3; color: var(--pj-ink); }
+  .vy-pair small { font: 500 11px/1 var(--mono); color: var(--pj-3); }
+
+  /* the walk: the map large, the watch beside it; the steps and their story at the foot */
+  .vy-walk { outline: none; }
+  .vy-walk:focus-visible { box-shadow: inset 0 0 0 2px var(--pj-ink); }
+  .vy-walk-vis { display: grid; grid-template-columns: minmax(0, 1fr) clamp(220px, 24vw, 280px); align-items: center; }
+  .vy-walk-map { padding: clamp(8px, 2vw, 24px); }
+  .vy-walk-watch { display: grid; place-items: center; align-self: stretch; padding: 24px; border-left: 1px solid var(--pj-line); --vw-w: clamp(160px, 17vw, 196px); }
+  .vy-walk-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 10px 12px 18px; border-top: 1px solid var(--pj-line); }
+  .vy-steps { min-width: 0; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+  .vy-steps::-webkit-scrollbar { display: none; }
+  .vy-steps-row { position: relative; display: flex; width: max-content; }
+  .vy-steps-row button, .vy-steps-row :global(.vy-ind > span) { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px; flex: none; min-height: 44px; padding: 0 14px;
+    border-radius: 99px; font: 500 14px/1 var(--display); white-space: nowrap; }
+  .vy-steps-row button { cursor: pointer; color: var(--pj-3); scroll-snap-align: center; transition: color .15s, transform .16s var(--pj-ease); touch-action: manipulation; }
+  .vy-steps-row :global(.t) { font: 400 12px/1 var(--mono); font-variant-numeric: tabular-nums; opacity: .75; }
+  .vy-steps-row button:active { transform: scale(.97); }
+  .vy-steps-row button:focus-visible { outline: 2px solid var(--pj-ink); outline-offset: -2px; }
+  @media (hover: hover) and (pointer: fine) { .vy-steps-row button:hover { color: var(--pj-ink); } }
+  .vy-steps-row :global(.vy-ind) { position: absolute; inset: 0; display: flex; pointer-events: none; background: #f0f0f0; color: var(--pj-ink); }
+  .vy-walk-ctl { display: flex; align-items: center; gap: 12px; }
+  .vy-keys { display: none; font: 400 11px/1 var(--mono); color: var(--pj-3); transition: color .2s; }
+  .vy-keys kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-right: 3px; border-radius: 4px; font: 500 11px/1 var(--display); color: var(--pj-2); box-shadow: inset 0 0 0 1px var(--pj-line), 0 1px 0 var(--pj-line); }
+  @media (hover: hover) and (pointer: fine) { .vy-keys { display: inline; } }
+  .vy-walk:focus-within .vy-keys, .vy-walk:focus .vy-keys { color: var(--pj-ink); }
+  .vy-pp { all: unset; box-sizing: border-box; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; color: var(--pj-ink); box-shadow: inset 0 0 0 1px var(--pj-line);
+    transition: background-color .15s, transform .16s var(--pj-ease); touch-action: manipulation; }
+  .vy-pp svg { width: 14px; height: 14px; }
+  .vy-pp .i-play, .held .vy-pp .i-pause { display: none; }
+  .held .vy-pp .i-play { display: block; }
+  .vy-pp:active { transform: scale(.94); }
+  .vy-pp:focus-visible { outline: 2px solid var(--pj-ink); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .vy-pp:hover { background: rgba(31, 29, 27, .05); } }
+  .vy-caps { grid-column: 1 / -1; display: grid; padding: 4px 14px 0; }
+  .vy-caps p { grid-area: 1 / 1; margin: 0; max-width: 46em; font: 400 15px/1.55 var(--display); color: var(--pj-2); text-wrap: pretty;
+    opacity: 0; visibility: hidden; translate: 0 4px; transition: opacity .2s var(--pj-ease), translate .2s var(--pj-ease), visibility 0s .2s; }
+  .vy-caps p.on { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .24s var(--pj-ease) .05s, translate .24s var(--pj-ease) .05s; }
+  .vy-caps :global(b) { font-weight: 500; color: var(--pj-ink); font-variant-numeric: tabular-nums; }
+
+  /* the shared indicator for every switch on the page: a copy of the options in the chosen style, clipped to one */
+  .vy :global(.vy-ind.go) { transition: clip-path .22s var(--pj-ease); }
+
+  /* decisions: four cards, a watch you can flip between the first idea and what we kept */
+  .vy-calls { display: grid; gap: 56px 40px; margin-top: 40px; }
+  .vy-call-stage { position: relative; display: grid; justify-items: center; gap: 22px; padding: 52px 16px 16px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--pj-line);
+    background-image: linear-gradient(rgba(31, 29, 27, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(31, 29, 27, .035) 1px, transparent 1px); background-size: 24px 24px; background-position: -1px -1px; }
+  .vy-call-stage :global(.vw) { --vw-w: clamp(156px, 15vw, 184px); }
+  .vy-call-stage :global(.sc) { transition-duration: .22s, .22s; }
+  .vy-tag { position: absolute; top: 18px; left: 18px; display: inline-flex; align-items: center; gap: 8px; font: 500 11px/1 var(--mono); color: var(--pj-3); transition: color .2s; }
+  .vy-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  [data-state="first"] .vy-tag { color: #B8210F; }
+  [data-state="kept"] .vy-tag { color: #1B7A3A; }
+  .vy-call h3 { display: flex; gap: 12px; margin-top: 24px; font: 600 18px/1.35 var(--display); color: var(--pj-ink); text-wrap: balance; }
+  .vy-call h3 span { padding-top: 4px; font: 500 12px/1.4 var(--mono); color: var(--pj-3); }
+  .vy-call p { margin-top: 10px; padding-left: 32px; font-size: 16px; line-height: 1.6; }
+  .vy-call .vy-cost { margin-top: 12px; font-size: 14.5px; line-height: 1.55; color: var(--pj-2); }
+  .vy-cost b { font-weight: 600; color: var(--pj-ink); }
+
+  /* a two-way or many-way switch: a hairline track, the chosen option in ink */
+  .vy-seg { position: relative; display: inline-flex; flex-wrap: nowrap; border-radius: 99px; background: #fff; box-shadow: inset 0 0 0 1px var(--pj-line); }
+  .vy-seg button, .vy-seg :global(.vy-ind > span) { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; min-height: 44px; padding: 0 16px;
+    border-radius: 99px; font: 500 13px/1 var(--display); white-space: nowrap; }
+  .vy-seg button { cursor: pointer; color: var(--pj-2); transition: color .15s, transform .16s var(--pj-ease); touch-action: manipulation; }
+  .vy-seg button:active { transform: scale(.97); }
+  .vy-seg button:focus-visible { outline: 2px solid var(--pj-ink); outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) { .vy-seg button:hover { color: var(--pj-ink); } }
+  .vy-seg :global(.vy-ind) { position: absolute; inset: 0; display: flex; pointer-events: none; border-radius: 99px; background: var(--pj-ink); color: #fff; }
+  .vy-seg :global(.vy-ind [lang="hi"]) { color: rgba(255, 255, 255, .6); }
+  .vy-seg [lang="hi"] { color: var(--pj-3); }
+
+  /* four alerts */
+  .vy-alerts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: clamp(20px, 3vw, 32px) clamp(12px, 2vw, 20px); }
+  .vy-alert { all: unset; box-sizing: border-box; display: grid; justify-items: center; align-content: start; gap: 4px; padding: 16px 8px 18px; border-radius: 12px; cursor: pointer; text-align: center;
+    transition: background-color .2s, transform .16s var(--pj-ease); touch-action: manipulation; }
+  .vy-alert :global(.vw) { --vw-w: min(100%, 152px); margin-bottom: 16px; }
+  .vy-alert:active { transform: scale(.97); }
+  .vy-alert:focus-visible { outline: 2px solid var(--pj-ink); outline-offset: -2px; }
+  @media (hover: hover) and (pointer: fine) { .vy-alert:hover { background: rgba(31, 29, 27, .035); } }
+  .vy-alert-t { font: 600 15px/1.3 var(--display); color: var(--pj-ink); }
+  .vy-alert-w { font-size: 13px; line-height: 1.4; color: var(--pj-2); text-wrap: balance; }
+  .vy-alert-f { font: 400 11px/1.4 var(--mono); color: var(--pj-3); }
+  /* the rhythm of each tap, drawn to scale: buzz, gap, buzz. it lights up as it plays */
+  .vy-pat { position: relative; display: block; height: 6px; margin: 12px 0 6px; }
+  .vy-pat > span { position: absolute; inset: 0; display: flex; }
+  .vy-pat i { height: 100%; border-radius: 3px; background: color-mix(in oklab, var(--tone) 30%, white); }
+  .vy-pat b { height: 100%; }
+  .vy-pat .is-lit { clip-path: inset(0 100% 0 0); opacity: 0; }
+  .vy-pat .is-lit i { background: var(--tone); }
+  .vy-pat.go .is-lit { animation: vy-sweep calc(var(--ms) + 500ms) linear; }
+  @keyframes vy-sweep { 0% { clip-path: inset(0 100% 0 0); opacity: 1; } 75% { clip-path: inset(0 0 0 0); opacity: 1; } 100% { clip-path: inset(0 0 0 0); opacity: 0; } }
+
+  /* the look */
+  .vy-look { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px clamp(32px, 6vw, 72px); align-items: center; padding: clamp(32px, 5vw, 56px); }
+  .vy-look-watch { --vw-w: clamp(180px, 22vw, 228px); }
+  .vy-look-side { display: grid; gap: 32px; }
+  .vy-look-ctl { display: grid; gap: 12px; justify-items: start; }
+  .vy-ctl { display: grid; grid-template-columns: 56px auto; align-items: center; gap: 12px; }
+  .vy-ctl > span { font: 500 11px/1 var(--mono); color: var(--pj-3); }
+  .vy-pig { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; margin: 0; padding: 20px 0 0; list-style: none; border-top: 1px solid var(--pj-line); }
+  .vy-pig li { display: grid; grid-template-columns: 22px 1fr; column-gap: 10px; align-items: center; }
+  .vy-pig i { grid-row: 1 / 3; width: 22px; height: 22px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
+  .vy-spec { display: grid; gap: 6px; }
+  .vy-spec i { display: block; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #22A04B 4%, #F5B700 25%, #FF8A00 42%, #E0301E 58%, #7A2F9A 83%, #7A1F3D); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
+  .vy-spec p { position: relative; display: flex; justify-content: space-between; font: 400 11px/1 var(--mono); color: var(--pj-3); }
+  .vy-pig b { font: 500 13px/1.3 var(--display); color: var(--pj-ink); white-space: nowrap; }
+  .vy-pig li { min-width: 0; }
+  .vy-pig b span { color: var(--pj-3); }
+  .vy-pig small { font-size: 12px; line-height: 1.3; color: var(--pj-3); }
+
+  /* credits */
+  .vy-by { display: grid; gap: 0 var(--vy-gap); margin: 40px 0 0; }
+  .vy-by > div { padding: 20px 0; border-top: 1px solid var(--pj-line); }
+  .vy-by dt { font: 600 17px/1.3 var(--display); color: var(--pj-ink); }
+  .vy-by dd { margin: 6px 0 0; color: var(--pj-2); text-wrap: pretty; }
+  .vy-by + .vy-cols { margin-top: 40px; }
+
+  .vy-concept { background: #f1f1f1; line-height: 0; }
+  .vy-concept img { display: block; width: 100%; height: auto; }
+  .vy-after { margin-top: 36px; }
+
+  /* the phone app: the phone and, beside it, the watch at the same moment; the steps and captions are the walk's */
+  .vy-app-vis { display: flex; justify-content: center; align-items: center; gap: clamp(40px, 8vw, 104px); padding: clamp(32px, 5vw, 56px) 24px clamp(28px, 4vw, 44px); }
+  .vy-app-watch { display: grid; justify-items: center; gap: 22px; --vw-w: clamp(150px, 15vw, 188px); }
+  .vy-app-watch p { display: grid; justify-items: center; gap: 4px; font-size: 14px; line-height: 1.3; color: var(--pj-ink); }
+  .vy-app-watch small { font: 500 11px/1 var(--mono); color: var(--pj-3); }
+  .vy-app .vy-walk-foot { border-top: 1px solid var(--pj-line); }
+
+  /* stages ease in once as they arrive: a fade and a few pixels. text never moves */
+  .vy-pre { opacity: 0; translate: 0 8px; }
+  .vy-pre.vy-on { opacity: 1; translate: 0 0; transition: opacity .6s var(--pj-ease), translate .6s var(--pj-ease); }
+  .vy-call:nth-child(even) > .vy-pre.vy-on { transition-delay: .08s; }
+
+  /* ---- a wide screen: text beside its stage or its note, two columns of decisions */
+  @media (min-width: 1000px) {
+    .vy-head-in { grid-template-columns: minmax(0, var(--vy-text)) minmax(0, 1fr); column-gap: var(--vy-gap); align-items: end; }
+    .vy-cols { grid-template-columns: minmax(0, var(--vy-text)) minmax(0, 1fr); column-gap: var(--vy-gap); align-items: start; }
+    .vy-note { align-self: start; margin-top: 3.2rem; }
+    .vy-calls { grid-template-columns: 1fr 1fr; }
+    .vy-by { grid-template-columns: 1fr 1fr; }
+  }
+  /* the idea's before and after sits beside its text once there's room for both watches */
+  @media (min-width: 1100px) {
+    .vy-cols.is-side { grid-template-columns: minmax(0, 1fr) minmax(0, 420px); align-items: center; }
+    .vy-cols.is-side .vy-pair-fig { margin: 0; }
+    .vy-cols.is-side .vy-pair > div { --vw-w: 150px; }
+    .vy-cols.is-side .vy-pair { gap: 28px; }
+  }
+  @media (min-width: 700px) and (max-width: 999px) {
+    .vy-calls { grid-template-columns: 1fr 1fr; gap: 56px 24px; }
+    .vy-call p { padding-left: 0; }
+    .vy-call h3 { display: block; }
+    .vy-call h3 span { display: block; padding: 0 0 6px; }
+  }
+
+  /* ---- a phone: one column, stages edge to edge, the controls at the foot of each where the thumb is */
+  @media (max-width: 760px) {
+    .vy-app-vis { flex-direction: column; gap: 28px; padding-top: 28px; }
+    .vy-app-watch { --vw-w: 138px; }
+    .vy-walk-vis { grid-template-columns: 1fr; }
+    .vy-walk-watch { order: -1; padding: 28px 0 8px; border-left: 0; --vw-w: 156px; }
+    .vy-walk-map { padding: 0 4px; }
+    .vy-alerts { grid-template-columns: repeat(2, 1fr); }
+    .vy-look { grid-template-columns: 1fr; justify-items: center; }
+    .vy-look-side { width: 100%; }
+    .vy-pig { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .vy-head-in { gap: 18px; margin-top: 0; }
+    .vy h1 { font-size: 44px; }
+    .vy-one { margin-top: 10px; max-width: none; font-size: 18px; line-height: 1.38; text-wrap: pretty; }
+    .vy-facts { gap: 12px 16px; padding-top: 14px; }
+    .vy-facts dd { margin-top: 5px; font-size: 14px; }
+    .vy-facts > div:first-child { grid-column: 1 / -1; }
+    .vy-crew dd { margin-top: 0; gap: 0 14px; }
+    .vy-person { min-height: 40px; }
+    .vy-sec { margin-top: 48px; }
+    .vy .vy-sec h2 { margin-top: 18px; }
+    .vy-pig { grid-template-columns: 1fr; }
+    .vy-fig, section > .vy-stage, .vy-calls { margin-top: 36px; }
+    .vy-stage, .vy-call-stage { margin-inline: calc(var(--gut) * -1); border-radius: 0; box-shadow: inset 0 1px 0 var(--pj-line), inset 0 -1px 0 var(--pj-line); }
+    .vy-calls { gap: 56px; }
+    .vy-call-stage { padding-top: 56px; }
+    .vy-call p { padding-left: 0; }
+    .vy-call h3 { display: block; margin-top: 20px; }
+    .vy-call h3 span { display: block; padding: 0 0 6px; }
+    .vy-walk-foot { padding: 6px 0 18px; }
+    .vy-steps { padding-left: 8px; scroll-padding-inline: 8px; }
+    .vy-walk-ctl { padding-right: 8px; }
+    .vy-caps { padding-inline: var(--gut); }
+    .vy-look { padding: 36px var(--gut) 28px; }
+    .vy-look-ctl { justify-items: stretch; }
+    .vy-ctl { grid-template-columns: 1fr; gap: 8px; }
+    .vy-ctl .vy-seg { justify-self: start; max-width: 100%; }
+    .vy-pair { gap: 16px; padding-inline: 8px; }
+    .vy-word { font-size: 44px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vy-pre { translate: none; }
+    .vy-caps p, .vy-caps p.on { translate: none; transition: none; }
+    .vy :global(.vy-ind.go) { transition: none; }
+    .vy-pat.go .is-lit { animation: none; }
+  }
+</style>

@@ -1,0 +1,70 @@
+---
+// <Decision tried="…" kept="…" why="…" cost="…">: one decision, in four lines. slots `tried` and `kept` take a drawing
+// or a demo instead of words when there's one. on a phone the two sides are cards you swipe between
+interface Props { tried: string; kept: string; why: string; cost?: string }
+const { tried, kept, why, cost } = Astro.props;
+const hasTried = Astro.slots.has('tried'), hasKept = Astro.slots.has('kept');
+---
+<section class="bx dec" aria-label={`Decision: ${kept}`}>
+  <div class:list={["dec-pair", { pics: hasTried || hasKept }]}>
+    <div class="dec-side was">
+      <p class="px dec-k"><i aria-hidden="true"></i>tried first</p>
+      {hasTried && <div class="dec-pic"><slot name="tried" /></div>}
+      <p class="dec-v">{tried}</p>
+    </div>
+    <div class="dec-side now">
+      <p class="px dec-k"><i aria-hidden="true"></i>kept</p>
+      {hasKept && <div class="dec-pic"><slot name="kept" /></div>}
+      <p class="dec-v">{kept}</p>
+    </div>
+  </div>
+  {(hasTried || hasKept) && <p class="dec-pager" aria-hidden="true"><i class="on"></i><i></i></p>}
+  <dl class="dec-notes">
+    <div><dt class="px">why</dt><dd>{why}</dd></div>
+    {cost && <div><dt class="px">what it cost</dt><dd>{cost}</dd></div>}
+  </dl>
+</section>
+
+<script>
+  // the two dots under a phone's swipe cards follow the one in view
+  document.querySelectorAll<HTMLElement>('.dec-pair.pics').forEach((pair) => {
+    const dots = pair.parentElement!.querySelectorAll('.dec-pager i');
+    pair.addEventListener('scroll', () => {
+      const at = pair.scrollLeft > (pair.scrollWidth - pair.clientWidth) / 2 ? 1 : 0;
+      dots.forEach((d, i) => d.classList.toggle('on', i === at));
+    }, { passive: true });
+  });
+</script>
+
+<style>
+  .dec { border-top: 1px solid var(--ink); padding-top: 18px; }
+  .dec-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .dec-side { min-width: 0; }
+  .dec-k { display: flex; align-items: center; gap: 8px; font: 500 12px/1 var(--pixel); color: var(--ink-2); }
+  .dec-k i { width: 9px; height: 9px; background: var(--ink-3); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, 22% 22%, 22% 78%, 78% 78%, 78% 22%, 22% 22%); }
+  .now .dec-k { color: var(--ink); }
+  .now .dec-k i { background: #1f8a3a; clip-path: none; }
+  .dec-pic { position: relative; height: 220px; margin-top: 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+  .dec-pic > :global(*) { height: 100%; }
+  .was .dec-pic { opacity: .8; }
+  .dec-v { font: 400 22px/1.25 var(--serif); color: var(--ink); margin-top: 12px; text-wrap: pretty; }
+  .was .dec-v { color: var(--ink-2); text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: rgba(31, 29, 27, .35); }
+  .dec-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .dec-notes dt { font: 500 12px/1 var(--pixel); color: var(--ink-2); }
+  .dec-notes dd { margin: 8px 0 0; font: 400 15px/1.5 var(--display); color: var(--body); text-wrap: pretty; }
+  .dec-notes div:only-child { grid-column: 1 / -1; max-width: var(--text); }
+  .dec-pager { display: none; }
+  @media (max-width: 640px) {
+    .dec { padding: 16px var(--gut) 0; }
+    .dec-pair:not(.pics) { grid-template-columns: 1fr; gap: 18px; }
+    .dec-pager { display: flex; justify-content: center; gap: 6px; margin: 10px 0 0; }
+    .dec-pager i { width: 5px; height: 5px; background: var(--line); transition: background-color .2s var(--ease); }
+    .dec-pager i.on { background: var(--ink); }
+    /* with drawings: two cards, swiped between; the second peeks in so it's clear there's more */
+    .dec-pair.pics { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: calc(var(--gut) * -1); padding: 0 var(--gut) 4px; scroll-padding-inline: var(--gut); scrollbar-width: none; overscroll-behavior-x: contain; }
+    .dec-pair.pics::-webkit-scrollbar { display: none; }
+    .pics .dec-side { flex: 0 0 84%; scroll-snap-align: start; }
+    .dec-notes { grid-template-columns: 1fr; gap: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .dec-pager i { transition: none; } }
+</style>

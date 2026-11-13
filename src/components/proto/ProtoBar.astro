@@ -1,0 +1,168 @@
+---
+// PROTOTYPE (dev only): the floating switcher for the vault's motion dials. dials, storage and events are described in
+// the vault prototype plan; ProtoHead.astro sets the initial values before first paint.
+---
+<div class="proto-bar" id="proto-bar" role="group" aria-label="prototype switcher" data-collapsed="false">
+  <button type="button" class="pb-chip" data-pb="expand" aria-label="open prototype switcher">proto</button>
+  <div class="pb-body">
+    <div class="pb-row pb-tabs" role="tablist" aria-label="dial">
+      <button type="button" role="tab" data-dial="open">open</button>
+      <button type="button" role="tab" data-dial="enter">enter</button>
+      <button type="button" role="tab" data-dial="surface">surface</button>
+      <button type="button" class="pb-min" data-pb="collapse" aria-label="collapse prototype switcher">–</button>
+    </div>
+    <div class="pb-row pb-pick">
+      <button type="button" data-pb="prev" aria-label="previous option">‹</button>
+      <span class="pb-label" aria-live="polite"><b data-pb="count"></b> <span data-pb="name"></span></span>
+      <button type="button" data-pb="next" aria-label="next option">›</button>
+      <button type="button" class="pb-replay" data-pb="replay" hidden>replay</button>
+    </div>
+    <p class="pb-hint" data-pb="hint"></p>
+  </div>
+</div>
+
+<style is:inline>
+  .proto-bar {
+    position: fixed; z-index: 2147483000; left: 0; right: 0; margin-inline: auto;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
+    background: #111; color: #fff; border-radius: 16px; padding: 6px 8px 8px;
+    font: 12px/1.3 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .28), 0 0 0 1px rgba(255, 255, 255, .08);
+    view-transition-name: proto-bar;
+  }
+  .proto-bar button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; border-radius: 10px; padding: 0 10px; min-height: 36px; opacity: .6; }
+  .proto-bar button:hover, .proto-bar button:focus-visible { opacity: 1; }
+  .proto-bar button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+  .proto-bar .pb-row { display: flex; align-items: center; gap: 2px; }
+  .proto-bar .pb-tabs button[data-dial] { text-underline-offset: 6px; }
+  .proto-bar .pb-tabs button[aria-selected="true"] { opacity: 1; text-decoration: underline; }
+  .proto-bar .pb-min { margin-left: auto; min-width: 36px; font-size: 16px; }
+  .proto-bar .pb-pick { justify-content: space-between; }
+  .proto-bar .pb-pick > button[data-pb="prev"], .proto-bar .pb-pick > button[data-pb="next"] { min-width: 44px; font-size: 18px; }
+  .proto-bar .pb-label { flex: 1; text-align: center; white-space: nowrap; }
+  .proto-bar .pb-label b { font-weight: 400; opacity: .6; }
+  .proto-bar .pb-replay { border: 1px solid rgba(255, 255, 255, .3); min-height: 28px; }
+  .proto-bar .pb-hint { margin: 0; padding: 2px 10px 0; opacity: .5; font-size: 11px; text-align: center; min-height: 14px; }
+  .proto-bar .pb-chip { display: none; }
+  .proto-bar[data-collapsed="true"] { width: fit-content; padding: 0; border-radius: 999px; }
+  .proto-bar[data-collapsed="true"] .pb-body { display: none; }
+  .proto-bar[data-collapsed="true"] .pb-chip { display: block; opacity: 1; padding: 0 16px; min-height: 36px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .proto-bar button { transition: opacity 120ms; }
+  }
+  /* the bar never moves during page transitions */
+  ::view-transition-group(proto-bar) { animation: none; }
+  ::view-transition-old(proto-bar) { display: none; }
+  ::view-transition-new(proto-bar) { animation: none; }
+</style>
+
+<script>
+  const DIALS = {
+    open: { param: 'o', values: ['morph', 'window', 'sheet', 'stitch', 'zoom'], hints: {
+      morph: 'the reference: card morphs into the stage',
+      window: 'live demo, a window opens around it',
+      sheet: 'ios sheet over the wall, drag to dismiss',
+      stitch: 'stepped pixel rect, like the garden',
+      zoom: 'the camera flies into the wall',
+    } },
+    enter: { param: 'e', values: ['skeleton', 'rise', 'stitch', 'cascade', 'focus'], hints: {
+      skeleton: 'the reference: surfaces first, demos fade in',
+      rise: 'cards float up one by one',
+      stitch: 'cards revealed top-down in steps',
+      cascade: 'column by column, left to right',
+      focus: 'blurred to sharp at random',
+    } },
+    surface: { param: 's', values: ['white', 'grey'], hints: {
+      white: 'white cards with a hairline',
+      grey: '#f2f2f2 cards, no hairline',
+    } },
+  } as const;
+  type Key = keyof typeof DIALS;
+  const KEYS = Object.keys(DIALS) as Key[];
+
+  const bar = document.getElementById('proto-bar') as HTMLElement;
+  const html = document.documentElement;
+  const $ = (s: string) => bar.querySelector(s) as HTMLElement;
+  const tabs = Array.from(bar.querySelectorAll<HTMLElement>('[data-dial]'));
+  const read = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const write = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch {} };
+
+  const saved = read('proto.dial') as Key | null;
+  let dial: Key = saved && saved in DIALS ? saved : 'open';
+  let collapsed = read('proto.bar') === 'collapsed';
+
+  const dataKey = (k: Key) => 'proto' + k[0].toUpperCase() + k.slice(1);
+  const current = (k: Key) => html.dataset[dataKey(k)] || DIALS[k].values[0];
+
+  function render() {
+    const d = DIALS[dial];
+    const v = current(dial);
+    tabs.forEach((t) => {
+      const on = t.dataset.dial === dial;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    $('[data-pb="count"]').textContent = `${(d.values as readonly string[]).indexOf(v) + 1} / ${d.values.length}`;
+    $('[data-pb="name"]').textContent = v;
+    $('[data-pb="hint"]').textContent = (d.hints as Record<string, string>)[v] || '';
+    $('[data-pb="replay"]').hidden = dial !== 'enter';
+    bar.dataset.collapsed = String(collapsed);
+  }
+
+  function set(k: Key, v: string) {
+    html.dataset[dataKey(k)] = v;
+    write('proto.' + k, v);
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set(DIALS[k].param, v);
+      history.replaceState(history.state, '', u);
+    } catch {}
+    window.dispatchEvent(new CustomEvent('proto:change', { detail: { key: k, value: v } }));
+    render();
+  }
+
+  function cycle(step: number) {
+    const vals = DIALS[dial].values as readonly string[];
+    const i = vals.indexOf(current(dial));
+    set(dial, vals[(i + step + vals.length) % vals.length]);
+  }
+
+  function pick(k: Key) {
+    dial = k;
+    write('proto.dial', k);
+    render();
+  }
+
+  function collapse(on: boolean) {
+    collapsed = on;
+    write('proto.bar', on ? 'collapsed' : 'open');
+    render();
+  }
+
+  bar.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest('button');
+    if (!b) return;
+    if (b.dataset.dial) pick(b.dataset.dial as Key);
+    else if (b.dataset.pb === 'prev') cycle(-1);
+    else if (b.dataset.pb === 'next') cycle(1);
+    else if (b.dataset.pb === 'collapse') collapse(true);
+    else if (b.dataset.pb === 'expand') collapse(false);
+    else if (b.dataset.pb === 'replay') window.dispatchEvent(new CustomEvent('proto:change', { detail: { key: 'enter', value: current('enter') } }));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (collapsed || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.closest('input, textarea, select') || t.isContentEditable)) return;
+    if (e.key === 'ArrowLeft') cycle(-1);
+    else if (e.key === 'ArrowRight') cycle(1);
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') pick(KEYS[(KEYS.indexOf(dial) + (e.key === 'ArrowDown' ? 1 : KEYS.length - 1)) % KEYS.length]);
+    else return;
+    e.preventDefault();
+  });
+
+  // other code may change a dial too
+  window.addEventListener('proto:change', render);
+  render();
+</script>

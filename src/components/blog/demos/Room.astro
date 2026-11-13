@@ -1,0 +1,35 @@
+---
+// it makes room: a small garden that holds eight. keep planting and the oldest unpicks itself. it opens with five
+// planted; the drawing here and the live bed use the same five, at the same places (as a share of the stage)
+import { grow, rects } from '../plant';
+import { SEEDS } from './room-seeds';
+const still = SEEDS.map(([kind, seed, form, pal, x, y]) => {
+  const p = grow(kind, { seed, form, pal });
+  const [x0, y0, x1, y1] = p.box;
+  return { svg: rects(p.cells), x, y, x0, y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+});
+---
+<div class="dm-stage ro" style="--dm-h: 300px; --dm-hp: 280px">
+  <div class="ro-still dm-still" aria-hidden="true">
+    {still.map((s) => (
+      <svg viewBox={`${s.x0} ${s.y0} ${s.w} ${s.h}`} shape-rendering="crispEdges" style={`left: calc(${s.x}% + var(--c) * ${s.x0}); top: calc(${s.y}% + var(--c) * ${s.y0}); width: calc(var(--c) * ${s.w}); height: calc(var(--c) * ${s.h})`} set:html={s.svg} />
+    ))}
+  </div>
+  <p class="dm-hint" aria-hidden="true">keep planting</p>
+</div>
+<div class="dm-bar">
+  <button class="dm-btn solid" type="button" data-plant disabled><span>plant one</span></button>
+  <output class="dm-read" aria-live="polite"><span class="ro-meter" aria-hidden="true">{Array.from({ length: 8 }, (_, i) => <i class:list={[{ on: i < SEEDS.length }]}></i>)}</span> <b data-n>{SEEDS.length}</b> of 8</output>
+</div>
+
+<style>
+  .ro { --c: 4.5px; cursor: pointer; touch-action: manipulation; }
+  .ro-still { position: absolute; inset: 0; }
+  .ro-still svg { position: absolute; display: block; }
+  .ro-meter { display: inline-flex; gap: 3px; vertical-align: -1px; margin-right: 8px; }
+  .ro-meter i { width: 8px; height: 10px; box-shadow: inset 0 0 0 1px var(--ink-3); transition: background-color .2s var(--ease); }
+  .ro-meter i.on { background: var(--ink); box-shadow: none; }
+  .ro-meter i.go { background: #f56f2a; box-shadow: none; }
+  @media (max-width: 640px) { .ro { --c: 3.5px; } }
+  @media (prefers-reduced-motion: reduce) { .ro-meter i { transition: none; } }
+</style>

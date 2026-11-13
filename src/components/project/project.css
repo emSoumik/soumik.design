@@ -1,0 +1,74 @@
+/* the hand-built project pages (vayu, font preview): one quiet column of text, and stages, soft grey boxes where
+   the thing itself runs live. a stage can carry steps underneath that you can click, and a caption */
+.pj { --col: 640px; --stage: 860px; --pj-ink: #1f1d1b; --pj-2: rgba(31, 29, 27, .62); --pj-3: rgba(31, 29, 27, .42); --pj-line: rgba(31, 29, 27, .1);
+  --pj-stage: #f5f5f3; --pj-ease: cubic-bezier(.23, 1, .32, 1);
+  font: 400 17px/1.65 var(--display); color: rgba(31, 29, 27, .84); -webkit-font-smoothing: antialiased; }
+.pj > * { width: min(100%, var(--col)); margin-inline: auto; }
+.pj > .pj-stage, .pj > .pj-figure { width: min(100%, var(--stage)); }
+.pj :focus-visible { outline: 2px solid var(--pj-ink); outline-offset: 3px; border-radius: 6px; }
+.pj a { color: var(--pj-ink); text-decoration: underline; text-decoration-color: var(--pj-line); text-decoration-thickness: 1px; text-underline-offset: 3px; transition: text-decoration-color .2s; }
+@media (hover: hover) { .pj a:hover { text-decoration-color: currentColor; } }
+
+/* the head: back, title, a line of facts, the problem in a few sentences */
+.pj h1 { margin-top: 20px; font: 500 22px/1.2 var(--display); letter-spacing: -.01em; color: var(--pj-ink); }
+.pj > h1:first-child { margin-top: 0; }
+.pj-meta { margin-top: 2px; font: 400 15px/1.5 var(--display); color: var(--pj-3); }
+.pj-lede { margin-top: 28px; font-size: 19px; line-height: 1.55; color: var(--pj-ink); text-wrap: pretty; }
+.pj-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.pj-links a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 99px; font: 500 14px/1 var(--display); text-decoration: none;
+  box-shadow: inset 0 0 0 1px var(--pj-line); transition: background-color .2s, transform .16s var(--pj-ease); }
+.pj-links a:active { transform: scale(.97); }
+@media (hover: hover) { .pj-links a:hover { background: var(--pj-stage); } }
+
+/* sections: a small heading with a hairline running out to the right */
+.pj h2 { display: flex; align-items: center; gap: 16px; margin-top: clamp(72px, 11vw, 112px); margin-bottom: 20px; font: 600 15px/1.3 var(--display); color: var(--pj-ink); }
+.pj h2::after { content: ""; flex: 1; height: 1px; background: var(--pj-line); }
+.pj h3 { margin-top: 32px; font: 600 17px/1.4 var(--display); color: var(--pj-ink); }
+.pj p + p { margin-top: 16px; }
+.pj p { text-wrap: pretty; }
+.pj strong { font-weight: 600; color: var(--pj-ink); }
+.pj ul.pj-list, .pj ol.pj-list { padding: 0; list-style: none; margin-top: 16px; }
+.pj-list li { position: relative; padding-left: 26px; }
+.pj-list li + li { margin-top: 10px; }
+.pj-list li::before { content: counter(list-item); position: absolute; left: 0; top: .2em; font: 500 12px/1.6 var(--mono); color: var(--pj-3); }
+.pj-note { font-size: 15px; color: var(--pj-2); }
+
+/* a stage: the soft grey box with a faint grid, where the thing runs */
+.pj-stage { position: relative; margin-top: 36px; margin-bottom: 0; }
+.pj-box { position: relative; overflow: hidden; border-radius: clamp(16px, 2vw, 22px); background-color: var(--pj-stage);
+  background-image: linear-gradient(rgba(31, 29, 27, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(31, 29, 27, .035) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px; box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .04); }
+.pj-stage + p, .pj-stage + h3, .pj-figure + p { margin-top: 36px; }
+.pj-figure { margin-top: 36px; }
+
+/* steps under a stage: numbers in grey, the current one in ink, each a real button */
+.pj-steps { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 2px; margin-top: 14px; }
+.pj-steps button { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border-radius: 99px; cursor: pointer;
+  font: 400 14px/1 var(--display); color: var(--pj-3); transition: color .2s, background-color .2s; }
+.pj-steps button i { font: 400 12px/1 var(--mono); font-style: normal; color: var(--pj-3); }
+.pj-steps button[aria-current="step"] { color: var(--pj-ink); }
+.pj-steps button[aria-current="step"] i { color: var(--pj-2); }
+.pj-steps button:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .pj-steps button:hover { color: var(--pj-ink); } }
+.pj-cap { min-height: 3.2em; margin: 4px auto 0; max-width: 36em; text-align: center; font: 400 15px/1.55 var(--display); color: var(--pj-2); text-wrap: balance; }
+.pj-cap b { font-weight: 500; color: var(--pj-ink); }
+
+/* a table of decisions: what we chose, and what it cost */
+.pj-calls { margin-top: 20px; border-top: 1px solid var(--pj-line); }
+.pj-calls > div { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 18px 0; border-bottom: 1px solid var(--pj-line); }
+.pj-calls dt { font-weight: 600; color: var(--pj-ink); }
+.pj-calls dd { margin: 0; }
+.pj-calls dd small { display: block; margin-top: 6px; font-size: 15px; color: var(--pj-2); }
+.pj-calls dd small::before { content: "The cost: "; font-weight: 500; color: var(--pj-ink); }
+
+.pj-end { margin-top: clamp(72px, 11vw, 112px); padding-top: 20px; border-top: 1px solid var(--pj-line); font-size: 15px; color: var(--pj-2); }
+
+@media (max-width: 640px) {
+  .pj { font-size: 16px; }
+  .pj-lede { font-size: 18px; }
+  .pj > .pj-stage, .pj > .pj-figure { margin-inline: -6px; width: calc(100% + 12px); }
+  .pj-steps { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -10px; padding-inline: 4px; }
+  .pj-steps::-webkit-scrollbar { display: none; }
+  .pj-steps button { flex: none; }
+  .pj-cap { text-align: left; padding-inline: 6px; }
+}

@@ -1,0 +1,224 @@
+---
+// LAB direction 3, "Letter": the case study as a short essay in one column, the way benji.org and austin valleskey
+// write. media stays small and captioned on soft planes; the numbers live in footnotes (sidenotes in the margin on
+// wide screens, a sheet on phones); the sounds are words you can press
+import Shot from './Shot.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+const posters = [
+  ['confirmed', 'You’re in.'],
+  ['packed', 'All packed.'],
+  ['shipped', 'On its way.'],
+  ['delivered', 'It’s home.'],
+];
+---
+<article class="lt" data-lt>
+  <header class="head">
+    <h1>WhyClub</h1>
+    <p class="sub">Notes on a store for a streetwear label from India</p>
+    <p class="by">Soumik Halder<span aria-hidden="true">·</span>2026<span aria-hidden="true">·</span><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in<span aria-hidden="true"> ↗</span></a></p>
+  </header>
+
+  <p class="open">WhyClub sells oversized graphic tees in small drops. I designed and built its store: the art direction, the design system, the frontend, and the backend that takes an order from payment to the door. These are the parts I’d walk another designer through, in the order a customer meets them.</p>
+
+  <h2>The photo does the talking</h2>
+  <p>The home page is one campaign photo per drop, with the tee’s name set across it, and you swipe from one drop to the next. Everything after it is quiet on purpose: white pages, black type, one dock. The photo gets to be loud because nothing else is.</p>
+  <p>Each tee starts as a packshot of the real thing. The model photos are made from it with AI, a front and then a back of the same person, so each tee has a pair the home page can cross between.</p>
+  <figure class="fig">
+    <div class="plane row3 scroller" role="group" aria-label="From packshot to campaign photo">
+      <Shot src={A + 'process/tee'} kind="plate" ratio="4 / 5" alt="Packshot of the Please, I’m a Star tee: black, a blue and pink rose print and WHYCLUB on the chest." />
+      <Shot src={A + 'process/front'} kind="plate" ratio="4 / 5" alt="A model wearing the same tee over a white long sleeve, in front of a weathered wall." />
+      <Shot src={A + 'process/back'} kind="plate" ratio="4 / 5" alt="The same model from behind, showing the Please, I’m a Star back print." />
+    </div>
+    <figcaption>The packshot, then the front and back made from it. The store tells customers the model photos are edited with AI and the tees are what they’ll get.</figcaption>
+  </figure>
+
+  <h2>Letting the photo reach the glass</h2>
+  <p>Safari on the iPhone now tints its bars from the page behind them. The store used to give it a black status bar with a free shipping ticker under it, so every photo sat in a frame. I took the ticker out and had the store read the top edge of each photo and hand Safari a muted shade of it.<button type="button" class="fm" popovertarget="lt-n1" aria-label="Note 1">1</button><span class="fn" id="lt-n1" popover role="note"><span class="k" aria-hidden="true">1</span>It averages the top 16 pixels of the photo on a 48 by 12 canvas, mixes each channel 65 to 35 with the overall brightness, then darkens the result by 15% for dark photos and 3% for light ones. Each photo is read once, and the bars wait 160ms after a swipe settles before they change.<button type="button" class="fnx" popovertarget="lt-n1" popovertargetaction="hide" aria-label="Close note">Close</button></span> Now the picture runs to the edges of the phone.</p>
+  <figure class="fig">
+    <div class="plane row2">
+      <Shot src={A + 'ios/before'} ratio="720 / 1565" alt="Before: a black status bar and a free shipping ticker above the photo." />
+      <Shot src={A + 'ios/light'} ratio="720 / 1565" alt="After: the same photo, with the status bar in a muted shade of its top edge and the photo running under Safari’s toolbar." />
+    </div>
+    <figcaption>The same photo before and after, on an iPhone.</figcaption>
+  </figure>
+
+  <h2>One dock instead of five pages</h2>
+  <p>The old navbar sent every button to its own page, so every tap was a reload. The dock does those jobs without leaving: Shop grows into a panel with Women and Men as photos, Account and More open the same way, and scrolling down tucks the whole thing into a pill at the left edge.</p>
+  <p>The motion is mostly about what it doesn’t do. A tap carries no momentum, so only a panel opening gets a hint of overshoot; everything else settles without one, and closing is the fastest, because you’re done.<button type="button" class="fm" popovertarget="lt-n2" aria-label="Note 2">2</button><span class="fn" id="lt-n2" popover role="note"><span class="k" aria-hidden="true">2</span>Opening is a spring with a 0.4 second response at a damping ratio of 0.82; closing is 0.28 seconds and critically damped. Before a panel opens, the bar squeezes to 200 by 32 for 90ms. Keyboard presses and reduced motion skip the squeeze. A tap that lands before the dock has loaded is kept and opens its panel once it’s ready.<button type="button" class="fnx" popovertarget="lt-n2" popovertargetaction="hide" aria-label="Close note">Close</button></span></p>
+  <figure class="fig">
+    <div class="plane solo">
+      <Shot src={A + 'p-dock-solo'} video kind="plate" ratio="392 / 480" alt="The dock on its own: the bar grows into the Shop panel, folds back, then tucks into a pill." />
+    </div>
+    <figcaption>The dock alone: bar, panel, pill. The idea of a bar that unfolds into the menu is <a href="https://x.com/dannyjpwilliams/status/2099861544326848811" target="_blank" rel="noopener">Danny Williams’</a>.</figcaption>
+  </figure>
+
+  <h2>Buying without leaving</h2>
+  <p>Quick add on a card opens a sheet with the photos, the price and the sizes. Add the same tee again and the note at the bottom updates in place instead of stacking a second one. On the product page the details rise over the photo as a sheet, with Details, Size & fit and Delivery as tabs, so reading never takes you away from the tee.</p>
+  <figure class="fig">
+    <div class="plane row2">
+      <Shot src={A + 'p-quickadd'} video alt="Quick add on a product card opens a sheet; choosing M and Add to bag shows a note that it’s in the bag." />
+      <Shot src={A + 'p-sheets'} video alt="The product sheet rises over the photo, then switches between Details, Size & fit and Delivery." />
+    </div>
+    <figcaption>Quick add from the grid, and the product sheet.</figcaption>
+  </figure>
+
+  <h2>A pass that only says what happened</h2>
+  <p>When Razorpay reports the payment, the bag gives way to a printer slot and the order’s pass feeds out of it.<button type="button" class="fm" popovertarget="lt-n3" aria-label="Note 3">3</button><span class="fn" id="lt-n3" popover role="note"><span class="k" aria-hidden="true">3</span>The print is one speed curve, a nudge, a breath, three ticks and a glide, handed to the browser as a single linear() easing, so the paper never jumps between steps.<button type="button" class="fnx" popovertarget="lt-n3" popovertargetaction="hide" aria-label="Close note">Close</button></span> From then on it changes only when the parcel does. Shiprocket’s courier scans move the order on, and each stage gets its own scene in one WebGL shader. It pauses off screen and draws a single still frame for anyone who has asked for less motion.</p>
+  <figure class="fig">
+    <div class="plane row4 scroller" role="group" aria-label="The pass at each stage">
+      {posters.map(([k, t]) => <Shot src={A + `pass/${k}-m`} kind="bare" alt={`The pass at ${t.replace('.', '')}`} caption={t} />)}
+    </div>
+    <figcaption>A stem and one bloom; a box that folds shut; a route with light running along it; five blooms.</figcaption>
+  </figure>
+
+  <h2>Waiting, drawn</h2>
+  <p>A slow page used to show a 2px line inside the dock and nothing else, so it read as a frozen site. Now a tap covers the page with the shape of the next one: grey blocks at once, then the page draws itself as an outline in reading order, and the real page fades in over it.<button type="button" class="fm" popovertarget="lt-n4" aria-label="Note 4">4</button><span class="fn" id="lt-n4" popover role="note"><span class="k" aria-hidden="true">4</span>The outline starts at 350ms and the page fades in over 120ms. The outlines are measured from the real pages at phone and desktop widths. Only the page’s name shows, as pale ghost type, and for a product it’s read from the card you pressed. If nothing arrives in 10 seconds, you get the page back.<button type="button" class="fnx" popovertarget="lt-n4" popovertargetaction="hide" aria-label="Close note">Close</button></span> There are no photos and no labels in it, so it never passes for the page itself.</p>
+  <figure class="fig">
+    <div class="plane solo narrow">
+      <Shot src={A + 'p-loading'} video alt="Tapping a product shows grey blocks, then an outline of the product page, then the page." />
+    </div>
+    <figcaption>Five versions of this were explored before this one shipped.</figcaption>
+  </figure>
+
+  <h2>What it sounds like</h2>
+  <p>The first sounds had pitch and read like a game. Now a <button type="button" class="say" data-sound="tap">tap<i aria-hidden="true"></i></button> is a short contact over a low body that settles in about 25ms, and no two are quite alike.<button type="button" class="fm" popovertarget="lt-n5" aria-label="Note 5">5</button><span class="fn" id="lt-n5" popover role="note"><span class="k" aria-hidden="true">5</span>Each press gets a random detune of up to 35 cents and a level change of up to 8%, so a run of taps never sounds stamped. The sounds play through @web-kits/audio by Raphael Salaja.<button type="button" class="fnx" popovertarget="lt-n5" popovertargetaction="hide" aria-label="Close note">Close</button></span> The dock <button type="button" class="say" data-sound="dockOpen">opens on filtered air<i aria-hidden="true"></i></button>. Adding to the bag is <button type="button" class="say" data-sound="success">a fourth struck together<i aria-hidden="true"></i></button>, and placing an order is <button type="button" class="say" data-sound="complete">a slow D major strum<i aria-hidden="true"></i></button>. Every note is in D.</p>
+
+  <h2>Behind the counter</h2>
+  <p>Orders, the catalogue and coupons live in Convex. Razorpay and Shiprocket report back by webhook, and each report moves an order to its next stage, which is what the pass shows and what the emails say. I built that half too, so every screen above was designed knowing exactly what the system could tell it.</p>
+
+  <p class="end"><a href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub<span aria-hidden="true"> ↗</span></a></p>
+
+  <Credits class="credits" items={['dock', 'sound', 'photos', 'stack']} />
+</article>
+
+<style>
+  .lt { --plane: #f4f3f0; --col: 600px; max-width: var(--col); margin: 0 auto; }
+  .head h1 { font: 500 clamp(36px, 5vw, 48px)/1.05 var(--display); letter-spacing: -.025em; }
+  .sub { margin-top: 10px; font: 400 clamp(18px, 2vw, 20px)/1.4 var(--display); color: var(--ink-2); text-wrap: balance; }
+  .by { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; font: 400 13px/1.4 var(--display); color: var(--ink-3); }
+  .by a { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+  .lt > p { margin-top: 18px; font: 400 17px/1.65 var(--display); color: var(--body); text-wrap: pretty; }
+  .lt > .open { margin-top: clamp(36px, 5vw, 56px); font-size: 19px; line-height: 1.6; color: var(--ink); }
+  .lt h2 { margin-top: clamp(48px, 6vw, 72px); font: 500 19px/1.3 var(--display); letter-spacing: -.01em; color: var(--ink); }
+  .lt h2 + p { margin-top: 10px; }
+  .lt a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(31, 29, 27, .25); text-underline-offset: 3px; }
+  @media (hover: hover) and (pointer: fine) { .lt a:hover { text-decoration-color: currentColor; } }
+
+  /* figures: small media on a soft plane, the caption under it, no borders */
+  .fig { margin: 28px 0 0; }
+  .plane { display: grid; gap: 16px; padding: clamp(18px, 3vw, 28px); border-radius: 20px; background: var(--plane); }
+  .row2 { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: clamp(36px, 8vw, 72px); gap: clamp(16px, 3vw, 28px); }
+  .row3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .row4 { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .solo { justify-items: center; }
+  .solo :global(.shot) { width: min(100%, 300px); }
+  .narrow :global(.shot) { width: min(100%, 210px); }
+  .row4 :global(figcaption) { margin-top: 8px; font-size: 12.5px; text-align: center; }
+  .fig > figcaption { margin-top: 12px; font: 400 13.5px/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .scroller:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  /* footnote markers: a small raised number with a 44px hit area that doesn't move the line */
+  .fm { all: unset; position: relative; display: inline-block; margin-left: 2px; vertical-align: super; font: 600 11px/1 var(--display); color: var(--ink);
+    font-variant-numeric: tabular-nums; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .fm::after { content: ''; position: absolute; inset: -17px -15px; }
+  .fm:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 2px; }
+  .fn .k { font: 600 11px/1 var(--display); color: var(--ink); margin-right: 6px; vertical-align: 1px; }
+  .fnx { all: unset; display: none; }
+
+  /* phones and tablets: a note opens as a sheet from the bottom, the way the store's sheets do */
+  @media (max-width: 1179px) {
+    .fn:popover-open { position: fixed; inset: auto 0 0 0; margin: 0; width: auto; max-width: none; height: auto; border: 0; border-radius: 22px 22px 0 0;
+      padding: 22px 20px calc(16px + env(safe-area-inset-bottom)); background: #fff; color: var(--body); font: 400 16px/1.55 var(--display);
+      box-shadow: 0 -12px 40px -12px rgba(0, 0, 0, .22); display: block; }
+    .fn .k { display: inline; }
+    .fn:popover-open .fnx { display: flex; align-items: center; width: fit-content; margin: 14px 0 0 auto; height: 44px; padding: 0 18px; border-radius: 99px; background: rgba(31, 29, 27, .06);
+      font: 500 14px/1 var(--display); color: var(--ink); cursor: pointer; }
+    .fn:popover-open .fnx:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+    .fn { transform: translateY(100%); transition: transform .32s cubic-bezier(.32, .72, 0, 1), overlay .32s allow-discrete, display .32s allow-discrete; }
+    .fn:popover-open { transform: none; }
+    .fn::backdrop { background: rgba(0, 0, 0, .18); opacity: 0; transition: opacity .25s, overlay .32s allow-discrete, display .32s allow-discrete; }
+    .fn:popover-open::backdrop { opacity: 1; }
+    @starting-style {
+      .fn:popover-open { transform: translateY(100%); }
+      .fn:popover-open::backdrop { opacity: 0; }
+    }
+  }
+
+  /* wide screens: the column moves left and the notes sit in the margin next to the line that calls them */
+  @media (min-width: 1180px) {
+    .lt { margin-left: max(0px, calc((100% - var(--col) - 300px) / 2)); }
+    .fn { display: block; position: relative; inset: auto; float: right; clear: right; width: 240px; margin: 6px -300px 14px 0; padding: 0; border: 0; overflow: visible;
+      background: none; color: var(--ink-2); font: 400 13px/1.5 var(--display); text-wrap: pretty; }
+    .fn.lit { animation: lit 1.2s var(--ease); }
+    @keyframes lit { 0%, 30% { opacity: .35; } 100% { opacity: 1; } }
+  }
+
+  /* words that play the sound they describe */
+  .say { all: unset; position: relative; cursor: pointer; color: var(--ink); text-decoration: underline dotted rgba(31, 29, 27, .45); text-underline-offset: 4px;
+    text-decoration-thickness: 1.5px; -webkit-tap-highlight-color: transparent; }
+  .say::after { content: ''; position: absolute; inset: -14px -4px; }
+  .say i { display: inline-block; width: 13px; height: 10px; margin-left: 5px; vertical-align: -0px;
+    background: currentColor; -webkit-mask: var(--wave) center / contain no-repeat; mask: var(--wave) center / contain no-repeat; opacity: .55;
+    --wave: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 10'><rect x='0' y='4' width='1.6' height='2' rx='.8'/><rect x='3' y='2' width='1.6' height='6' rx='.8'/><rect x='6' y='0' width='1.6' height='10' rx='.8'/><rect x='9' y='2.5' width='1.6' height='5' rx='.8'/><rect x='11.4' y='4' width='1.6' height='2' rx='.8'/></svg>"); }
+  .say.on i { animation: pulse .5s var(--ease); }
+  @keyframes pulse { 0% { opacity: 1; transform: scaleY(1.35); } 100% { opacity: .55; transform: none; } }
+  .say:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 3px; }
+
+  .end { margin-top: 40px !important; font-weight: 500; }
+  .lt :global(.credits) { margin-top: clamp(56px, 7vw, 80px); }
+
+  /* phones: planes run edge to edge; rows of three or four become a row you swipe */
+  @media (max-width: 640px) {
+    .lt > p { font-size: 16.5px; }
+    .lt > .open { font-size: 18px; }
+    .plane { margin-inline: calc(-1 * var(--gut)); border-radius: 0; padding: 22px var(--gut); }
+    .row2 { padding-inline: var(--gut); gap: 12px; }
+    .scroller { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gut); scrollbar-width: none; overscroll-behavior-x: contain; }
+    .scroller::-webkit-scrollbar { display: none; }
+    .scroller > :global(*) { flex: 0 0 auto; scroll-snap-align: start; }
+    .row3 > :global(*) { width: 62vw; }
+    .row4 > :global(*) { width: 40vw; }
+    .fig > figcaption { padding-inline: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fn, .fn::backdrop { transition: none !important; }
+    .fn.lit, .say.on i { animation: none; }
+  }
+</style>
+
+<script>
+  import { play, type SoundName } from './sound';
+
+  const root = document.querySelector<HTMLElement>('[data-lt]')!;
+  const wide = matchMedia('(min-width: 1180px)');
+
+  // on wide screens the notes are already in the margin, so a marker points at its note instead of opening a sheet
+  root.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const fm = t.closest<HTMLButtonElement>('.fm');
+    if (fm && wide.matches) {
+      e.preventDefault();
+      const note = document.getElementById(fm.getAttribute('popovertarget')!)!;
+      note.classList.remove('lit');
+      void note.offsetWidth;
+      note.classList.add('lit');
+      return;
+    }
+    const say = t.closest<HTMLButtonElement>('.say');
+    if (!say) return;
+    play(say.dataset.sound as SoundName);
+    say.classList.remove('on');
+    void say.offsetWidth;
+    say.classList.add('on');
+  });
+  // a row you swipe takes keyboard focus (so arrow keys can scroll it) only while it actually overflows
+  const scrollers = [...root.querySelectorAll<HTMLElement>('.scroller')];
+  const focusable = () => scrollers.forEach((s) => { if (s.scrollWidth > s.clientWidth + 1) s.tabIndex = 0; else s.removeAttribute('tabindex'); });
+  new ResizeObserver(focusable).observe(root);
+
+  // a note that was opened as a sheet shouldn't linger when the window grows into the sidenote layout
+  wide.addEventListener('change', () => root.querySelectorAll<HTMLElement>('.fn').forEach((n) => { try { n.hidePopover(); } catch {} }));
+</script>

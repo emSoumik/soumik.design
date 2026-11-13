@@ -1,0 +1,750 @@
+---
+// LAB direction 9, "Board": the working board instead of the finished deck. the case study is one big pannable
+// canvas laid out as the path a customer takes, with notes pinned next to the screens and the live dock and pass
+// running on it. a guided tour flies the camera from stop to stop. phone: the tour is the default (camera on stop 1,
+// caption under the board, big Prev/Next, one finger pans, two zoom) and every stop is also a plain list below.
+// desktop: the board opens as an overview you can drag, zoom and fly around, and the tour is opt-in
+import Shot from './Shot.astro';
+import SoundKeys from './SoundKeys.astro';
+import FooterIndex from './FooterIndex.astro';
+import Credits from './Credits.astro';
+import { A } from './lab';
+
+// rect = the part of the board a stop frames: [x, y, w, h] in world px, label and pinned notes included
+const stops = [
+  { id: 'land', name: 'Land', rect: [60, 712, 560, 730], text: 'A customer lands on a drop. A campaign photo fills the phone and a swipe brings the next one, one drop per screen. Everything after it is plain neutrals: a loud brand on a quiet store.' },
+  { id: 'shop', name: 'Shop', rect: [700, 712, 560, 730], text: 'Two doors in, Women and Men, one photo each. Then the shop is a quiet grid of tees and prices.' },
+  { id: 'quick', name: 'Quick add and the sheet', rect: [1340, 712, 804, 730], text: 'The + on every shop card opens a sheet with photos, price and size, so you never leave the shop. On a product page the details sheet rises over the tee photo, so the tee stays on screen while you read.' },
+  { id: 'bag', name: 'Bag', rect: [2230, 712, 312, 730], text: 'The bag is kept short. Each piece gets one line, the total sits under it, a free pair of socks is one tap to add, and then it is checkout.' },
+  { id: 'pass', name: 'Pay, then the pass', rect: [2620, 712, 560, 730], text: 'The moment Razorpay confirms a payment, the bag gives way to a printer slot and a pass feeds out. It is live here, so pick a stage. Courier updates from Shiprocket move it along.' },
+  { id: 'dock', name: 'The dock', rect: [1340, 32, 804, 668], phone: [1340, 32, 440, 668], text: 'Navigation sits at the bottom, where the thumb is. One surface, three shapes: a bar of five, a pill at the left edge, and a panel with Women and Men as photos. It is the real one, so tap it.' },
+  { id: 'tint', name: 'Safari’s colour', rect: [60, 1532, 980, 560], text: 'Safari 26 tints its bars from the page behind them, and with a white page edge every hero looked pasted in. I took the free shipping bar out, and the store reads a thin strip along the top of each photo instead. These three are from an iPhone.' },
+  { id: 'wait', name: 'Waiting', rect: [1040, 1532, 740, 560], text: 'Tap a link and grey blocks cover the old page at once. At 350ms they draw themselves into an outline of that page, and the real page fades in over the same lines. Still nothing after 10 seconds and you get the old page back.' },
+  { id: 'sound', name: 'Sound', rect: [1820, 1532, 600, 560], text: 'A press is a few milliseconds of soft noise over a low thump, detuned a little each time. Only rare moments carry a note, and every note is in D. Press the keys.' },
+  { id: 'counter', name: 'Behind the counter', rect: [2230, 72, 940, 490], text: 'Convex holds the catalogue and the orders the pass reads from. Razorpay and Shiprocket each send a webhook that moves an order to its next stage. Doing both halves meant nothing had to be explained to anyone before it was built.' },
+];
+const stages = [
+  ['confirmed', 'You’re in', 'A stem grows and one bloom opens.'],
+  ['packed', 'All packed', 'A box drops in, folds shut and gets taped.'],
+  ['shipped', 'On its way', 'The route draws itself and light runs it to a pin.'],
+  ['delivered', 'It’s home', 'Five blooms open, one after another.'],
+];
+const W = 3300, H = 2140;
+---
+<article class="bd">
+  <header class="head">
+    <p class="eyebrow"><a href="/projects/">case study</a><span aria-hidden="true">·</span>2026</p>
+    <h1>WhyClub</h1>
+    <p class="lede">The details survived because one person did the brand, the store and the backend. This is the board I worked from, arranged as the path a customer takes from the first photo to the parcel at the door.</p>
+    <dl class="meta">
+      <div><dt>Role</dt><dd>Design and engineering</dd></div>
+      <div><dt>Stack</dt><dd>Astro, React, Convex, Cloudflare Workers, WebGL</dd></div>
+      <div><dt>Live</dt><dd><a href="https://whyclub.in" target="_blank" rel="noopener">whyclub.in <span aria-hidden="true">↗</span></a></dd></div>
+    </dl>
+  </header>
+
+  <section class="board" aria-label="The board" data-board>
+    <p class="how">Drag to move. Pinch or hold ctrl and scroll to zoom. The pass and the dock below are live, so poke them.</p>
+    <div class="stage">
+      <div class="vp" tabindex="0" data-own-keys role="group" aria-roledescription="pannable board" aria-label="The WhyClub board. Arrow keys or W A S D move around, plus and minus zoom, 0 fits it all.">
+        <div class="world" style={`width:${W}px;height:${H}px`}>
+          <p class="title" aria-hidden="true">WhyClub<span>the customer’s path, left to right</span></p>
+
+          <svg class="wires" viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
+            <defs>
+              <marker id="bd-ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M1.5 1.5 8.5 5l-7 3.5" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></marker>
+            </defs>
+            <g class="solid">
+              <path d="M608 1096 C650 1060 676 1060 710 1090" marker-end="url(#bd-ah)" />
+              <path d="M1248 1096 C1290 1060 1316 1060 1350 1090" marker-end="url(#bd-ah)" />
+              <path d="M2132 1096 C2170 1060 2196 1060 2240 1090" marker-end="url(#bd-ah)" />
+              <path d="M2532 1096 C2560 1060 2590 1060 2630 1090" marker-end="url(#bd-ah)" />
+            </g>
+            <g class="dash">
+              <path d="M1740 706 L1740 738" marker-end="url(#bd-ah)" />
+              <path d="M3060 736 L3060 570" marker-end="url(#bd-ah)" />
+              <path d="M420 1428 C420 1490 560 1490 620 1552" marker-end="url(#bd-ah)" />
+              <path d="M1000 1428 C1000 1500 1480 1480 1520 1552" marker-end="url(#bd-ah)" />
+              <path d="M1900 1428 C1900 1500 2200 1480 2260 1552" marker-end="url(#bd-ah)" />
+            </g>
+          </svg>
+
+          <!-- by the numbers, top left -->
+          <div class="nt" style="--x:80px;--y:540px;--w:300px;--c:#2f7de1;--r:-1deg">
+            <b class="k">By the numbers</b>
+            <p>251 commits from the first page in March 2026 to the store today. 201 test files, unit tests in Vitest and whole flows in Playwright. 24 sound cues.</p>
+          </div>
+          <div class="nt" style="--x:420px;--y:540px;--w:300px;--c:#e8603c;--r:.8deg">
+            <b class="k">Start here</b>
+            <p>The row in the middle is the path: land, shop, add to bag, pay. The rest hang off it, above and below.</p>
+          </div>
+
+          <!-- 01 land -->
+          <section class="rg" id="bd-r-land" style="--x:80px;--y:740px;--w:520px;--h:680px" aria-label="Land">
+            <span class="lb"><i>01</i>Land</span>
+            <div class="it" style="--x:28px;--y:28px;--w:220px"><Shot src={A + 'm-01'} alt="The home page on a phone: the Please, I’m a Star campaign photo filling the screen." /></div>
+            <div class="it" style="--x:272px;--y:28px;--w:220px"><Shot src={A + 'p-hero'} video alt="The home page on a phone, swiping from one drop’s campaign photo to the next." /></div>
+            <div class="nt" style="--x:28px;--y:524px;--w:464px;--c:#e8603c">
+              <p>One drop per screen: a campaign photo fills the phone and you swipe for the next. Shopping happens on plain neutrals, a loud brand on a quiet store.</p>
+            </div>
+          </section>
+
+          <!-- 02 shop -->
+          <section class="rg" id="bd-r-shop" style="--x:720px;--y:740px;--w:520px;--h:680px" aria-label="Shop">
+            <span class="lb"><i>02</i>Shop</span>
+            <div class="it" style="--x:28px;--y:28px;--w:220px"><Shot src={A + 'm-02'} alt="The shop on a phone: two columns of tees with their prices." /></div>
+            <div class="it" style="--x:272px;--y:28px;--w:220px"><Shot src={A + 'p-categories'} video alt="The two doors into the shop, Women and Men, each a photo." /></div>
+            <div class="nt" style="--x:28px;--y:524px;--w:464px;--c:#2fa36b;--r:-.6deg">
+              <p>Two doors in, Women and Men, one photo each. After that the shop is a quiet grid.</p>
+            </div>
+          </section>
+
+          <!-- 03 quick add and sheet -->
+          <section class="rg" id="bd-r-quick" style="--x:1360px;--y:740px;--w:764px;--h:680px" aria-label="Quick add and the sheet">
+            <span class="lb"><i>03</i>Quick add and the sheet</span>
+            <div class="it" style="--x:28px;--y:28px;--w:220px"><Shot src={A + 'm-04'} alt="Quick add open over the shop, size M picked." /></div>
+            <div class="it" style="--x:272px;--y:28px;--w:220px"><Shot src={A + 'p-quickadd'} video alt="Tapping the + on a card: a sheet rises with photos, price and sizes, then the bag in the dock counts the piece." /></div>
+            <div class="it" style="--x:516px;--y:28px;--w:220px"><Shot src={A + 'p-sheets'} video alt="On a product page the details sheet rises over the tee photo." /></div>
+            <div class="nt" style="--x:28px;--y:524px;--w:344px;--c:#2f7de1;--r:.6deg">
+              <p>The + on every shop card opens a sheet with photos, price and size, without leaving the shop. Add to bag and the bag in the dock counts it.</p>
+            </div>
+            <div class="nt" style="--x:392px;--y:524px;--w:344px;--c:#e8603c;--r:-.8deg">
+              <p>On the product page the details sheet rises over the tee photo, so the tee stays on screen while you read.</p>
+            </div>
+          </section>
+
+          <!-- 04 bag -->
+          <section class="rg" id="bd-r-bag" style="--x:2250px;--y:740px;--w:272px;--h:680px" aria-label="Bag">
+            <span class="lb"><i>04</i>Bag</span>
+            <div class="it" style="--x:26px;--y:28px;--w:220px"><Shot src={A + 'm-cart'} alt="The bag: each piece on one line, the total under it, and a free pair of socks to add." /></div>
+            <div class="nt" style="--x:26px;--y:524px;--w:220px;--c:#2fa36b;--r:.7deg">
+              <p>Each piece on one line, the total under it, a free pair of socks one tap to add, then checkout.</p>
+            </div>
+          </section>
+
+          <!-- 05 pay, the pass (live) -->
+          <section class="rg" id="bd-r-pass" style="--x:2640px;--y:740px;--w:520px;--h:680px" aria-label="Pay, then the pass">
+            <span class="lb"><i>05</i>Pay, then the pass <em>live</em></span>
+            <div class="it" style="--x:28px;--y:28px;--w:260px">
+              <div class="passhold" data-pass-hold>
+                <picture><source srcset={`${A}pass/confirmed-m.avif`} type="image/avif"><img src={`${A}pass/confirmed-m.webp`} alt="" loading="lazy" decoding="async" draggable="false"></picture>
+              </div>
+            </div>
+            <div class="it chips" style="--x:312px;--y:28px;--w:180px">
+              <div class="list" role="radiogroup" aria-label="Order stage">
+                {stages.map(([k, t], i) => (
+                  <button type="button" role="radio" aria-checked={String(i === 0)} tabindex={i === 0 ? 0 : -1} data-stage={k} data-sd={stages[i][2]}>{t}</button>
+                ))}
+              </div>
+              <p class="sd" aria-live="polite" data-stage-text>{stages[0][2]}</p>
+              <button type="button" class="pill" data-replay>Print it again</button>
+            </div>
+            <div class="nt" style="--x:312px;--y:360px;--w:180px;--c:#2fa36b;--r:.8deg">
+              <p>The colour band is one fragment shader drawing a different scene per stage. It pauses off screen and shows one still frame for reduced motion.</p>
+            </div>
+          </section>
+
+          <!-- 06 the dock (live), above the path -->
+          <section class="rg" id="bd-r-dock" style="--x:1360px;--y:60px;--w:764px;--h:620px" aria-label="The dock">
+            <span class="lb"><i>06</i>The dock <em>live</em><b>off the path</b></span>
+            <div class="it" style="--x:28px;--y:28px;--w:260px"><div class="dockhold" data-dock-hold></div></div>
+            <div class="it btns" style="--x:28px;--y:548px;--w:260px">
+              <button type="button" class="pill" data-act="open" aria-pressed="false">Open Shop</button>
+              <button type="button" class="pill" data-act="scroll" aria-pressed="false">Scroll the page</button>
+            </div>
+            <div class="nt" style="--x:320px;--y:28px;--w:416px;--c:#2f7de1;--r:-.6deg">
+              <p>Navigation sits at the bottom, where the thumb is. One surface, three shapes: a bar of five at the top of a page, a pill at the left edge once you scroll, and a panel when you tap Shop, Account or More.</p>
+            </div>
+            <div class="nt" style="--x:320px;--y:200px;--w:416px;--c:#e8603c;--r:.5deg">
+              <p>Tap Shop and the bar squeezes for 90ms, then springs open into a panel. The springs are written in Apple’s terms, response and damping, and sampled into CSS linear() easings. Only opening a panel overshoots, a little.</p>
+            </div>
+            <div class="nt" style="--x:320px;--y:394px;--w:416px;--c:#2fa36b;--r:-.4deg">
+              <p>They are plain transitions, so a tap halfway through a move picks up from wherever the dock is. Dark glass shows only on an iPhone in dark mode.</p>
+            </div>
+            <p class="spring" style="--x:320px;--y:560px;--w:416px" aria-live="polite" data-spring>Tap the dock, or use the buttons.</p>
+          </section>
+
+          <!-- behind the counter, above the path -->
+          <section class="rg" id="bd-r-counter" style="--x:2250px;--y:100px;--w:900px;--h:440px" aria-label="Behind the counter">
+            <span class="lb"><i>10</i>Behind the counter<b>off the path</b></span>
+            <div class="it flow" style="--x:28px;--y:44px;--w:844px">
+              <div class="nd"><b>Razorpay</b><span>webhook: payment confirmed</span></div>
+              <i class="ar" aria-hidden="true"></i>
+              <div class="nd hi"><b>Convex</b><span>the order</span></div>
+              <i class="ar" aria-hidden="true"></i>
+              <div class="nd"><b>The pass</b><span>stage moves on</span></div>
+              <i class="ar back" aria-hidden="true"></i>
+              <div class="nd"><b>Shiprocket</b><span>webhook: courier update</span></div>
+            </div>
+            <div class="nt" style="--x:28px;--y:230px;--w:400px;--c:#2f7de1;--r:-.6deg">
+              <p>Convex holds the catalogue and the orders the pass reads from. Each webhook moves an order to its next stage.</p>
+            </div>
+            <div class="nt" style="--x:452px;--y:230px;--w:420px;--c:#e8603c;--r:.6deg">
+              <p>The store runs on Astro and React on Cloudflare Workers. Doing both halves, design and engineering, meant nothing had to be explained to anyone before it was built.</p>
+            </div>
+          </section>
+
+          <!-- 07 safari's colour -->
+          <section class="rg" id="bd-r-tint" style="--x:80px;--y:1560px;--w:666px;--h:500px" aria-label="Safari’s colour">
+            <span class="lb"><i>07</i>Safari’s colour<b>off the path</b></span>
+            <div class="it" style="--x:28px;--y:28px;--w:190px"><Shot src={A + 'ios/before'} ratio="720 / 1565" alt="Before, on an iPhone: a free shipping bar above the photo, and Safari’s toolbar on white under the dock." caption="Before" /></div>
+            <div class="it" style="--x:238px;--y:28px;--w:190px"><Shot src={A + 'ios/light'} ratio="720 / 1565" alt="After, light mode: the same photo, with the status bar in a muted shade of its top edge." caption="After" /></div>
+            <div class="it" style="--x:448px;--y:28px;--w:190px"><Shot src={A + 'ios/dark'} ratio="720 / 1565" alt="After, dark mode: the same page with the dock in dark glass." caption="After, dark mode" /></div>
+          </section>
+          <div class="nt" style="--x:770px;--y:1580px;--w:260px;--c:#2f7de1;--r:.7deg">
+            <p>With a white page edge every hero looked pasted in, and a free shipping bar sat on top. I took the bar out. The store reads the top 16px of each photo, averaged on a 48 by 12 canvas, mixed 65/35 with its own brightness and darkened a touch.</p>
+          </div>
+          <div class="nt" style="--x:770px;--y:1840px;--w:260px;--c:#e8603c;--r:-.6deg">
+            <p>The shade goes to the browser 160ms after a swipe settles. Each photo is read once.</p>
+          </div>
+
+          <!-- 08 waiting -->
+          <section class="rg" id="bd-r-wait" style="--x:1060px;--y:1560px;--w:700px;--h:500px" aria-label="Waiting">
+            <span class="lb"><i>08</i>Waiting<b>off the path</b></span>
+            <div class="it" style="--x:28px;--y:28px;--w:190px"><Shot src={A + 'p-loading'} video alt="Tapping Shop, then Women, on a slow connection: grey blocks, then an outline of the grid, then the photos land in the same places." /></div>
+            <ol class="it ruler" style="--x:256px;--y:28px;--w:416px">
+              <li><b>Press</b><span>Grey blocks cover the old page.</span></li>
+              <li><b>350ms</b><span>They draw themselves into an outline of the page, in reading order.</span></li>
+              <li><b>Ready</b><span>The real page fades in over the same lines.</span></li>
+              <li class="gap" aria-hidden="true"><b></b><span></span></li>
+              <li><b>10s</b><span>Still nothing? You get the old page back.</span></li>
+            </ol>
+            <div class="nt" style="--x:256px;--y:350px;--w:416px;--c:#2fa36b;--r:.5deg">
+              <p>The store works out from the address what kind of page is coming. The outlines are measured from the real pages at phone and desktop widths.</p>
+            </div>
+          </section>
+
+          <!-- 09 sound -->
+          <section class="rg" id="bd-r-sound" style="--x:1840px;--y:1560px;--w:560px;--h:360px" aria-label="Sound">
+            <span class="lb"><i>09</i>Sound<b>off the path</b></span>
+            <div class="it keys" style="--x:28px;--y:28px;--w:504px">
+              <SoundKeys keys={[
+                { name: 'tap', label: 'Tap', note: 'Any button' },
+                { name: 'dockOpen', label: 'Dock opens', note: 'Filtered air, no note' },
+                { name: 'success', label: 'Added to bag', note: 'A fourth, struck almost together' },
+                { name: 'complete', label: 'Order placed', note: 'A slow D major strum' },
+              ]} />
+            </div>
+          </section>
+          <div class="nt" style="--x:1840px;--y:1950px;--w:560px;--c:#e8603c;--r:-.4deg">
+            <p>The first sounds were short pitched blips and the store felt like an arcade. Now a press is soft noise over a low thump that settles in about 25ms. All sounds are optional, and each has something to see as well.</p>
+          </div>
+
+          <!-- footer -->
+          <section class="rg" id="bd-r-foot" style="--x:2480px;--y:1560px;--w:700px;--h:400px" aria-label="Footer">
+            <span class="lb"><i>11</i>Footer<b>off the path</b></span>
+            <div class="it foot" style="--x:28px;--y:28px;--w:644px"><FooterIndex /></div>
+          </section>
+          <div class="nt" style="--x:2480px;--y:1990px;--w:700px;--c:#2f7de1;--r:.4deg">
+            <p>Every footer link carries a number running across the three columns, 01 to 13. Point at one and its number slides 6px in over 180ms while the label steps right.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tools" role="group" aria-label="Board controls">
+        <button type="button" class="tb tour" data-tour>Take the tour</button>
+        <button type="button" class="tb ico" data-zoom="out" aria-label="Zoom out">−</button>
+        <button type="button" class="tb ico" data-zoom="in" aria-label="Zoom in">+</button>
+        <button type="button" class="tb" data-fit>Fit</button>
+      </div>
+      <div class="mm" data-mm aria-hidden="true"><div class="mmv"></div></div>
+    </div>
+
+    <div class="cap" data-cap>
+      <p class="n"><span data-cap-n>1 / {stops.length}</span><button type="button" class="end" data-end>End tour</button></p>
+      <h2 data-cap-title>{stops[0].name}</h2>
+      <p class="tx" data-cap-text>{stops[0].text}</p>
+      <div class="row">
+        <button type="button" class="pill big" data-prev>Prev</button>
+        <button type="button" class="pill big dark" data-next>Next</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="words" aria-labelledby="bd-words-h">
+    <h2 id="bd-words-h">The path in words</h2>
+    <ol>
+      {stops.map((s, i) => (
+        <li data-stop-li data-rect={s.rect.join(',')} data-phone={(s.phone ?? s.rect).join(',')}><span class="no">{String(i + 1).padStart(2, '0')}</span><div><h3>{s.name}</h3><p>{s.text}</p></div></li>
+      ))}
+    </ol>
+    <p class="visit"><a href="https://whyclub.in" target="_blank" rel="noopener">Visit WhyClub <span aria-hidden="true">↗</span></a></p>
+  </section>
+
+  <Credits class="credits" items={['dock', 'sound', 'photos', 'stack']} />
+</article>
+
+<style>
+  .bd { --bw: min(1280px, calc(100vw - var(--gut) * 2)); --dot: #d6d3cd; max-width: 1120px; margin: 0 auto; padding-bottom: 120px; }
+  .head { max-width: 720px; }
+  .head h1 { margin-top: 18px; font: 500 clamp(44px, 7vw, 76px)/1 var(--display); letter-spacing: -.03em; }
+  .lede { margin-top: 18px; font: 400 clamp(18px, 2vw, 21px)/1.5 var(--display); color: var(--ink-2); text-wrap: pretty; }
+  .meta { display: flex; flex-wrap: wrap; gap: 14px 36px; margin-top: 26px; }
+  .meta dt { font: 500 10.5px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .meta dd { margin: 8px 0 0; font: 400 14px/1.4 var(--display); }
+  .meta a, .visit a { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+  /* the board: a stage as wide as the layout allows, the camera is one transform on the world */
+  .board { position: relative; margin-top: clamp(40px, 6vw, 72px); width: var(--bw); margin-left: calc(50% - var(--bw) / 2); }
+  .how { max-width: 640px; margin: 0 0 14px; font: 400 14px/1.5 var(--display); color: var(--ink-2); }
+  .stage { position: relative; height: clamp(520px, 80svh, 860px); border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+  .vp { position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: grab; outline: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .vp.dragging { cursor: grabbing; }
+  .vp:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; }
+  .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #fff radial-gradient(circle, var(--dot) 1.3px, transparent 1.6px) 0 0 / 32px 32px;
+    box-shadow: 0 0 0 1px var(--line); }
+  .world.glide { transition: transform 700ms var(--ease); }
+  .world.moving { will-change: transform; }
+  .world :global(img), .world :global(video) { -webkit-user-drag: none; }
+
+  .title { position: absolute; left: 80px; top: 230px; margin: 0; font: 500 170px/1 var(--display); letter-spacing: -.04em; color: var(--ink); pointer-events: none; }
+  .title span { display: block; margin-top: 18px; font: 500 22px/1 var(--mono); letter-spacing: 0; color: var(--ink-3); }
+  .wires { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+  .wires path { fill: none; stroke-linecap: round; }
+  .wires .solid { stroke: var(--ink); stroke-width: 2.4; }
+  .wires .dash { stroke: var(--ink-3); stroke-width: 2; stroke-dasharray: 2 8; }
+
+  /* a region is a frame, named like one in a design tool */
+  .rg { position: absolute; left: var(--x); top: var(--y); width: var(--w); height: var(--h); border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .lb { position: absolute; left: 2px; bottom: calc(100% + 8px); display: flex; align-items: baseline; gap: 10px; white-space: nowrap; font: 500 15px/1 var(--mono); color: var(--ink); }
+  .lb i { font-style: normal; color: var(--ink-3); }
+  .lb em { font-style: normal; padding: 3px 6px; border-radius: 5px; background: rgba(31, 29, 27, .06); color: var(--ink-2); font-size: 12px; }
+  .lb b { font-weight: 400; color: var(--ink-3); font-size: 12px; }
+  .it { position: absolute; left: var(--x); top: var(--y); width: var(--w); }
+
+  /* notes: white, a hairline and a coloured top stripe */
+  .nt { position: absolute; left: var(--x); top: var(--y); width: var(--w); box-sizing: border-box; padding: 14px 16px 15px; border-radius: 4px 4px 8px 8px; background: #fff;
+    border-top: 4px solid var(--c, var(--ink)); box-shadow: 0 0 0 1px var(--line), 0 10px 22px -16px rgba(31, 29, 27, .35); rotate: var(--r, 0deg); }
+  .nt p { margin: 0; font: 400 15px/1.5 var(--display); color: var(--body); text-wrap: pretty; }
+  .nt .k { display: block; margin-bottom: 6px; font: 500 12px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* live pieces */
+  .dockhold { position: relative; width: 100%; aspect-ratio: 392 / 760; border-radius: 30px; overflow: hidden;
+    background: #3a2c22 url(/assets/work/whyclub/lab/hero-star.webp) center / cover; box-shadow: 0 20px 40px -26px rgba(40, 30, 15, .5); }
+  .passhold { position: relative; width: 100%; aspect-ratio: 392 / 890; overflow: hidden; }
+  .passhold picture, .passhold img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .dockhold :global(iframe), .passhold :global(iframe) { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; }
+  .passhold :global(iframe) { opacity: 0; transition: opacity .3s var(--ease); background: #fff; }
+  .passhold:global(.is-live) :global(iframe) { opacity: 1; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .spring { position: absolute; left: var(--x); top: var(--y); width: var(--w); margin: 0; font: 400 12.5px/1.5 var(--mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .chips { display: grid; gap: 12px; align-content: start; justify-items: stretch; }
+  .list { display: grid; gap: 6px; }
+  .list button { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 14px; display: flex; align-items: center; border-radius: 12px; cursor: pointer;
+    font: 500 15px/1.2 var(--display); color: var(--ink-3); box-shadow: 0 0 0 1px var(--line); -webkit-tap-highlight-color: transparent; }
+  .list button[aria-checked='true'] { color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink); }
+  .list button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .chips .sd { margin: 0; min-height: 40px; font: 400 13px/1.45 var(--display); color: var(--ink-2); }
+
+  .pill { all: unset; box-sizing: border-box; min-height: 44px; padding: 0 16px; border-radius: 99px; display: inline-grid; place-items: center; cursor: pointer; text-align: center;
+    font: 500 13.5px/1.1 var(--display); color: var(--ink); background: #fff; box-shadow: 0 0 0 1px var(--line); -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease); }
+  .pill[aria-pressed='true'], .pill.dark { background: var(--ink); color: #fff; box-shadow: none; }
+  .pill:active { transform: scale(.97); }
+  .pill:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .ruler { list-style: none; margin: 0; padding: 0; }
+  .ruler li { position: relative; display: grid; grid-template-columns: 4.6em 1fr; gap: 12px; padding: 0 0 18px 22px; font: 400 15px/1.45 var(--display); color: var(--body); }
+  .ruler li::before { content: ''; position: absolute; left: 0; top: .55em; width: 10px; height: 2px; background: var(--ink); }
+  .ruler li::after { content: ''; position: absolute; left: 0; top: .55em; bottom: -.55em; width: 2px; background: var(--ink); }
+  .ruler li:last-child::after { display: none; }
+  .ruler b { font: 500 13px/1.7 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .ruler .gap { padding-bottom: 8px; min-height: 22px; }
+  .ruler .gap::before { top: 2px; width: 10px; height: 10px; left: -4px; background: none; border: solid var(--ink); border-width: 2px 0; transform: skewY(-18deg); }
+  .ruler .gap::after { background: repeating-linear-gradient(var(--ink) 0 3px, transparent 3px 7px); width: 2px; }
+
+  .flow { display: flex; align-items: center; }
+  .flow .nd { flex: 0 0 172px; box-sizing: border-box; display: grid; gap: 6px; padding: 14px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .flow .nd.hi { box-shadow: 0 0 0 1.5px var(--ink); }
+  .flow .nd b { font: 500 17px/1.2 var(--display); }
+  .flow .nd span { font: 400 12.5px/1.4 var(--mono); color: var(--ink-2); }
+  .flow .ar { position: relative; flex: 1 1 0; height: 2px; background: var(--ink); }
+  .flow .ar::after { content: ''; position: absolute; right: 0; top: -4px; width: 8px; height: 8px; border: solid var(--ink); border-width: 2px 2px 0 0; rotate: 45deg; translate: -1px 0; }
+  .flow .ar.back::after { right: auto; left: 0; rotate: -135deg; translate: 1px 0; }
+
+  .keys :global(.sk) { grid-template-columns: 1fr 1fr; }
+  .foot { overflow: hidden; border-radius: 12px; }
+  .foot :global(.fi) { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 28px; }
+  .foot :global(.col:first-child) { grid-column: auto; }
+  .foot :global(.col:first-child ul) { display: block; }
+
+  /* controls on the stage */
+  .tools { position: absolute; right: 14px; top: 14px; display: flex; gap: 4px; padding: 4px; border-radius: 99px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 6px 18px -10px rgba(31, 29, 27, .3); }
+  .tb { all: unset; box-sizing: border-box; min-width: 44px; height: 44px; padding: 0 14px; display: grid; place-items: center; border-radius: 99px; cursor: pointer;
+    font: 500 13.5px/1 var(--display); color: var(--ink); -webkit-tap-highlight-color: transparent; transition: transform .16s var(--ease), background-color .16s var(--ease); }
+  .tb.ico { padding: 0; font-size: 20px; font-weight: 400; }
+  .tb.tour { background: var(--ink); color: #fff; }
+  .tb:active { transform: scale(.95); }
+  .tb:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .tb:disabled { opacity: .35; cursor: default; }
+
+  .mm { position: absolute; right: 14px; bottom: 14px; width: 168px; aspect-ratio: 3300 / 2140; border-radius: 8px; background: #fff; cursor: pointer; touch-action: none;
+    box-shadow: 0 0 0 1px var(--line), 0 6px 18px -10px rgba(31, 29, 27, .3); overflow: hidden; }
+  .mm :global(.mr) { position: absolute; background: rgba(31, 29, 27, .1); border-radius: 1px; }
+  .mmv { position: absolute; box-sizing: border-box; border: 1.5px solid var(--ink); border-radius: 2px; background: rgba(31, 29, 27, .05); }
+  .mm.glide .mmv { transition: left 700ms var(--ease), top 700ms var(--ease), width 700ms var(--ease), height 700ms var(--ease); }
+
+  /* the tour caption: floats bottom left on desktop, sits under the board on a phone */
+  .cap { position: absolute; left: 14px; bottom: 14px; width: min(440px, calc(100% - 28px)); box-sizing: border-box; padding: 16px 18px 18px; border-radius: 16px; background: #fff;
+    box-shadow: 0 0 0 1px var(--line), 0 14px 34px -16px rgba(31, 29, 27, .38); }
+  .cap[hidden] { display: none; }
+  .cap .n { display: flex; align-items: center; justify-content: space-between; margin: 0; font: 500 11.5px/1 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .cap h2 { margin: 8px 0 0; font: 500 21px/1.15 var(--display); letter-spacing: -.015em; }
+  .cap .tx { margin: 8px 0 0; font: 400 14.5px/1.55 var(--display); color: var(--body); text-wrap: pretty; }
+  .cap .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .end { all: unset; box-sizing: border-box; min-height: 32px; padding: 0 8px; margin: -10px -8px -10px 0; display: grid; place-items: center; cursor: pointer; color: var(--ink-2); font: 500 12px/1 var(--display); border-radius: 8px; }
+  .end:focus-visible { outline: 2px solid var(--ink); }
+
+  .words { margin-top: clamp(260px, 30vw, 360px); max-width: 860px; }
+  .words h2 { font: 500 clamp(24px, 2.8vw, 32px)/1.12 var(--display); letter-spacing: -.02em; }
+  .words ol { list-style: none; margin: 20px 0 0; padding: 0; display: grid; }
+  .words li { display: grid; grid-template-columns: 2.6em 1fr; gap: 6px 10px; padding: 16px 0; box-shadow: inset 0 1px 0 var(--line); }
+  .words li[aria-current='true'] .no { color: var(--ink); }
+  .words .no { font: 500 12px/1.9 var(--mono); color: var(--ink-3); }
+  .words h3 { margin: 0; font: 500 17px/1.3 var(--display); }
+  .words li p { margin: 4px 0 0; font: 400 15.5px/1.6 var(--display); color: var(--body); text-wrap: pretty; }
+  .words .visit { margin-top: 28px; font-weight: 500; color: var(--ink); }
+  .bd :global(.credits) { margin-top: clamp(56px, 8vw, 88px); }
+
+  @media (hover: hover) and (pointer: fine) {
+    .tb:hover:not(.tour) { background: rgba(31, 29, 27, .06); }
+    .list button[aria-checked='false']:hover { color: var(--ink-2); }
+  }
+
+  /* the phone layout: the board runs edge to edge, the tour caption sits under it */
+  @media (max-width: 640px) {
+    .bd { --bw: 100vw; }
+    .board { width: auto; margin-left: calc(var(--gut) * -1); margin-right: calc(var(--gut) * -1); }
+    .how { margin-inline: var(--gut); }
+    .stage { height: 70svh; border-radius: 0; box-shadow: 0 1px 0 var(--line), 0 -1px 0 var(--line); }
+    .tools { right: auto; left: 10px; top: auto; bottom: 10px; }
+    .tb.tour { display: none; }
+    .mm { right: 10px; bottom: 10px; width: 104px; }
+    .cap { position: static; width: auto; border-radius: 0; box-shadow: 0 1px 0 var(--line); padding: 16px var(--gut) 20px; }
+    .cap[hidden] { display: block; }
+    .cap .end { display: none; }
+    .cap h2 { font-size: 20px; }
+    .cap .tx { font-size: 15.5px; }
+    .cap .row { gap: 10px; }
+    .pill.big { min-height: 52px; font-size: 15px; }
+    .words { margin-top: 56px; }
+  }
+  @media (min-width: 900px) {
+    .words ol { grid-template-columns: 1fr 1fr; column-gap: 48px; }
+    .words { max-width: none; }
+    .bd { padding-bottom: 140px; }
+  }
+  @media (min-width: 641px) {
+    .words { margin-top: 56px; }
+    .cap .row { grid-template-columns: auto auto 1fr; justify-content: start; }
+    .pill.big { min-height: 40px; min-width: 88px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .world.glide, .mm.glide .mmv, .pill, .tb { transition: none; }
+    .passhold :global(iframe) { transition: none; }
+  }
+</style>
+
+<script>
+  import { frame, whenShown, reduced } from './lab';
+
+  const root = document.querySelector<HTMLElement>('.bd')!;
+  const board = root.querySelector<HTMLElement>('[data-board]')!;
+  const stage = board.querySelector<HTMLElement>('.stage')!;
+  const vp = board.querySelector<HTMLElement>('.vp')!;
+  const world = board.querySelector<HTMLElement>('.world')!;
+  const W = world.offsetWidth || 3300, H = world.offsetHeight || 2140;
+  const phone = matchMedia('(max-width: 640px)');
+
+  // ---- live pieces
+  const dock = frame(root.querySelector<HTMLElement>('[data-dock-hold]')!, '/assets/work/whyclub/dock/index.html', 392, 760, 'The WhyClub dock, live', 'dock');
+  const openB = root.querySelector<HTMLButtonElement>('[data-act=open]')!;
+  const scrollB = root.querySelector<HTMLButtonElement>('[data-act=scroll]')!;
+  const readout = root.querySelector<HTMLElement>('[data-spring]')!;
+  const NAMES: Record<string, string> = { open: 'Open', close: 'Close', switch: 'Switch', collapse: 'Into the pill', expand: 'Out of the pill', resize: 'Resize' };
+  let panelOpen = false, scrolled = false;
+  const sync = () => {
+    openB.setAttribute('aria-pressed', String(panelOpen));
+    openB.textContent = panelOpen ? 'Close Shop' : 'Open Shop';
+    scrollB.setAttribute('aria-pressed', String(scrolled));
+    scrollB.textContent = scrolled ? 'Back to the top' : 'Scroll the page';
+  };
+  dock.on((d) => {
+    if (d.moving) return;
+    if (d.shape) { panelOpen = d.shape === 'panel'; sync(); }
+    if (d.spring) readout.textContent = `${NAMES[d.spring.name] ?? d.spring.name}: response ${d.spring.response.toFixed(2)}, damping ${d.spring.damping.toFixed(2)}, settles in ${d.spring.durationMs}ms`;
+  });
+  openB.addEventListener('click', () => { panelOpen = !panelOpen; dock.send(panelOpen ? { open: 'shop' } : { close: true }); sync(); });
+  scrollB.addEventListener('click', () => {
+    scrolled = !scrolled;
+    if (panelOpen) { panelOpen = false; dock.send({ close: true }); }
+    dock.send({ scroll: scrolled ? 'down' : 'top' });
+    sync();
+  });
+
+  const pass = frame(root.querySelector<HTMLElement>('[data-pass-hold]')!, '/assets/work/whyclub/pass/index.html?stage=confirmed', 392, 890, 'The WhyClub drop pass, live', 'pass');
+  const list = root.querySelector<HTMLElement>('.list')!;
+  const radios = [...list.querySelectorAll<HTMLButtonElement>('[role=radio]')];
+  const stageText = root.querySelector<HTMLElement>('[data-stage-text]')!;
+  const pick = (b: HTMLButtonElement, focus = false) => {
+    radios.forEach((r) => { r.setAttribute('aria-checked', String(r === b)); r.tabIndex = r === b ? 0 : -1; });
+    if (focus) b.focus();
+    stageText.textContent = b.dataset.sd ?? '';
+    pass.send({ stage: b.dataset.stage });
+  };
+  list.addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[role=radio]'); if (b) pick(b); });
+  list.addEventListener('keydown', (e) => {
+    const i = radios.findIndex((r) => r.getAttribute('aria-checked') === 'true');
+    const k = ({ ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 } as Record<string, number>)[e.key];
+    if (!k) return;
+    e.preventDefault();
+    pick(radios[(i + k + radios.length) % radios.length], true);
+  });
+  root.querySelector('[data-replay]')!.addEventListener('click', () => pass.send({ replay: true }));
+
+  // ---- the camera: one transform on the world
+  const cam = { x: 0, y: 0, k: 0.4 };
+  let vw = 0, vh = 0, minK = 0.1, ready = false;
+  const MAXK = 1.6;
+  const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+  // the middle of the view stays inside the world, so a region near an edge can still be centred
+  const clampCam = () => {
+    cam.k = clamp(cam.k, minK, MAXK);
+    const sw = W * cam.k, sh = H * cam.k;
+    cam.x = sw <= vw ? (vw - sw) / 2 : clamp(cam.x, vw / 2 - sw, vw / 2);
+    cam.y = sh <= vh ? (vh - sh) / 2 : clamp(cam.y, vh / 2 - sh, vh / 2);
+  };
+
+  const mm = board.querySelector<HTMLElement>('[data-mm]')!;
+  const mmv = mm.querySelector<HTMLElement>('.mmv')!;
+  // regions are positioned by inline vars, so read them once the board is laid out (it is hidden at load)
+  const buildMap = () => world.querySelectorAll<HTMLElement>('.rg').forEach((r) => {
+    const d = document.createElement('div');
+    d.className = 'mr';
+    Object.assign(d.style, { left: `${(r.offsetLeft / W) * 100}%`, top: `${(r.offsetTop / H) * 100}%`, width: `${(r.offsetWidth / W) * 100}%`, height: `${(r.offsetHeight / H) * 100}%` });
+    mm.prepend(d);
+  });
+  const paintMap = () => {
+    Object.assign(mmv.style, {
+      left: `${((-cam.x / cam.k) / W) * 100}%`, top: `${((-cam.y / cam.k) / H) * 100}%`,
+      width: `${(vw / cam.k / W) * 100}%`, height: `${(vh / cam.k / H) * 100}%`,
+    });
+  };
+  const apply = (ease = false) => {
+    const glide = ease && !reduced();
+    world.classList.toggle('glide', glide);
+    mm.classList.toggle('glide', glide);
+    world.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})`;
+    paintMap();
+  };
+  // a drag or wheel mid-flight takes over from wherever the camera visibly is
+  const settle = () => {
+    if (!world.classList.contains('glide')) return;
+    const m = new DOMMatrixReadOnly(getComputedStyle(world).transform);
+    cam.x = m.e; cam.y = m.f; cam.k = m.a;
+    apply(false);
+  };
+  let movingTimer = 0;
+  const moving = () => {
+    world.classList.add('moving');
+    clearTimeout(movingTimer);
+    movingTimer = window.setTimeout(() => world.classList.remove('moving'), 160);
+  };
+  const zoomAt = (px: number, py: number, k: number) => {
+    const nk = clamp(k, minK, MAXK);
+    const wx = (px - cam.x) / cam.k, wy = (py - cam.y) / cam.k;
+    cam.k = nk; cam.x = px - wx * nk; cam.y = py - wy * nk;
+    clampCam();
+  };
+  const fit = () => { cam.k = minK; cam.x = 0; cam.y = 0; clampCam(); };
+  const centerOn = (wx: number, wy: number) => { cam.x = vw / 2 - wx * cam.k; cam.y = vh / 2 - wy * cam.k; clampCam(); };
+
+  // ---- the tour
+  const items = [...root.querySelectorAll<HTMLElement>('[data-stop-li]')];
+  const rects = items.map((li) => li.dataset.rect!.split(',').map(Number) as [number, number, number, number]);
+  const rectsP = items.map((li) => li.dataset.phone!.split(',').map(Number) as [number, number, number, number]);
+  const N = items.length;
+  const cap = board.querySelector<HTMLElement>('[data-cap]')!;
+  const capN = cap.querySelector<HTMLElement>('[data-cap-n]')!;
+  const capT = cap.querySelector<HTMLElement>('[data-cap-title]')!;
+  const capX = cap.querySelector<HTMLElement>('[data-cap-text]')!;
+  const prevB = cap.querySelector<HTMLButtonElement>('[data-prev]')!;
+  const nextB = cap.querySelector<HTMLButtonElement>('[data-next]')!;
+  const tourB = board.querySelector<HTMLButtonElement>('[data-tour]')!;
+  let stop = -1;
+
+  const frameStop = (i: number) => {
+    const small = phone.matches;
+    const [x, y, w, h] = (small ? rectsP : rects)[i];
+    const padX = small ? 16 : 56, padT = small ? 20 : 72, padB = small ? 64 : 220;
+    const aw = Math.max(vw - padX * 2, 80), ah = Math.max(vh - padT - padB, 80);
+    const k = clamp(Math.min(aw / w, ah / h, 1.3), minK, MAXK);
+    cam.k = k;
+    cam.x = padX + (aw - w * k) / 2 - x * k;
+    cam.y = padT + (ah - h * k) / 2 - y * k;
+    clampCam();
+  };
+  const paintStop = () => {
+    const on = stop >= 0;
+    board.classList.toggle('touring', on);
+    cap.hidden = !on && !phone.matches;
+    tourB.textContent = on ? 'End tour' : 'Take the tour';
+    tourB.setAttribute('aria-pressed', String(on));
+    items.forEach((li, j) => li.toggleAttribute('aria-current', j === stop));
+    if (!on) return;
+    const li = items[stop];
+    capN.textContent = `${stop + 1} / ${N}`;
+    capT.textContent = li.querySelector('h3')!.textContent;
+    capX.textContent = li.querySelector('p')!.textContent;
+    prevB.disabled = stop === 0;
+    nextB.textContent = stop === N - 1 ? 'Start over' : 'Next';
+  };
+  const go = (i: number, ease = true) => {
+    stop = ((i % N) + N) % N;
+    settle();
+    frameStop(stop);
+    apply(ease);
+    paintStop();
+  };
+  const endTour = () => { stop = -1; settle(); fit(); apply(true); paintStop(); };
+
+  prevB.addEventListener('click', () => go(stop - 1));
+  nextB.addEventListener('click', () => go(stop + 1));
+  cap.querySelector('[data-end]')!.addEventListener('click', endTour);
+  tourB.addEventListener('click', () => (stop >= 0 ? endTour() : go(0)));
+  board.querySelector('[data-fit]')!.addEventListener('click', () => {
+    settle(); fit(); apply(true);
+    if (!phone.matches) { stop = -1; paintStop(); }
+  });
+  board.querySelectorAll<HTMLElement>('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+    settle();
+    zoomAt(vw / 2, vh / 2, cam.k * (b.dataset.zoom === 'in' ? 1.4 : 1 / 1.4));
+    apply(true);
+  }));
+
+  // ---- pan and pinch with pointers
+  const ptrs = new Map<number, { x: number; y: number }>();
+  let drag: { x: number; y: number; moved: boolean } | null = null;
+  let pinch: { d: number; k: number } | null = null;
+  let justDragged = false;
+  const local = (e: { clientX: number; clientY: number }) => { const r = vp.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  const dist = () => { const [a, b] = [...ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  const mid = () => { const [a, b] = [...ptrs.values()]; return local({ clientX: (a.x + b.x) / 2, clientY: (a.y + b.y) / 2 }); };
+
+  vp.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('button, a, iframe, input, [data-nodrag]')) return;
+    settle();
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, moved: false };
+    else if (ptrs.size === 2) { drag = null; pinch = { d: dist(), k: cam.k }; }
+  });
+  vp.addEventListener('pointermove', (e) => {
+    const p = ptrs.get(e.pointerId);
+    if (!p) return;
+    p.x = e.clientX; p.y = e.clientY;
+    if (pinch && ptrs.size >= 2) {
+      const m = mid();
+      zoomAt(m.x, m.y, pinch.k * (dist() / pinch.d));
+      moving(); apply();
+      return;
+    }
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    if (!drag.moved) { drag.moved = true; vp.setPointerCapture(e.pointerId); vp.classList.add('dragging'); }
+    cam.x += dx; cam.y += dy;
+    drag.x = e.clientX; drag.y = e.clientY;
+    clampCam(); moving(); apply();
+  });
+  const lift = (e: PointerEvent) => {
+    if (!ptrs.delete(e.pointerId)) return;
+    if (drag?.moved) { justDragged = true; setTimeout(() => (justDragged = false), 0); }
+    if (ptrs.size < 2) pinch = null;
+    if (ptrs.size === 1) { const [r] = [...ptrs.values()]; drag = { x: r.x, y: r.y, moved: true }; } else drag = null;
+    if (!ptrs.size) vp.classList.remove('dragging');
+  };
+  vp.addEventListener('pointerup', lift);
+  vp.addEventListener('pointercancel', lift);
+  vp.addEventListener('click', (e) => { if (justDragged) e.stopPropagation(); }, true);
+
+  // wheel and trackpad pan; ctrl/cmd + wheel (and a trackpad pinch) zooms at the cursor.
+  // when the camera can't move any further the event is left alone, so the page still scrolls past the board
+  vp.addEventListener('wheel', (e) => {
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? vh : 1;
+    settle();
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const p = local(e);
+      zoomAt(p.x, p.y, cam.k * Math.exp(-e.deltaY * unit * 0.01));
+      moving(); apply();
+      return;
+    }
+    const x = cam.x, y = cam.y;
+    cam.x -= e.deltaX * unit; cam.y -= e.deltaY * unit;
+    clampCam();
+    if (cam.x === x && cam.y === y) return;
+    e.preventDefault();
+    moving(); apply();
+  }, { passive: false });
+
+  // keyboard: W A S D or arrows pan, + / - zoom, 0 fits (only when the board itself has focus)
+  vp.addEventListener('keydown', (e) => {
+    if (e.target !== vp || e.metaKey || e.ctrlKey || e.altKey) return;
+    const step = 110;
+    const pan: Record<string, [number, number]> = {
+      ArrowLeft: [step, 0], a: [step, 0], ArrowRight: [-step, 0], d: [-step, 0], ArrowUp: [0, step], w: [0, step], ArrowDown: [0, -step], s: [0, -step],
+    };
+    const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    settle();
+    if (pan[key]) { cam.x += pan[key][0]; cam.y += pan[key][1]; clampCam(); }
+    else if (key === '+' || key === '=') zoomAt(vw / 2, vh / 2, cam.k * 1.25);
+    else if (key === '-' || key === '_') zoomAt(vw / 2, vh / 2, cam.k / 1.25);
+    else if (key === '0') fit();
+    else return;
+    e.preventDefault();
+    moving(); apply();
+  });
+
+  // ---- the minimap: click or drag to jump
+  let mapDrag = false;
+  const jump = (e: PointerEvent, ease: boolean) => {
+    const r = mm.getBoundingClientRect();
+    settle();
+    centerOn(((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H);
+    apply(ease);
+  };
+  mm.addEventListener('pointerdown', (e) => { mapDrag = true; mm.setPointerCapture(e.pointerId); jump(e, true); });
+  mm.addEventListener('pointermove', (e) => { if (mapDrag) { moving(); jump(e, false); } });
+  mm.addEventListener('pointerup', () => { mapDrag = false; });
+  mm.addEventListener('pointercancel', () => { mapDrag = false; });
+
+  // ---- measuring: the direction is hidden at load, so everything waits for it to show
+  const measure = () => {
+    const r = vp.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    vw = r.width; vh = r.height;
+    minK = Math.min(vw / W, vh / H);
+    return true;
+  };
+  const start = () => {
+    if (!measure()) return;
+    if (!ready) {
+      ready = true;
+      buildMap();
+      const hash = /^#bd-stop-(\d+)$/.exec(location.hash);
+      if (hash) go(Math.min(N, Math.max(1, Number(hash[1]))) - 1, false);
+      else if (phone.matches) go(0, false);
+      else { fit(); apply(false); paintStop(); }
+      return;
+    }
+    if (stop >= 0) { frameStop(stop); } else clampCam();
+    apply(false);
+    paintStop();
+  };
+  whenShown(root, start);
+  new ResizeObserver(() => { if (ready) start(); }).observe(vp);
+  phone.addEventListener('change', () => {
+    if (!ready) return;
+    if (phone.matches && stop < 0) go(0, false); else start();
+  });
+</script>
