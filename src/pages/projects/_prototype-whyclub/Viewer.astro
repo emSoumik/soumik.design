@@ -84,7 +84,7 @@
       if (!reduced) nv.play().catch(() => {});
     } else if (img) {
       const ni = new Image();
-      ni.src = img.currentSrc || img.src;
+      ni.src = img.dataset.full || img.currentSrc || img.src;
       ni.alt = img.alt;
       box.append(ni);
     }

@@ -61,7 +61,7 @@ const tiles = [
           <li class="tile">
             <div class={`fill t${i + 1}`}>
               <div class="slot">
-                {t.screen ? <Screen src={t.screen.src} alt={t.screen.alt} title={t.title} desc={t.desc} class="phone" /> :
+                {t.screen ? <Screen src={t.screen.src} alt={t.screen.alt} title={t.title} desc={t.desc} class="phone" small /> :
                   phones.filter((p) => p.tile === i).map(({ tile, name, does, ...p }) => <Screen {...p} title={name} desc={does} class="phone" data-at={2} />)}
               </div>
             </div>
