@@ -85,7 +85,7 @@ const cases = (await published('work')).map((e) => e.id);
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/brand/favicon-16.png">
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
-<noscript><style is:inline>.wait { display: none; }</style></noscript>
+<noscript><style is:inline>.wait, skullet-reveal { display: none; }</style></noscript>
 <Fonts preload={['pixel']} />
 <style is:inline>
   @font-face { font-family: "Faculty Glyphic"; src: url(/assets/fonts/faculty-glyphic.woff2) format("woff2"); font-display: swap; }
@@ -143,16 +143,29 @@ const cases = (await published('work')).map((e) => e.id);
   /* the dock: about me (yellow), projects, vault, blog, fixed low in the middle so it's there all the way down.
      it arrives quiet, just words on the white; once you scroll it fills in. planting tucks it into the yellow bud,
      out of the garden's way, and a tap on the bud opens it again. --dock is the hero's gap; the hint and clear stack above it */
-  :root { --dock: calc(max(22px, calc(env(safe-area-inset-bottom) + 12px)) + max(0px, 560px - 100svh)); --dock-f: max(22px, calc(env(safe-area-inset-bottom) + 12px)); }
+  :root { --dock: calc(max(22px, calc(env(safe-area-inset-bottom) + 12px)) + max(0px, 560px - 100svh)); --dock-f: max(22px, calc(env(safe-area-inset-bottom) + 12px)); --ios: cubic-bezier(.32, .72, 0, 1); }
+  /* its layout never changes: the tuck is a clip that closes round the avatar while it carries the bud to the middle
+     (main.js measures --dk-* from the open dock). the clip stands off 40px so the open pill keeps its shadow */
   .nav { position: fixed; z-index: 50; left: 50%; bottom: var(--dock-f); translate: -50% 0; display: flex; align-items: center; padding: 4px; border-radius: 99px;
-    font: 500 15px/1 var(--pixel); letter-spacing: .01em; background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
-    box-shadow: 0 0 0 1px rgba(31, 29, 27, .1), 0 16px 36px -18px rgba(31, 29, 27, .5), 0 2px 6px -3px rgba(31, 29, 27, .18);
-    transition: background-color .3s, box-shadow .3s; }
+    font: 500 15px/1 var(--pixel); letter-spacing: .01em; clip-path: inset(-40px round 99px);
+    transition: transform .42s var(--ios), clip-path .42s var(--ios); }
+  /* the pill's white and lift fade on opacity alone; frosted glass only under a mouse (and on the dock itself: a clip makes it a backdrop root) */
+  .nav::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: rgba(255, 255, 255, .94);
+    box-shadow: 0 0 0 1px rgba(31, 29, 27, .1), 0 16px 36px -18px rgba(31, 29, 27, .5), 0 2px 6px -3px rgba(31, 29, 27, .18); transition: opacity .3s var(--ease); }
+  @media (hover: hover) and (pointer: fine) {
+    .nav { -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4); }
+    .nav::before { background: rgba(255, 255, 255, .86); }
+  }
   .nav :is(.me, .seg) { position: relative; white-space: nowrap; display: inline-flex; align-items: center; min-height: 44px; border-radius: 99px; color: var(--ink);
-    transition: background-color .3s var(--ease), color .3s var(--ease), padding .5s var(--ease), transform .16s var(--ease); }
+    transition: background-color .3s var(--ease), color .3s var(--ease), transform .16s var(--ease); }
   .nav :is(.me, .seg):active { transform: scale(.96); }
   .nav :is(.me, .seg):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 99px; }
-  .nav .me { padding: 0 18px 0 5px; background: #ffd84d; color: #1f1d1b; }
+  .nav .me { padding: 0 18px 0 5px; color: #1f1d1b; isolation: isolate; }
+  /* the yellow fill, and the hairline the bud wears once the clip has taken the pill's shadow */
+  .nav .me::before, .nav .me::after { content: ""; position: absolute; z-index: -1; border-radius: inherit; pointer-events: none; }
+  .nav .me::before { inset: 0; background: #ffd84d; transition: opacity .3s var(--ease); }
+  .nav .me::after { left: 0; top: 0; height: 100%; aspect-ratio: 1; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(31, 29, 27, .12); opacity: 0; transition: opacity .15s ease-out; }
+  html.tuck .nav .me::after { opacity: 1; transition: opacity .2s var(--ease) .22s; }
   .nav .ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; }
   .nav .ic picture { display: contents; }
   .nav .ic img { width: 30px; height: 30px; object-fit: contain; mix-blend-mode: multiply; translate: 0 2px; transition: transform .5s var(--spring); }
@@ -162,16 +175,17 @@ const cases = (await published('work')).map((e) => e.id);
   .nav [data-work]::after { content: ""; position: absolute; left: 50%; bottom: 7px; width: 4px; height: 4px; margin-left: -2px; background: currentColor; opacity: 0; transition: opacity .2s; }
   html.at-work .nav [data-work]::after { opacity: 1; }
   html.at-work .nav [data-work] .arr { opacity: .35; }
-  .nav .more, .nav .lb { display: inline-flex; overflow: hidden; max-width: 480px; opacity: 1; transition: max-width .5s var(--ease), opacity .3s var(--ease) .1s, margin .5s var(--ease); }
+  /* the words come back once the pill has opened, and go first when it closes */
+  .nav .more, .nav .lb { display: inline-flex; transition: opacity .2s var(--ease) .12s; }
   .nav .more { gap: 2px; margin-left: 2px; }
   .nav .lb { padding-left: 9px; }
   /* tucked: only the yellow bud */
-  html.tuck .nav .more, html.tuck .nav .lb { max-width: 0; opacity: 0; margin: 0; padding: 0; transition: max-width .4s var(--ease), opacity .15s, margin .4s var(--ease), padding .4s var(--ease); }
-  html.tuck .nav .me { padding: 0 5px; }
+  html.tuck .nav { transform: translateX(var(--dk-dx, 0px)); clip-path: inset(var(--dk-t, 4px) var(--dk-r, 0px) var(--dk-b, 4px) var(--dk-l, 4px) round 99px); }
+  html.tuck .nav :is(.more, .lb) { opacity: 0; transition: opacity .15s ease-out; }
   /* quiet: at the top, before any planting or opening */
-  html:not(.moved):not(.open):not(.tuck) .nav { background: transparent; box-shadow: 0 0 0 1px transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html:not(.moved):not(.open):not(.tuck) .nav { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html:not(.moved):not(.open):not(.tuck) .nav::before, html:not(.moved):not(.open):not(.tuck) .nav .me::before { opacity: 0; }
   html:not(.moved):not(.open):not(.tuck) .nav .seg { color: var(--ink-2); }
-  html:not(.moved):not(.open):not(.tuck) .nav .me { background: transparent; }
   @media (max-width: 640px) {
     .nav { font-size: 13.5px; }
     .nav .seg { padding: 0 11px; }
@@ -191,6 +205,10 @@ const cases = (await published('work')).map((e) => e.id);
   .hint .fl span { display: inline-block; animation: bob 2.8s var(--ease) infinite; animation-delay: calc(var(--i) * .05s); }
   .hint .fl span:nth-child(3n+1) { color: #3e4f9c; } .hint .fl span:nth-child(3n+2) { color: #c25a7c; } .hint .fl span:nth-child(3n) { color: #4b8bbf; }
   @keyframes bob { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-3px); } }
+  /* main.js marks the hero .off once it has scrolled away, so the breeze stops with nobody to see it */
+  .hero.off .hint .fl span { animation-play-state: paused; }
+  /* 24px down: once this line leaves the top, the page counts as moved (an observer watches it, so scrolling reads nothing) */
+  .moved-at { position: absolute; left: 0; top: 24px; width: 1px; height: 1px; pointer-events: none; }
   .hint .swap { display: inline-block; transition: opacity .3s, filter .3s; }
   .hint .swap.out { opacity: 0; filter: blur(4px); }
 
@@ -231,7 +249,7 @@ const cases = (await published('work')).map((e) => e.id);
 
   @media (hover: hover) and (pointer: fine) {
     .snd:hover { color: var(--ink); background: rgba(31, 29, 27, .05); }
-    html:is(.moved, .open, .tuck) .nav .me:hover { background: #ffcc1f; }
+    .nav .me:hover::before { background: #ffcc1f; }
     .nav .me:hover .ic img { transform: rotate(-8deg) scale(1.08); }
     .nav .seg:hover { background: rgba(128, 128, 128, .14); color: var(--ink); }
     .nav [data-work]:hover .arr { transform: translateY(3px); }
@@ -242,6 +260,54 @@ const cases = (await published('work')).map((e) => e.id);
 
   /* ---- the projects live right under the garden */
   #projects { position: relative; scroll-margin-top: 0; }
+  /* until work.js mounts, a sample of the section holds its place (blank, then a skeleton once skullet is up).
+     the padding and sizes below mirror .wk-* in js/work/work.js so nothing moves when the real thing arrives; :where keeps them under it */
+  :where(#projects) { padding: clamp(80px, 14vh, 140px) clamp(16px, 4vw, 48px) calc(clamp(56px, 9vh, 96px) + env(safe-area-inset-bottom));
+    --skullet-base: rgb(0 0 0 / .06); --skullet-highlight: #fff; --skullet-radius: 4px; --skullet-animation: pulse; --skullet-speed: slow;
+    --skullet-text-top: x-height; --skullet-text-bottom: baseline; }
+  :root[data-theme="dark"] #projects { --skullet-base: rgb(255 255 255 / .09); --skullet-highlight: rgb(255 255 255 / .12); }
+  #projects skullet-reveal { display: block; }
+  skullet-reveal[loading]:not(:defined) { visibility: hidden; }
+  .sk-col { max-width: 880px; margin: 0 auto; }
+  .sk-open { display: grid; gap: 14px; margin-bottom: clamp(64px, 9vw, 112px); }
+  .sk-label { font: 500 15px/1 var(--pixel); letter-spacing: .02em; }
+  .sk-h2 { max-width: 16em; font: 500 clamp(28px, 3.2vw, 40px)/1.1 var(--display); letter-spacing: -.035em; text-wrap: balance; }
+  .sk-p + .sk-p { margin-top: clamp(96px, 12vw, 152px); }
+  .sk-head { display: grid; justify-items: center; text-align: center; max-width: 560px; margin: 0 auto; }
+  .sk-idx { margin-bottom: 12px; font: 400 11px/1 var(--mono); letter-spacing: .04em; }
+  .sk-title { font: 500 clamp(30px, 3.4vw, 40px)/1 var(--display); letter-spacing: -.035em; padding-bottom: .04em; }
+  .sk-dev { font: 400 .42em/1 "Tiro Devanagari Hindi", "Kohinoor Devanagari", serif; letter-spacing: 0; vertical-align: .9em; margin-left: .1em; }
+  .sk-line { margin-top: 12px; max-width: 34em; font: 400 15px/1.5 system-ui, -apple-system, "SF Pro Text", sans-serif; text-wrap: balance; }
+  .sk-acts { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 14px; margin-top: 18px; }
+  .sk-read, .sk-out { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; border-radius: 99px; white-space: nowrap; }
+  .sk-read { padding: 0 20px; font: 500 14px/1 system-ui, -apple-system, sans-serif; }
+  .sk-out { padding: 0 16px 0 14px; font: 400 12px/1 var(--mono); }
+  .sk-out i { width: 16px; height: 16px; }
+  .sk-fig { margin-top: clamp(32px, 4.5vw, 56px); }
+  .sk-stage { aspect-ratio: 16 / 10; border-radius: clamp(18px, 2.2vw, 28px); }
+  .sk-cap { margin-top: clamp(18px, 2.4vw, 24px); font: 400 12px/1.45 var(--display); text-align: center; text-wrap: balance; }
+  .sk-cap span { display: block; margin-bottom: 2px; font-weight: 500; font-size: 12.5px; }
+  .sk-why { container-type: inline-size; }
+  .sk-lineup { display: flex; justify-content: center; align-items: center; gap: 1.8cqw; padding: clamp(8px, 1.5vw, 16px) 0 0; }
+  .sk-lineup > div { width: 14.5cqw; flex: none; } .sk-lineup > .is-main { width: 17.5cqw; }
+  .sk-lineup .sk-cap span { width: fit-content; margin-inline: auto; }
+  .sk-glass { aspect-ratio: 392 / 848; container-type: inline-size; }
+  .sk-glass > i { display: block; height: 100%; border-radius: 12.5cqw; }
+  @media (max-width: 640px) {
+    :where(#projects) { padding-top: clamp(72px, 12vh, 104px); }
+    .sk-title { font-size: clamp(28px, 8.5vw, 34px); }
+    .sk-line { margin-top: 18px; }
+    .sk-fig { margin-top: 28px; }
+    .sk-vy { aspect-ratio: 1; box-sizing: content-box; padding: 26px 0; }
+    .sk-why { --hw: calc((100cqw - 32px) / 4.2); }
+    .sk-lineup { gap: 8px; padding: 0 0 40px; }
+    .sk-lineup > div { position: relative; width: calc(var(--hw) * .8); } .sk-lineup > .is-main { width: var(--hw); }
+    .sk-lineup > :nth-child(1) { order: 4; } .sk-lineup > :nth-child(2) { order: 5; } .sk-lineup > :nth-child(3) { order: 3; }
+    .sk-lineup > :nth-child(4) { order: 1; } .sk-lineup > :nth-child(5) { order: 2; }
+    .sk-lineup .sk-cap { position: absolute; left: 50%; top: calc(50% + var(--hw) * 424 / 392 + 19px); translate: -50% 0; margin: 0; font-size: 0; white-space: nowrap; }
+    .sk-lineup .sk-cap span { margin: 0; font: 500 12px/1 var(--display); }
+    .sk-cap { font-size: 11px; } .sk-cap span { font-size: 12px; }
+  }
   /* night mode (data-theme="dark" on html): everything under the garden goes pitch black, not navy */
   :root[data-theme="dark"] body { background: #000; }
   :root[data-theme="dark"] .foot { color: rgba(242, 242, 240, .5); }
@@ -281,7 +347,7 @@ const cases = (await published('work')).map((e) => e.id);
     .clear, .clear.on { translate: none; transition: opacity .2s, visibility 0s; } .clear.dig svg { animation: none; }
     @media (max-width: 640px) { .clear, .clear.on { translate: -50% 0; } }
     .load .wm-l path, .load .wm-f rect { animation: none; }
-    .nav, .nav :is(.me, .seg, .more, .lb) { transition: opacity .15s !important; }
+    .nav, .nav :is(.me, .seg, .more, .lb), .nav::before, .nav .me::before, .nav .me::after { transition: opacity .15s !important; }
   }
 
   /* ---- from the garden to the work: scrubbed by the scroll itself, off the main thread. no js, nothing to load */
@@ -317,6 +383,7 @@ const cases = (await published('work')).map((e) => e.id);
 <main>
   <section class="hero" id="top" aria-label="Garden">
     <canvas id="garden" aria-hidden="true"></canvas>
+    <i class="moved-at" aria-hidden="true"></i>
     <div class="ui">
       <div class="top in" style="--d:.1s">
         <div class="tr-r">
@@ -351,7 +418,33 @@ const cases = (await published('work')).map((e) => e.id);
   </section>
   <div class="seam" aria-hidden="true"></div>
 
-  <section id="projects" aria-label="Projects" data-cases={cases.join(' ') || undefined}><noscript>
+  <section id="projects" aria-label="Projects" data-cases={cases.join(' ') || undefined}>
+    {/* the section's shape, with its real copy, for skullet to trace while work.js is on its way (work.js swaps in the real thing) */}
+    <skullet-reveal id="projects-sk" loading label="loading projects"><div class="sk-col">
+      <div class="sk-open"><p class="sk-label">projects</p><p class="sk-h2">Things I designed, then built.</p></div>
+      <div class="sk-p">
+        <div class="sk-head"><p class="sk-idx">01 / 03 · live store</p><p class="sk-title">WhyClub</p>
+          <p class="sk-line">A streetwear label from India that sells oversized graphic tees in small drops. The name came from its founder. Everything else is mine: the design, the graphics, the store and the backend.</p>
+          <p class="sk-acts">{cases.includes('whyclub') && <span class="sk-read" skullet-block>Read the case study <span>→</span></span>}<span class="sk-out" skullet-block><i></i>WhyClub <span>↗</span></span></p></div>
+        <div class="sk-fig sk-why"><div class="sk-lineup">
+          {[['Shop', 'Two to a row. The + is quick add.'], ['Quick add', 'Size and price, without leaving.'], ['Home', 'One drop per screen. Swipe for the next.'], ['Product', 'Details rise over the photo.'], ['Bag', 'Each piece on one line, then checkout.']].map(([name, does], i) =>
+            <div class={i === 2 ? 'is-main' : undefined}><div class="sk-glass"><i skullet-block></i></div><p class="sk-cap"><span>{name}</span>{does}</p></div>)}
+        </div></div>
+      </div>
+      <div class="sk-p">
+        <div class="sk-head"><p class="sk-idx">02 / 03 · concept, FigBuild 2026</p><p class="sk-title">Vayu <span class="sk-dev" lang="hi">वायु</span></p>
+          <p class="sk-line">A watch that taps your wrist when the air around you turns bad, and hands you a cleaner way through in the same moment. Like Apple Watch’s noise alerts, but for the air. Designed with Shardul N.</p>
+          <p class="sk-acts">{cases.includes('vayu') && <span class="sk-read" skullet-block>See the concept <span>→</span></span>}<span class="sk-out" skullet-block><i></i>Devpost <span>↗</span></span></p></div>
+        <div class="sk-fig"><div class="sk-stage sk-vy" skullet-block></div><p class="sk-cap"><span>Not the shortest route. The one with the cleanest air.</span>The phone app and the watch I redesigned after the film we made for FigBuild.</p></div>
+      </div>
+      <div class="sk-p">
+        <div class="sk-head"><p class="sk-idx">03 / 03 · macOS app, open source</p><p class="sk-title">Font Preview</p>
+          <p class="sk-line">Quick Look for fonts on macOS. Select a font file in Finder, press Space, and see the whole font without installing it, WOFF2 included. I kept running into this myself, so I built it.</p>
+          <p class="sk-acts">{cases.includes('font-preview') && <span class="sk-read" skullet-block>Try it here <span>→</span></span>}<span class="sk-out" skullet-block><i></i>GitHub <span>↗</span></span></p></div>
+        <div class="sk-fig"><div class="sk-stage" skullet-block></div><p class="sk-cap"><span>Press Space on a font file.</span>The family set in itself, every size, then every glyph. Day or night, from a switch in the corner.</p></div>
+      </div>
+    </div></skullet-reveal>
+    <noscript>
     <h2>Soumik Halder, design engineer</h2>
     <p>I design and build interfaces end to end: the brand, the motion, the WebGL, and the code that ships it.</p>
     <h3><a href="https://whyclub.in">WhyClub</a></h3>

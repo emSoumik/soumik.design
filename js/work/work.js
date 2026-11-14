@@ -52,7 +52,7 @@ export function mountWork(section) {
   const read = (id, label) => (cases.includes(id) ? `<a class="wk-read" href="/projects/${id}/">${label} ${arrow}</a>` : '');
 
   section.classList.add('wk-root');
-  section.innerHTML = `
+  const html = `
     <div class="wk-col">
       <div class="wk-open">
         <p class="wk-label" data-wk-r>projects</p>
@@ -62,14 +62,14 @@ export function mountWork(section) {
       <article class="wk-p" id="work-whyclub">
         <header class="wk-head">
           <span class="wk-idx" data-wk-r>01 / 03 · live store</span>
-          <h3 class="wk-title" data-wk-r style="--d:.05s">WhyClub</h3>
-          <p class="wk-line" data-wk-r style="--d:.1s">A streetwear label from India that sells oversized graphic tees in small drops. The name came from its founder. Everything else is mine: the design, the graphics, the store and the backend.</p>
-          <p class="wk-acts" data-wk-r style="--d:.15s">
+          <h3 class="wk-title" data-wk-r>WhyClub</h3>
+          <p class="wk-line" data-wk-r>A streetwear label from India that sells oversized graphic tees in small drops. The name came from its founder. Everything else is mine: the design, the graphics, the store and the backend.</p>
+          <p class="wk-acts" data-wk-r>
             ${read('whyclub', 'Read the case study')}
             <a class="wk-link wk-gh" href="${WHYCLUB.href}" target="_blank" rel="noopener">${ico('whyclub')}WhyClub ${out}</a>
           </p>
         </header>
-        <div class="wk-fig" data-wk-r style="--d:.2s">
+        <div class="wk-fig" data-wk-r style="--d:.08s">
           <div class="wk-st-why">
             <ol class="wk-lineup" aria-label="Five screens from the store" data-pt-lineup="whyclub">
               ${LINEUP.map((p, i) => `<li${p.main ? ' class="is-main"' : ''}>${screen(p.media, i, p.main && 'whyclub')}<p class="wk-cap"><span data-pt-nm="${i}">${p.name}</span>${p.does}</p></li>`).join('')}
@@ -81,14 +81,14 @@ export function mountWork(section) {
       <article class="wk-p" id="work-vayu">
         <header class="wk-head">
           <span class="wk-idx" data-wk-r>02 / 03 · concept, FigBuild 2026</span>
-          <h3 class="wk-title" data-wk-r style="--d:.05s">Vayu <span class="wk-hi-dev" lang="hi">वायु</span></h3>
-          <p class="wk-line" data-wk-r style="--d:.1s">A watch that taps your wrist when the air around you turns bad, and hands you a cleaner way through in the same moment. Like Apple Watch’s noise alerts, but for the air. Designed with Shardul N.</p>
-          <p class="wk-acts" data-wk-r style="--d:.15s">
+          <h3 class="wk-title" data-wk-r>Vayu <span class="wk-hi-dev" lang="hi">वायु</span></h3>
+          <p class="wk-line" data-wk-r>A watch that taps your wrist when the air around you turns bad, and hands you a cleaner way through in the same moment. Like Apple Watch’s noise alerts, but for the air. Designed with Shardul N.</p>
+          <p class="wk-acts" data-wk-r>
             ${read('vayu', 'See the concept')}
             <a class="wk-link wk-gh" href="${VAYU.href}" target="_blank" rel="noopener">${ico('devpost')}Devpost ${out}</a>
           </p>
         </header>
-        <figure class="wk-fig" data-wk-r style="--d:.2s">
+        <figure class="wk-fig" data-wk-r style="--d:.08s">
           <div class="wk-stage wk-st-vy" data-pt-src="vayu">
             <div class="wk-pair">
               <div class="wk-ph">
@@ -107,14 +107,14 @@ export function mountWork(section) {
       <article class="wk-p" id="work-fontpreview">
         <header class="wk-head">
           <span class="wk-idx" data-wk-r>03 / 03 · macOS app, open source</span>
-          <h3 class="wk-title" data-wk-r style="--d:.05s">Font Preview</h3>
-          <p class="wk-line" data-wk-r style="--d:.1s">Quick Look for fonts on macOS. Select a font file in Finder, press Space, and see the whole font without installing it, WOFF2 included. I kept running into this myself, so I built it.</p>
-          <p class="wk-acts" data-wk-r style="--d:.15s">
+          <h3 class="wk-title" data-wk-r>Font Preview</h3>
+          <p class="wk-line" data-wk-r>Quick Look for fonts on macOS. Select a font file in Finder, press Space, and see the whole font without installing it, WOFF2 included. I kept running into this myself, so I built it.</p>
+          <p class="wk-acts" data-wk-r>
             ${read('font-preview', 'Try it here')}
             <a class="wk-link wk-gh" href="${FONTPREVIEW.href}" target="_blank" rel="noopener">${GH}GitHub ${out}</a>
           </p>
         </header>
-        <figure class="wk-fig" data-wk-r style="--d:.2s">
+        <figure class="wk-fig" data-wk-r style="--d:.08s">
           <div class="wk-stage wk-st-fp" data-pt-src="font-preview">${clip(F('fp-demo'), 'Font Preview running: a Finder window, a font selected, Space opening Quick Look on its sizes and glyphs, then dark mode and the next fonts.', F('fp-demo-poster'), 1440, 900)}</div>
           <figcaption class="wk-cap"><span>Press Space on a font file.</span>The family set in itself, every size, then every glyph. Day or night, from a switch in the corner.</figcaption>
         </figure>
@@ -122,6 +122,12 @@ export function mountWork(section) {
 
 ${endMarkup()}
     </div>`;
+  // index.astro holds the section's shape in a <skullet-reveal> while this loads. once skullet is up it reveals the real
+  // thing over its skeleton (at once on a fast load); if skullet isn't here yet, the markup just takes the space
+  const sk = section.querySelector('skullet-reveal');
+  const traced = typeof sk?.show === 'function';
+  // show() takes a node (a string would land as text)
+  if (traced) { const t = document.createElement('template'); t.innerHTML = html; sk.show(t.content); } else section.innerHTML = html;
 
   const $ = (s) => section.querySelector(s);
   const cleanups = [];
@@ -183,8 +189,7 @@ const STYLE = `
   --wk-ease: cubic-bezier(.22,1,.36,1); --wk-spring: cubic-bezier(.3,1.4,.5,1);
   --wk-serif: "Instrument Sans", -apple-system, system-ui, sans-serif; --wk-mono: ${MONO};
   position: relative; color: var(--wk-ink); background: var(--wk-paper); -webkit-font-smoothing: antialiased;
-  padding: clamp(80px, 14vh, 140px) clamp(16px, 4vw, 48px) calc(clamp(56px, 9vh, 96px) + env(safe-area-inset-bottom));
-  transition: background-color .6s var(--wk-ease), color .6s var(--wk-ease); }
+  padding: clamp(80px, 14vh, 140px) clamp(16px, 4vw, 48px) calc(clamp(56px, 9vh, 96px) + env(safe-area-inset-bottom)); }
 /* pitch black, not navy: neutral greys only, the bezels lift off the page with a hairline instead of a shadow */
 :root[data-theme="dark"] .wk-root { --wk-paper: #000; --wk-ink: #f2f2f0; --wk-ink2: rgba(242,242,240,.6); --wk-text: rgba(242,242,240,.72); --wk-line: rgba(255,255,255,.12);
   --wk-line2: rgba(255,255,255,.28); --wk-wash: rgba(255,255,255,.06); --wk-cta: #f2f2f0; --wk-cta-ink: #000; --wk-cta-hover: #fff;
@@ -196,10 +201,10 @@ const STYLE = `
 .wk-root :focus-visible { outline: 2px solid var(--wk-ink); outline-offset: 3px; border-radius: 4px; }
 .wk-root ::selection { background: var(--wk-ink); color: var(--wk-paper); }
 
-/* scroll reveal: the text rises and fades in first, then the stage (off under reduced motion) */
+/* scroll reveal: the text rises and fades in first, then the stage a beat behind (off under reduced motion) */
 @media (prefers-reduced-motion: no-preference) {
-  .wk-armed [data-wk-r] { opacity: 0; transform: translateY(22px);
-    transition: opacity .9s var(--wk-ease) var(--d, 0s), transform 1s var(--wk-ease) var(--d, 0s); }
+  .wk-armed [data-wk-r] { opacity: 0; transform: translateY(16px);
+    transition: opacity .56s var(--wk-ease) var(--d, 0s), transform .56s var(--wk-ease) var(--d, 0s); }
   .wk-armed [data-wk-r].is-in { opacity: 1; transform: none; }
 }
 
@@ -244,11 +249,17 @@ const STYLE = `
 .wk-stage { position: relative; overflow: hidden; display: grid; place-items: center; aspect-ratio: 16 / 10; container-type: inline-size;
   border-radius: var(--wk-rad); background: var(--wk-stage);
   box-shadow: 0 0 0 1px var(--wk-line), 0 28px 56px -38px var(--wk-shadow);
-  transition: transform .6s var(--wk-ease), box-shadow .6s var(--wk-ease); }
+  transition: transform .3s var(--wk-ease); }
+/* the deeper hover shadow is its own layer under the stage, shown on opacity, so a hover never repaints the stage or its film.
+   it shares the stage's grid cell, since the stage clips anything inside it */
 @media (hover: hover) and (pointer: fine) {
-  .wk-stage:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--wk-line2), 0 40px 64px -36px var(--wk-shadow); }
-  .wk-stage video { transition: filter .6s var(--wk-ease); }
-  .wk-stage:hover video { filter: brightness(1.035) saturate(1.04); }
+  .wk-fig:has(> .wk-stage) { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .wk-fig:has(> .wk-stage)::before { content: ""; grid-area: 1 / 1; border-radius: var(--wk-rad); pointer-events: none; opacity: 0;
+    box-shadow: 0 0 0 1px var(--wk-line), 0 40px 64px -36px var(--wk-shadow); transition: opacity .3s var(--wk-ease), transform .3s var(--wk-ease); }
+  .wk-fig:has(> .wk-st-vy)::before { box-shadow: 0 40px 64px -36px var(--wk-shadow); }
+  .wk-fig > .wk-stage { grid-area: 1 / 1; justify-self: stretch; }
+  .wk-stage:hover { transform: translateY(-3px); }
+  .wk-fig:has(> .wk-stage:hover)::before { opacity: 1; transform: translateY(-3px); }
 }
 .wk-fig .wk-cap { margin-top: clamp(18px, 2.4vw, 24px); }
 .wk-cap { margin: 16px 0 0; font: 400 12px/1.45 var(--wk-serif); color: var(--wk-ink2); text-align: center; text-wrap: balance; }
@@ -269,7 +280,6 @@ const STYLE = `
 /* vayu: the phone app looping in a device, the watch standing beside it, on a mor and rani wash edged with sona */
 .wk-st-vy { background: radial-gradient(75% 90% at 12% 0%, var(--wk-tint-a), transparent 65%), radial-gradient(70% 85% at 100% 100%, var(--wk-tint-b), transparent 65%), var(--wk-stage);
   box-shadow: 0 0 0 1px var(--wk-sona), 0 28px 56px -38px var(--wk-shadow); }
-@media (hover: hover) and (pointer: fine) { .wk-st-vy:hover { box-shadow: 0 0 0 1px var(--wk-sona), 0 40px 64px -36px var(--wk-shadow); } }
 .wk-pair { --ph: 23cqw; position: relative; width: var(--ph); translate: calc(var(--ph) * -.2) 0; }
 .wk-ph { position: relative; aspect-ratio: 402 / 874; border-radius: calc(var(--ph) * .15); background: #000;
   box-shadow: 0 0 0 calc(var(--ph) * .035) var(--wk-bezel), 0 0 0 calc(var(--ph) * .035 + 1px) var(--wk-bezel-edge), 0 40px 60px -30px var(--wk-shadow); }
