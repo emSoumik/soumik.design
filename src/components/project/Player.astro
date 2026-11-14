@@ -81,13 +81,13 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       var cine = matchMedia('(min-width: 768px) and (min-aspect-ratio: 4/3)').matches, r = f.getBoundingClientRect();
       f.classList.toggle('is-cine', cine);
       // the cap: 1240px, or the screen less a gutter each side, or what 86% of the height allows at 16:9
-      var vw = document.documentElement.clientWidth, g = Math.max(16, Math.min(48, vw * .04));
+      var fcw = f.clientWidth, vw = document.documentElement.clientWidth, g = Math.max(16, Math.min(48, vw * .04));
       var cap = Math.floor(Math.min(1240, vw - 2 * g, innerHeight * .86 * 16 / 9));
       set('--cap', cap + 'px'); set('--r1', (vw < 640 ? 14 : 20) + 'px');
       // the frame is centred on the column, so it grows evenly to both sides
-      set('--bx', (f.clientWidth - cap) / 2 + 'px');
+      set('--bx', (fcw - cap) / 2 + 'px');
       var box = q('.pl-box'), fw = box.offsetWidth, fh = box.offsetHeight, c = (q('.pl-frame').offsetHeight - fh) / 2;
-      var s = Math.min(1, f.clientWidth / fw), dx = fw * (1 - s) / 2, L = q('.pl-scrub').offsetWidth || 1;
+      var s = Math.min(1, fcw / fw), dx = fw * (1 - s) / 2, L = q('.pl-scrub').offsetWidth || 1;
       set('--s0', s.toFixed(4)); set('--c', c + 'px'); set('--r0', (14 / s).toFixed(2) + 'px');
       set('--dx0', dx + 'px'); set('--dy0', (c + fh * (1 - s)) + 'px'); set('--dyc0', (c + fh * (1 - s) / 2) + 'px');
       set('--sx0', Math.max(.05, (L - 2 * dx) / L).toFixed(4));
@@ -96,9 +96,15 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       set('--y0', Math.max(1, cine ? top : top - Math.max(0, (innerHeight - fh) / 2)) + 'px');
     };
     go();
-    addEventListener('resize', go);
-    new ResizeObserver(go).observe(f.parentElement);
-    if (document.fonts) document.fonts.ready.then(go);
+    // later triggers share one rAF; a phone's toolbar growing or shrinking (height only, under 160px) is ignored
+    var raf = 0, lw = innerWidth, lh = innerHeight, fresh = true;
+    var again = function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; go(); }); };
+    addEventListener('resize', function () {
+      var w = innerWidth, h = innerHeight, quiet = w === lw && Math.abs(h - lh) < 160 && matchMedia('(pointer: coarse)').matches;
+      lw = w; if (!quiet) { lh = h; again(); }
+    });
+    new ResizeObserver(function () { if (fresh) fresh = false; else again(); }).observe(f.parentElement);
+    if (document.fonts) document.fonts.ready.then(again);
   })(document.currentScript && document.currentScript.previousElementSibling);
   </script>
 )}

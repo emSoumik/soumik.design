@@ -47,7 +47,8 @@ const trees = [[150, 146], [184, 118], [206, 196], [160, 222], [230, 120], [270,
 </div>
 
 <style>
-  .wm { position: relative; }
+  /* its own paint layer, so the pulse repaints the map and not the whole page */
+  .wm { position: relative; contain: layout paint; will-change: transform; }
   svg { display: block; width: 100%; height: auto; font-family: var(--display); }
   .wm-blocks rect { fill: rgba(31, 29, 27, .045); }
   .wm-park { fill: rgba(34, 160, 75, .15); stroke: rgba(34, 160, 75, .28); }
@@ -89,6 +90,14 @@ const trees = [[150, 146], [184, 118], [206, 196], [160, 222], [230, 120], [270,
   @media (prefers-reduced-motion: no-preference) {
     .wm-pulse { animation: wm-pulse 2s cubic-bezier(.23, 1, .32, 1) infinite; }
   }
+  /* paused while offscreen (without js it just keeps running) */
+  .wm.is-watched:not(.is-on) .wm-pulse { animation-play-state: paused; }
   @keyframes wm-pulse { 0% { scale: .6; opacity: 1; } 100% { scale: 1.6; opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .wm-haze, .wm-routes, .is-haze { transition: none; } }
 </style>
+
+<script>
+  // pause the pulse while the map is offscreen
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('is-on', e.isIntersecting)));
+  document.querySelectorAll('.wm').forEach((m) => { m.classList.add('is-watched'); io.observe(m); });
+</script>
