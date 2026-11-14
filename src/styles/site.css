@@ -209,7 +209,9 @@ img, video { display: block; max-width: 100%; height: auto; }
 .bp-progress { display: none; }
 @supports (animation-timeline: scroll()) {
   .bp-progress { display: block; position: fixed; inset: 0 0 auto; height: 2px; z-index: 20; pointer-events: none; background: var(--ink); transform-origin: 0 50%; transform: scaleX(0);
-    animation: bp-read linear both; animation-timeline: scroll(root); }
+    animation: bp-read linear both; }
+  /* own rule: the minifier folds a same-rule animation-timeline into the shorthand, which chrome drops */
+  html .bp-progress { animation-timeline: scroll(root); }
 }
 @keyframes bp-read { to { transform: scaleX(1); } }
 
