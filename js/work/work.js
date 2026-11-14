@@ -31,7 +31,7 @@ function injectCSS() {
 const pic = (src, alt, w = 392, h = 848) =>
   `<picture><source type="image/avif" srcset="${src}.avif"><img src="${src}.webp" alt="${alt}" width="${w}" height="${h}" loading="lazy" decoding="async" draggable="false"></picture>`;
 const clip = (src, alt, poster = src, w = '', h = '') =>
-  `<video muted loop playsinline disablepictureinpicture preload="none" poster="${poster}.webp"${w ? ` width="${w}" height="${h}"` : ''} aria-label="${alt}"><source type="video/webm" src="${src}.webm"><source type="video/mp4" src="${src}.mp4"></video>`;
+  `<video muted loop playsinline disablepictureinpicture preload="none" poster="${poster}.webp"${w ? ` width="${w}" height="${h}"` : ''} aria-label="${alt}"><source type="video/webm" src="${src}.v2.webm"><source type="video/mp4" src="${src}.v2.mp4"></video>`;
 
 // whyclub: five screens in the order you'd shop, home a size up in the middle and playing, a name and a line under each
 const LINEUP = [
@@ -150,15 +150,21 @@ ${endMarkup()}
   }
 
   // ---- the clips play while on screen, posters only under reduced motion ----------------
+  // seen: the ones on screen, so a hidden tab can stop them and start them again
+  const seen = new Set();
+  const run = (v) => {
+    if (dead) return;
+    if (seen.has(v) && !reduced.matches && !document.hidden) {
+      v.preload = 'auto';
+      v.play()?.catch?.(() => {});
+    } else v.pause();
+  };
   section.querySelectorAll('video').forEach((v) => {
-    observe(v, (on) => {
-      if (dead) return;
-      if (on && !reduced.matches && !document.hidden) {
-        v.preload = 'auto';
-        v.play()?.catch?.(() => {});
-      } else v.pause();
-    }, { threshold: 0.35 });
+    observe(v, (on) => { if (on) seen.add(v); else seen.delete(v); run(v); }, { threshold: 0.35 });
   });
+  const onVis = () => seen.forEach(run);
+  document.addEventListener('visibilitychange', onVis);
+  cleanups.push(() => document.removeEventListener('visibilitychange', onVis));
 
   // ---- closing: the footer (js/work/end.js) copies the email, goes back to the garden, grows its bed ------
   cleanups.push(wireEnd(section.querySelector('.wk-end'), reduced));

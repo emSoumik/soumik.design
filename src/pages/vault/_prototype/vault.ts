@@ -99,12 +99,14 @@ function init(root: HTMLElement) {
     const sound = q<HTMLButtonElement>('.vlt-sound', el);
     let seen = false, asked = false;
     const sync = () => {
-      if (!seen || (reduced.matches && !asked)) { video.pause(); return; }
+      // a hidden tab stops a silent film; one with its sound on keeps playing
+      if (!seen || (document.hidden && video.muted) || (reduced.matches && !asked)) { video.pause(); return; }
       video.preload = 'auto';
       video.play().catch(() => {});
     };
     video.addEventListener('playing', () => { el.dataset.ready = ''; });
     new IntersectionObserver(([e]) => { seen = e.isIntersecting; sync(); }, { rootMargin: '10% 0px' }).observe(el);
+    document.addEventListener('visibilitychange', sync);
     const hush = () => { video.muted = true; asked = false; sound.setAttribute('aria-pressed', 'false'); sync(); };
     sound.addEventListener('click', (e) => {
       e.stopPropagation();
