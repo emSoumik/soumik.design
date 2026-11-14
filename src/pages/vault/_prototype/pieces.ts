@@ -6,6 +6,8 @@ export type Piece = {
   video?: string;
   title: string;
   line: string;
+  /** a still of the first scene at /assets/vault/stills/<still>.{avif,webp}, shown under the canvas until it draws */
+  still?: string;
   /** reel scenes the demo walks (shaders) */
   scenes: number[];
   /** the surface the piece sits on */
@@ -54,7 +56,7 @@ export const PIECES: Piece[] = [
     r: 4 / 5,
   },
   {
-    slug: 'order-pass', kind: 'Shader', title: 'Order stage shaders', tone: 'ink', scenes: [0, 1, 2, 3],
+    slug: 'order-pass', kind: 'Shader', title: 'Order stage shaders', tone: 'ink', scenes: [0, 1, 2, 3], still: 'order-pass',
     line: 'Every WhyClub order gets a pass that changes as the order moves. Each stage has its own light, written by hand in WebGL.',
     about: [
       'One fragment shader draws all four stages. A bloom opens when the order is confirmed, a glowing box bobs once it’s packed, a comet runs the route to a pin when it ships, and a bouquet sits at different depths of focus when it’s home.',
@@ -67,7 +69,7 @@ export const PIECES: Piece[] = [
     r: 16 / 9,
   },
   {
-    slug: 'riso-glyphs', kind: 'Shader', title: 'Riso glyphs', tone: 'paper', scenes: [4],
+    slug: 'riso-glyphs', kind: 'Shader', title: 'Riso glyphs', tone: 'paper', scenes: [4], still: 'riso-glyphs',
     line: 'The beta pass’s badges, printed like a riso: paper tooth, a faint ink-starved band, then grain. Hand-written WebGL.',
     about: [
       'The glyphs are printed like a riso: paper tooth, a faint ink-starved band, then grain. Move your pointer over it to tilt the light.',
@@ -78,7 +80,7 @@ export const PIECES: Piece[] = [
     r: 1,
   },
   {
-    slug: 'dithered-asterisk', kind: 'Shader', title: 'Dithered asterisk', tone: 'paper', scenes: [5],
+    slug: 'dithered-asterisk', kind: 'Shader', title: 'Dithered asterisk', tone: 'paper', scenes: [5], still: 'dithered-asterisk',
     line: 'An asterisk for the beta pass whose halo is drawn as ordered-dither dots, in hand-written WebGL.',
     about: [
       'The asterisk’s halo is drawn as 2px ordered-dither dots. Move your pointer over it to tilt the light.',

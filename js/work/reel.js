@@ -516,6 +516,10 @@ function hexToRgb(hex) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
+// low-end phones draw at dpr 1 and a slower idle rate. the shaders are soft fields and dithers, and u_dpr keeps the dots right
+const LOW_END = typeof navigator !== 'undefined' && (navigator.hardwareConcurrency <= 4 || (navigator.deviceMemory ?? 8) <= 4);
+const IDLE_MS = LOW_END ? 40 : 30;
+
 export function createReel(canvas, opts = {}) {
   const noop = { show() {}, next() {}, prev() {}, get index() { return 0; }, setTilt() {}, destroy() {} };
   let failed = false;
@@ -592,18 +596,29 @@ export function createReel(canvas, opts = {}) {
   let dirtySize = true;
   let destroyed = false;
   let pendingStill = false;
+  let drawnOnce = false;
 
+  // css size comes from the ResizeObserver, so a draw never reads layout. dpr is cheap to read and catches zoom
+  const css = { w: 0, h: 0 };
+  let size = { w: 2, h: 2, dpr: 1 };
   const resize = () => {
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    const w = Math.max(2, Math.round(canvas.clientWidth * dpr));
-    const h = Math.max(2, Math.round(canvas.clientHeight * dpr));
+    const dpr = Math.min(window.devicePixelRatio || 1, LOW_END ? 1 : 1.5);
+    if (!dirtySize && dpr === size.dpr) return size;
+    if (dirtySize && !css.w) {
+      // first draw before the observer has reported: read once
+      css.w = canvas.clientWidth;
+      css.h = canvas.clientHeight;
+    }
+    const w = Math.max(2, Math.round(css.w * dpr));
+    const h = Math.max(2, Math.round(css.h * dpr));
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w;
       canvas.height = h;
       gl.viewport(0, 0, w, h);
     }
     dirtySize = false;
-    return { w, h, dpr };
+    size = { w, h, dpr };
+    return size;
   };
 
   // 404 state, eased like the original.
@@ -677,6 +692,10 @@ export function createReel(canvas, opts = {}) {
     }
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     drawnKind = scene.kind;
+    if (!drawnOnce) {
+      drawnOnce = true;
+      opts.onReady?.();
+    }
     return true;
   };
 
@@ -692,8 +711,8 @@ export function createReel(canvas, opts = {}) {
       if (pendingStill && !failed) frame = requestAnimationFrame(loop);
       return;
     }
-    // 30fps when idle, full rate while the tilt is still easing.
-    if (!lastDraw || isEasing() || now - lastDraw >= 30) {
+    // 30fps when idle (25 on low-end), full rate while the tilt is still easing.
+    if (!lastDraw || isEasing() || now - lastDraw >= IDLE_MS) {
       if (draw(now)) lastDraw = now;
     }
     frame = requestAnimationFrame(loop);
@@ -720,7 +739,10 @@ export function createReel(canvas, opts = {}) {
     if (visible) kick();
   });
   io.observe(canvas);
-  const ro = new ResizeObserver(() => {
+  const ro = new ResizeObserver(([entry]) => {
+    const box = entry.contentBoxSize?.[0];
+    css.w = box ? box.inlineSize : entry.contentRect.width;
+    css.h = box ? box.blockSize : entry.contentRect.height;
     dirtySize = true;
     if (reduced) {
       pendingStill = true;
