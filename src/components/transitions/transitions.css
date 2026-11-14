@@ -1,0 +1,145 @@
+/* page transitions: the overlays and view-transition animations for every trip (see PageTransitions.astro).
+   the seam and its fringe are inline svg data uris; the fringe is a 24 x 5 grid of 7px cells that thins out away from the seam (bayer order). */
+@view-transition { navigation: auto; }
+/* a page prerendered by the speculation rules (components/Speculation.astro) holds its intro until it's shown */
+html.pt-held *, html.pt-held *::before, html.pt-held *::after { animation-play-state: paused !important; }
+:root { --pt-ios: cubic-bezier(.32, .72, 0, 1); --pt-out: cubic-bezier(.23, 1, .32, 1); --pt-inout: cubic-bezier(.65, 0, .35, 1); }
+
+/* the overlays that exist only for the length of a transition */
+.pt-seam, .pt-veil, .pt-frame { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; contain: strict; }
+.pt-seam { view-transition-name: pt-seam; }
+.pt-seam i { position: absolute; left: 0; right: 0; top: 0; height: 56px; display: block;
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 3' shape-rendering='crispEdges'><rect x='1' y='0' width='1' height='1' fill='%23e8412f'/><rect x='0' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='2' y='1' width='1' height='1' fill='%23e8412f'/><rect x='1' y='2' width='1' height='1' fill='%23e8412f'/><rect x='4' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='7' y='0' width='1' height='1' fill='%232447d8'/><rect x='6' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='1' width='1' height='1' fill='%23ffd04a'/><rect x='8' y='1' width='1' height='1' fill='%232447d8'/><rect x='7' y='2' width='1' height='1' fill='%232447d8'/><rect x='10' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='13' y='0' width='1' height='1' fill='%23f594b8'/><rect x='12' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='1' width='1' height='1' fill='%23e3a21a'/><rect x='14' y='1' width='1' height='1' fill='%23f594b8'/><rect x='13' y='2' width='1' height='1' fill='%23f594b8'/><rect x='16' y='1' width='1' height='1' fill='%231f8a3a'/><rect x='19' y='0' width='1' height='1' fill='%23ffc93c'/><rect x='18' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='1' width='1' height='1' fill='%23e2562b'/><rect x='20' y='1' width='1' height='1' fill='%23ffc93c'/><rect x='19' y='2' width='1' height='1' fill='%23ffc93c'/><rect x='22' y='1' width='1' height='1' fill='%231f8a3a'/></svg>") 0 0 / 168px 21px repeat-x, linear-gradient(var(--pt-paper, #fff), var(--pt-paper, #fff)) 0 0 / 100% 21px no-repeat; image-rendering: pixelated; }
+.pt-seam i::after { content: ""; position: absolute; left: 0; right: 0; top: 21px; height: 35px; background: var(--pt-paper, #fff);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%205'%20shape-rendering%3D'crispEdges'%3E%3Crect%20x%3D'0'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'1'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'2'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'3'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'4'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'5'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'6'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'7'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'8'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'9'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'10'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'11'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'12'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'13'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'14'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'15'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'16'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'17'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'18'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'19'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'20'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'21'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'22'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'23'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'1'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'3'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'5'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'7'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'9'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'11'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'13'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'15'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'17'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'19'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'21'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'23'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'0'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'2'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'4'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'6'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'8'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'10'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'12'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'14'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'16'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'18'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'20'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'22'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'0'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'4'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'8'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'12'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'16'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'20'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3C%2Fsvg%3E") 0 0 / 168px 35px repeat-x; mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%205'%20shape-rendering%3D'crispEdges'%3E%3Crect%20x%3D'0'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'1'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'2'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'3'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'4'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'5'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'6'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'7'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'8'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'9'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'10'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'11'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'12'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'13'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'14'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'15'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'16'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'17'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'18'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'19'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'20'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'21'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'22'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'23'%20y%3D'0'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'1'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'3'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'5'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'7'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'9'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'11'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'13'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'15'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'17'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'19'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'21'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'23'%20y%3D'1'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'0'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'2'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'4'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'6'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'8'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'10'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'12'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'14'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'16'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'18'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'20'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'22'%20y%3D'2'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'0'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'4'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'8'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'12'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'16'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3Crect%20x%3D'20'%20y%3D'4'%20width%3D'1'%20height%3D'1'%2F%3E%3C%2Fsvg%3E") 0 0 / 168px 35px repeat-x; }
+.pt-seam[data-dir="up"] i { transform: scaleY(-1); }
+.pt-veil { view-transition-name: pt-veil; background: #000; }
+.pt-frame { view-transition-name: pt-src; }
+.pt-flick { position: absolute; z-index: 1; pointer-events: none; white-space: nowrap; }
+.pt-flick span { position: absolute; left: 0; top: 0; opacity: 0; animation: pt-on 80ms linear calc(140ms + var(--i) * 80ms); }
+
+@keyframes pt-on { from, to { opacity: 1; } }
+@keyframes pt-fade-out { to { opacity: 0; } }
+@keyframes pt-rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes pt-fade-in { from { opacity: 0; } }
+/* hidden, then shown in one step at the end: the new page waits under a cover */
+@keyframes pt-wait { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pt-recede { to { transform: scale(.97); opacity: .7; } }
+@keyframes pt-lift { from { opacity: 0; transform: translateY(28px); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-pt]::view-transition-old(root), html[data-pt]::view-transition-new(root) { mix-blend-mode: normal; }
+
+  /* ---- quiet */
+  html[data-pt="quiet"]::view-transition-old(root) { animation: 140ms var(--pt-out) both pt-fade-out; }
+  html[data-pt="quiet"]::view-transition-new(root) { animation: 280ms var(--pt-out) 60ms both pt-rise; }
+  html[data-pt]::view-transition-group(pt-mast), html[data-pt]::view-transition-new(pt-mast) { animation: none; }
+  html[data-pt]::view-transition-old(pt-mast) { display: none; }
+
+  /* ---- seam. the band's top is p; the reveal edge sits under the seam row, at p + 10 going down, p + 45 going up
+     (the band is flipped, fringe above). same curve and length on both, so the edge never leaves the seam */
+  @keyframes pt-seam-down { from { transform: translateY(-56px); } to { transform: translateY(100%); } }
+  @keyframes pt-stitch-in { from { clip-path: inset(0 0 calc(100% + 46px) 0); } to { clip-path: inset(0 0 -10px 0); } }
+  @keyframes pt-seam-up { from { transform: translateY(100%); } to { transform: translateY(-56px); } }
+  @keyframes pt-unpick { from { clip-path: inset(0 0 -45px 0); } to { clip-path: inset(0 0 calc(100% + 11px) 0); } }
+  html[data-pt="seam"]::view-transition-group(pt-seam) { animation: none; }
+  html[data-pt="seam"]::view-transition-new(pt-seam) { animation: 640ms var(--pt-inout) both pt-seam-down; }
+  html[data-pt="seam"]::view-transition-old(root) { animation: none; }
+  html[data-pt="seam"]::view-transition-new(root) { animation: 640ms var(--pt-inout) both pt-stitch-in; }
+  html[data-pt="seam"][data-pt-dir="up"]::view-transition-new(pt-seam) { animation: 560ms var(--pt-inout) both pt-seam-up; }
+  html[data-pt="seam"][data-pt-dir="up"]::view-transition-old(root) { z-index: 1; animation: 560ms var(--pt-inout) both pt-unpick; }
+  html[data-pt="seam"][data-pt-dir="up"]::view-transition-new(root) { animation: none; }
+
+  /* ---- window. --pt-t/r/b/l is the source's rect as an inset of the screen, --pt-rad its corner. the page itself is
+     scaled to cover that rect (--pt-cx/cy/cs) and clipped to it in its own coordinates (--pt-ix/iy/irad), so it opens out
+     of the product and closes back into it like an app into its icon */
+  @keyframes pt-window-open {
+    from { transform: translate(var(--pt-cx), var(--pt-cy)) scale(var(--pt-cs)); clip-path: inset(var(--pt-iy) var(--pt-ix) round var(--pt-irad)); }
+    to { transform: none; clip-path: inset(0 0 round 0); }
+  }
+  @keyframes pt-window-close {
+    from { transform: none; clip-path: inset(0 0 round 0); }
+    70% { opacity: 1; }
+    to { transform: translate(var(--pt-cx), var(--pt-cy)) scale(var(--pt-cs)); clip-path: inset(var(--pt-iy) var(--pt-ix) round var(--pt-irad)); opacity: 0; }
+  }
+  @keyframes pt-corner { from { clip-path: inset(0 round var(--pt-rad)); } to { clip-path: inset(0 round 0); } }
+  @keyframes pt-shot-out { 0%, 15% { opacity: 1; } to { opacity: 0; } }
+  html[data-pt="window"]::view-transition-old(root) { animation: 620ms var(--pt-ios) both pt-recede; }
+  html[data-pt="window"]::view-transition-new(root) { transform-origin: 0 0; animation: 620ms var(--pt-ios) both pt-window-open; }
+  /* the product's screen grows with the window and fades into the page it opens onto */
+  html[data-pt="window"]::view-transition-group(pt-src) { animation-duration: 620ms; animation-timing-function: var(--pt-ios); }
+  html[data-pt="window"]::view-transition-image-pair(pt-src) { animation: 620ms var(--pt-ios) both pt-corner; }
+  html[data-pt="window"]::view-transition-old(pt-src) { height: 100%; object-fit: cover; mix-blend-mode: normal; animation: 300ms ease-out both pt-shot-out; }
+  html[data-pt="window"]::view-transition-new(pt-src) { animation: none; opacity: 0; }
+  html[data-pt="window"][data-pt-dir="close"]::view-transition-old(root) { z-index: 1; transform-origin: 0 0; animation: 480ms var(--pt-ios) both pt-window-close; }
+  html[data-pt="window"][data-pt-dir="close"]::view-transition-new(root) { animation: none; }
+  /* a row of screens that found no partner here: the screen that holds the product grows like pt-src, the rest fade */
+  html[data-pt="window"]::view-transition-group(*.pt-main) { animation-duration: 620ms; animation-timing-function: var(--pt-ios); }
+  html[data-pt="window"]::view-transition-image-pair(*.pt-main) { animation: 620ms var(--pt-ios) both pt-corner; }
+  html[data-pt="window"]::view-transition-old(*.pt-main) { height: 100%; object-fit: cover; mix-blend-mode: normal; animation: 300ms ease-out both pt-shot-out; }
+  html[data-pt="window"]::view-transition-new(*.pt-main) { animation: none; opacity: 0; }
+  html[data-pt="window"]::view-transition-old(*.pt-ph), html[data-pt="window"]::view-transition-old(*.pt-nm) { animation: 160ms ease-out both pt-fade-out; }
+
+  /* ---- lineup. each screen's group is moved by js (fly() below), at the new screen's size the whole way, so a screen
+     drawn scaled on one page and at size on the other never swells mid-flight. names slide on the browser's own */
+  html[data-pt="lineup"]::view-transition-old(root) { animation: 220ms var(--pt-out) both pt-fade-out; }
+  html[data-pt="lineup"]::view-transition-new(root) { animation: 560ms var(--pt-ios) 60ms both pt-lift; }
+  html[data-pt="lineup"]::view-transition-group(*.pt-ph) { animation: none; transform-origin: 0 0; }
+  html[data-pt="lineup"]::view-transition-group(*.pt-nm) { animation-duration: 640ms; animation-timing-function: var(--pt-ios); }
+  /* the same screenshot on both sides: the arriving one settles over the leaving one, no dip in between */
+  html[data-pt="lineup"]::view-transition-old(*.pt-ph), html[data-pt="lineup"]::view-transition-old(*.pt-nm) { mix-blend-mode: normal; animation: none; }
+  html[data-pt="lineup"]::view-transition-new(*.pt-ph), html[data-pt="lineup"]::view-transition-new(*.pt-nm) { mix-blend-mode: normal; animation: 640ms ease-in-out both pt-fade-in; }
+  /* one that's off screen or hidden on the other page has nothing to settle into: it goes with its page */
+  html[data-pt="lineup"]::view-transition-old(*.pt-ph):only-child, html[data-pt="lineup"]::view-transition-old(*.pt-nm):only-child { animation: 220ms var(--pt-out) both pt-fade-out; }
+
+  /* ---- wake. the source's two taps, then its screen. one keyframe list each, eased per step */
+  @keyframes pt-tap {
+    0% { transform: none; animation-timing-function: var(--pt-out); }
+    22% { transform: scale(.93); } 44% { transform: none; } 66% { transform: scale(.93); } 88% { transform: none; opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes pt-wake-open {
+    0% { opacity: 0; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); }
+    10% { opacity: 1; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); animation-timing-function: var(--pt-ios); }
+    55% { opacity: 1; clip-path: inset(0 round 0); animation-timing-function: ease-out; }
+    100% { opacity: 0; clip-path: inset(0 round 0); }
+  }
+  @keyframes pt-wake-page { from { transform: scale(1.035); } }
+  @keyframes pt-sleep {
+    0% { opacity: 0; clip-path: inset(0 round 0); animation-timing-function: ease-out; }
+    24% { opacity: 1; clip-path: inset(0 round 0); animation-timing-function: var(--pt-ios); }
+    78% { opacity: 1; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); animation-timing-function: ease-out; }
+    100% { opacity: 0; clip-path: inset(var(--pt-t) var(--pt-r) var(--pt-b) var(--pt-l) round var(--pt-rad)); }
+  }
+  html[data-pt="wake"]::view-transition-group(pt-src), html[data-pt="wake"]::view-transition-group(pt-veil) { animation: none; }
+  html[data-pt="wake"]::view-transition-old(pt-src) { animation: 260ms linear both pt-tap; }
+  html[data-pt="wake"]::view-transition-new(pt-veil) { animation: 600ms linear 100ms both pt-wake-open; }
+  html[data-pt="wake"]::view-transition-old(root) { animation: 430ms var(--pt-ios) both pt-recede; }
+  html[data-pt="wake"]::view-transition-new(root) { animation: 430ms step-end both pt-wait, 340ms var(--pt-out) 430ms both pt-wake-page; }
+  html[data-pt="wake"][data-pt-dir="close"]::view-transition-new(pt-veil) { animation: 760ms linear both pt-sleep; }
+  html[data-pt="wake"][data-pt-dir="close"]::view-transition-old(root) { animation: none; }
+  html[data-pt="wake"][data-pt-dir="close"]::view-transition-new(root) { animation: 190ms step-end both pt-wait; }
+
+  /* ---- type. --pt-x/y/s map the screen onto the source window (origin top left) */
+  @keyframes pt-ql-open { from { transform: translate(var(--pt-x), var(--pt-y)) scale(var(--pt-s)); clip-path: inset(0 round calc(12px / var(--pt-s))); } to { transform: none; clip-path: inset(0 round 0); } }
+  @keyframes pt-ql-close {
+    from { transform: none; clip-path: inset(0 round 0); }
+    45% { opacity: 1; }
+    to { transform: translate(var(--pt-x), var(--pt-y)) scale(var(--pt-s)); clip-path: inset(0 round calc(12px / var(--pt-s))); opacity: 0; }
+  }
+  html[data-pt="type"]::view-transition-old(root) { animation: none; }
+  html[data-pt="type"]::view-transition-new(root) { transform-origin: 0 0; animation: 440ms cubic-bezier(.2, .9, .25, 1) both pt-ql-open, 110ms ease-out both pt-fade-in; }
+  html[data-pt="type"]::view-transition-group(pt-src) { animation: none; }
+  html[data-pt="type"]::view-transition-old(pt-src) { animation: 160ms ease-out both pt-fade-out; }
+  html[data-pt="type"][data-pt-dir="close"]::view-transition-old(root) { z-index: 1; transform-origin: 0 0; animation: 340ms cubic-bezier(.4, 0, .2, 1) both pt-ql-close; }
+  html[data-pt="type"][data-pt-dir="close"]::view-transition-new(root) { animation: none; }
+  /* the title waits under its flicking copies, then takes over in one step */
+  .pt-flicking { animation: 460ms step-end both pt-wait; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none; }
+  ::view-transition-old(root) { animation: 120ms linear both pt-fade-out; }
+  ::view-transition-new(root) { animation: 120ms linear both pt-fade-in; }
+  .pt-flick { display: none; }
+}

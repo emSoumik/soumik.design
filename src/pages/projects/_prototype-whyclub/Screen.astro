@@ -1,10 +1,13 @@
 ---
 // PROTOTYPE: a bare phone screen, no bezel and no panel: rounded corners and a hairline shadow on the white page.
 // crop = a strip from the bottom of a screen; art = a component plate (a cut from the ui on a photo), at its own aspect.
+// small = a stand-in tile that only ever shows it about 200px wide: the 400px rendition (name.s.avif/.webp) is picked on 2x
+// screens and the full one on sharper; the zoom row scales its phones with a transform, so it never sets this. the full
+// file is on data-full for the viewer, which would otherwise open the small one
 // every one opens in the viewer: its caption is the title there, desc (or the alt) the line under it
 import type { Shot } from './copy';
-interface Props extends Shot { crop?: boolean; class?: string; 'data-at'?: number; view?: boolean; title?: string }
-const { src, alt, caption, desc, video = false, crop = false, art = false, class: cls, 'data-at': at, view = true, title } = Astro.props;
+interface Props extends Shot { crop?: boolean; class?: string; 'data-at'?: number; view?: boolean; title?: string; small?: boolean }
+const { src, alt, caption, desc, video = false, crop = false, art = false, class: cls, 'data-at': at, view = true, title, small = false } = Astro.props;
 ---
 <figure class:list={['scr', { crop, art }, cls]} data-at={at} data-view={view ? '' : undefined} data-title={caption ?? title} data-desc={desc ?? alt}
   tabindex={view ? 0 : undefined} role={view ? 'button' : undefined} aria-label={view ? `Open ${caption ?? title ?? 'screen'} larger` : undefined}>
@@ -17,8 +20,8 @@ const { src, alt, caption, desc, video = false, crop = false, art = false, class
       <button type="button" class="play" aria-label="Play recording" hidden>▶</button>
     ) : (
       <picture>
-        <source srcset={`${src}.avif`} type="image/avif">
-        <img src={`${src}.webp`} alt={alt} loading="lazy" decoding="async" draggable="false">
+        <source srcset={small ? `${src}.s.avif 400w, ${src}.avif 784w` : `${src}.avif`} sizes={small ? '200px' : undefined} type="image/avif">
+        <img src={`${src}.webp`} srcset={small ? `${src}.s.webp 400w, ${src}.webp 784w` : undefined} sizes={small ? '200px' : undefined} data-full={small ? `${src}.webp` : undefined} alt={alt} loading="lazy" decoding="async" draggable="false">
       </picture>
     )}
   </div>

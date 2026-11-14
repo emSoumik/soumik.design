@@ -117,6 +117,8 @@ export const SLIDESHOW_CSS = `
 @container (max-width:520px){.wcs-stage[data-device=phone]{aspect-ratio:1/1.1}.wcs-phone{width:44cqw;margin-top:5cqw;padding:1.2cqw;border-radius:9cqw}.wcs-phone .wcs-screen{border-radius:7.8cqw}}
 .wcs-shot{position:absolute;inset:0;margin:0;opacity:0;transform:scale(1.03);transition:opacity .6s ease,transform 1.1s ${EASE};will-change:opacity,transform}
 .wcs-shot img,.wcs-shot video{display:block;width:100%;height:100%;object-fit:cover;object-position:top;pointer-events:none;-webkit-user-drag:none}
+.wcs-shot img{transition:opacity .24s cubic-bezier(.23,1,.32,1)}
+.wcs-shot img.wcs-wait{opacity:0}
 .wcs-shot.is-on{opacity:1;transform:none;z-index:2}
 .wcs-shot.is-prev{opacity:0;transform:none;z-index:1}
 .wcs .wcs-arrow{all:unset;box-sizing:border-box;position:absolute;top:50%;z-index:4;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;cursor:pointer;touch-action:manipulation;background:rgba(255,255,255,.78);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);box-shadow:0 0 0 .5px rgba(22,20,15,.12),0 2px 8px rgba(22,20,15,.14),0 1px 2px rgba(22,20,15,.1);opacity:0;pointer-events:none;transform:translateY(-50%);transition:opacity .3s,transform 160ms ease-out}
@@ -129,7 +131,7 @@ export const SLIDESHOW_CSS = `
 @media (hover:none){.wcs .wcs-arrow{opacity:1;pointer-events:auto}}
 @container (max-width:520px){.wcs .wcs-arrow{opacity:1;pointer-events:auto}}
 .wcs[data-reduced] .wcs-shot,.wcs[data-reduced] .wcs-dev,.wcs[data-reduced] .wcs-bg i{transition-duration:.01s}
-@media (prefers-reduced-motion:reduce){.wcs-seg::before,.wcs-url u,.wcs-arrow{transition-duration:.01s}}
+@media (prefers-reduced-motion:reduce){.wcs-seg::before,.wcs-url u,.wcs-arrow{transition-duration:.01s}.wcs-shot img{transition:none}}
 `;
 
 let cssDone = false;
@@ -262,13 +264,21 @@ export function mountSlideshow(host, { device = 'desktop', interval = 2800, phon
       img.alt = s.alt;
       img.draggable = false;
       img.decoding = 'async';
+      // not cached: it waits invisible and fades in once decoded, instead of popping in half way through the crossfade
+      if (!img.complete) {
+        img.classList.add('wcs-wait');
+        const done = () => img.classList.remove('wcs-wait');
+        img.addEventListener('load', () => (img.decode ? img.decode().then(done, done) : done()), { once: true });
+        img.addEventListener('error', done, { once: true });
+      }
       pic.appendChild(img);
       fig.appendChild(pic);
     }
     screens[d].appendChild(fig);
     L.ready = new Promise(res => {
       if (!pix) return res();
-      pix.addEventListener('load', () => res(), { once: true });
+      // loaded and decoded, so the crossfade starts on real pixels
+      pix.addEventListener('load', () => (pix.decode ? pix.decode().then(() => res(), () => res()) : res()), { once: true });
       pix.addEventListener('error', () => res(), { once: true });
       later(res, 2500);
     });
