@@ -51,6 +51,9 @@ function init(root: HTMLElement) {
   const demos = new Map<string, Demo>();
   qa('.vlt-card', wall).forEach((li) => cards.set(li.dataset.slug!, { li, art: q('.vlt-art', li), hit: q<HTMLAnchorElement>('.vlt-hit', li) }));
   qa('.vlt-detail', host).forEach((a) => articles.set(a.dataset.slug!, a));
+  // the entrance holds a card's shader or film until the card has arrived; wakes[slug] starts it once released
+  const held = new Set<string>();
+  const wakes = new Map<string, () => void>();
   const stageOf = (slug: string) => q('.vlt-stage', articles.get(slug)!);
   const blocksOf = (slug: string) => [...articles.get(slug)!.children].filter((c) => !c.classList.contains('vlt-stage')) as HTMLElement[];
 
@@ -81,32 +84,36 @@ function init(root: HTMLElement) {
       pick((at + Number(b.dataset.step) + list.length) % list.length);
       walk();
     }));
+    // ready once the first frame is drawn, so the still under it never gives way to a blank canvas
+    const start = () => {
+      if (!seen || reel || held.has(p.slug)) return;
+      reel = createReel(canvas, { start: list[at], onReady: () => { el.dataset.ready = ''; }, onFail: () => { q('.vlt-fail', el).hidden = false; el.dataset.ready = ''; } });
+    };
+    wakes.set(p.slug, start);
     new IntersectionObserver(([e]) => {
       seen = e.isIntersecting;
-      if (seen && !reel) {
-        reel = createReel(canvas, { start: list[at], onFail: () => { q('.vlt-fail', el).hidden = false; el.dataset.ready = ''; } });
-        frames(2).then(() => { el.dataset.ready = ''; });
-      }
+      start();
       walk();
     }, { rootMargin: '15% 0px' }).observe(el);
     return { el, home: art, tilt: (x, y) => reel?.setTilt(x, y) };
   }
   // a film plays muted and looped while it's on screen. under reduced motion it stays the finished flower until someone
   // asks for sound, which plays it from the start. the sound button shows on the card and the stage
-  function mountFilm(art: HTMLElement): Demo {
+  function mountFilm(slug: string, art: HTMLElement): Demo {
     const el = q('.vlt-demo', art);
     const video = q<HTMLVideoElement>('video', el);
     const sound = q<HTMLButtonElement>('.vlt-sound', el);
     let seen = false, asked = false;
     const sync = () => {
       // a hidden tab stops a silent film; one with its sound on keeps playing
-      if (!seen || (document.hidden && video.muted) || (reduced.matches && !asked)) { video.pause(); return; }
+      if (!seen || held.has(slug) || (document.hidden && video.muted) || (reduced.matches && !asked)) { video.pause(); return; }
       video.preload = 'auto';
       video.play().catch(() => {});
     };
     video.addEventListener('playing', () => { el.dataset.ready = ''; });
     new IntersectionObserver(([e]) => { seen = e.isIntersecting; sync(); }, { rootMargin: '10% 0px' }).observe(el);
     document.addEventListener('visibilitychange', sync);
+    wakes.set(slug, sync);
     const hush = () => { video.muted = true; asked = false; sound.setAttribute('aria-pressed', 'false'); sync(); };
     sound.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -119,7 +126,7 @@ function init(root: HTMLElement) {
   }
   PIECES.forEach((p) => {
     const art = cards.get(p.slug)!.art;
-    if (p.video) demos.set(p.slug, mountFilm(art));
+    if (p.video) demos.set(p.slug, mountFilm(p.slug, art));
     else if (p.slug === 'dock') {
       const dk = q('[data-dockcard]', art);
       liveDock(dk, { host: q('.win', dk), head: 14, fixed: true, dwell: 2600 }); // quicker than the detail, so the card never sits long as a lone pill
@@ -604,7 +611,15 @@ function init(root: HTMLElement) {
   // filter
   let kind = 'all';
   const seg = qa<HTMLButtonElement>('[data-filter]', root);
+  // the cards that stay slide to their new places (translate only, so live canvases never stretch); new ones fade in,
+  // hidden ones go at once. a second click reads the cards where they are mid-flight and carries on from there
+  let flips: Animation[] = [];
   const applyFilter = () => {
+    const move = !reduced.matches;
+    const first = new Map<HTMLElement, DOMRect>();
+    if (move) cards.forEach((c) => { if (!c.li.hidden) first.set(c.li, c.li.getBoundingClientRect()); });
+    flips.forEach((a) => a.cancel());
+    flips = [];
     let n = 0;
     PIECES.forEach((p) => {
       const ok = (kind === 'all' || p.kind === kind);
@@ -613,6 +628,18 @@ function init(root: HTMLElement) {
     });
     empty.hidden = n > 0;
     layout();
+    if (!move) return;
+    const vh = innerHeight;
+    cards.forEach((c) => {
+      if (c.li.hidden) return;
+      const last = c.li.getBoundingClientRect();
+      if (last.bottom < -200 || last.top > vh + 200) return;
+      const was = first.get(c.li);
+      if (!was) { flips.push(c.li.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, delay: 120, easing: EASE, fill: 'backwards' })); return; }
+      const dx = was.left - last.left, dy = was.top - last.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      flips.push(c.li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 380, easing: IOS }));
+    });
   };
   const pickSeg = (b: HTMLButtonElement, focus = false) => {
     kind = b.dataset.filter!;
@@ -663,7 +690,21 @@ function init(root: HTMLElement) {
         go(li, [{ opacity: 0, transform: 'translateY(-24px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 560, delay: c * 90 + seen[c]++ * 60, easing: EASE });
       });
     } else {
-      lis.forEach((li) => go(li, [{ opacity: 0, filter: 'blur(10px)', transform: 'scale(1.03)' }, { opacity: 1, filter: 'blur(0px)', transform: 'none' }], { duration: 640, delay: Math.random() * 300, easing: EASE }));
+      // focus: only the cards on the first screen arrive, in reading order. blur only where there's gpu to spare.
+      // each card's shader or film waits until the card has landed, so nothing heavy runs under the animation
+      const soft = matchMedia('(hover: hover) and (pointer: fine)').matches && navigator.hardwareConcurrency >= 8;
+      const vh = innerHeight;
+      const shown = lis.filter((li) => { const r = li.getBoundingClientRect(); return r.top < vh && r.bottom > 0; });
+      shown.forEach((li, i) => {
+        const delay = Math.min(i * 45, 270);
+        const from: Keyframe = soft ? { opacity: 0, filter: 'blur(6px)', transform: 'scale(1.03)' } : { opacity: 0, transform: 'scale(1.03)' };
+        const to: Keyframe = soft ? { opacity: 1, filter: 'blur(0px)', transform: 'none' } : { opacity: 1, transform: 'none' };
+        const a = li.animate([from, to], { duration: 520, delay, easing: EASE, fill: 'backwards' });
+        running.push(a);
+        const slug = li.dataset.slug!;
+        held.add(slug);
+        void Promise.race([a.finished.catch(() => {}), sleep(delay + 520)]).then(() => { held.delete(slug); wakes.get(slug)?.(); });
+      });
     }
   }
   addEventListener('proto:change', (e) => {
