@@ -1,6 +1,6 @@
 ---
 // <Phone src="/assets/work/whyclub/m-01" />: one screen in a phone. src is a path without its extension:
-// a still ships as .avif + .webp, a recording (video) as .webm + .mp4 with a .webp poster.
+// a still ships as .avif + .webp, a recording (video) as .v2.webm + .v2.mp4 with a .webp poster.
 // sized by its own width, so it reads the same as a cover detail or one of a row of three
 interface Props {
   src: string;
@@ -17,8 +17,8 @@ const { src, alt, caption, video = false, eager = false, class: cls } = Astro.pr
   <div class="s"><div class="in">
     {video ? (
       <video muted loop playsinline disablepictureinpicture preload="none" poster={`${src}.webp`} aria-label={alt}>
-        <source src={`${src}.webm`} type="video/webm">
-        <source src={`${src}.mp4`} type="video/mp4">
+        <source src={`${src}.v2.webm`} type="video/webm">
+        <source src={`${src}.v2.mp4`} type="video/mp4">
       </video>
     ) : (
       <picture>
@@ -42,15 +42,21 @@ const { src, alt, caption, video = false, eager = false, class: cls } = Astro.pr
 </style>
 
 <script>
-  // recordings play while they're on screen; with reduced motion they stay on their poster
+  // recordings play while they're on screen and the tab is showing; with reduced motion they stay on their poster
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const seen = new Set<HTMLVideoElement>();
+    const run = (v: HTMLVideoElement) => {
+      if (seen.has(v) && !document.hidden) { v.preload = 'auto'; v.play().catch(() => {}); }
+      else v.pause();
+    };
     const io = new IntersectionObserver((entries) => {
       for (const { target, isIntersecting } of entries) {
         const v = target as HTMLVideoElement;
-        if (isIntersecting && !document.hidden) { v.preload = 'auto'; v.play().catch(() => {}); }
-        else v.pause();
+        if (isIntersecting) seen.add(v); else seen.delete(v);
+        run(v);
       }
     }, { threshold: 0.35 });
+    document.addEventListener('visibilitychange', () => seen.forEach(run));
     document.querySelectorAll<HTMLVideoElement>('.ph video').forEach((v) => io.observe(v));
   }
 </script>

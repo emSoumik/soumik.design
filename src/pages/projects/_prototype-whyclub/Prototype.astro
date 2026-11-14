@@ -21,12 +21,19 @@ import Viewer from './Viewer.astro';
       v.addEventListener('pause', () => { b.textContent = '▶'; b.ariaLabel = 'Play recording'; });
     });
   } else {
+    // seen: the ones on screen, so a hidden tab can stop them and start them again
+    const seen = new Set<HTMLVideoElement>();
+    const run = (v: HTMLVideoElement) => {
+      if (seen.has(v) && !document.hidden) { v.preload = 'auto'; v.play().catch(() => {}); } else v.pause();
+    };
     const io = new IntersectionObserver((entries) => {
       for (const { target, isIntersecting } of entries) {
         const v = target as HTMLVideoElement;
-        if (isIntersecting && !document.hidden) { v.preload = 'auto'; v.play().catch(() => {}); } else v.pause();
+        if (isIntersecting) seen.add(v); else seen.delete(v);
+        run(v);
       }
     }, { threshold: 0.35 });
+    document.addEventListener('visibilitychange', () => seen.forEach(run));
     document.querySelectorAll<HTMLVideoElement>('.scr video, video.bare').forEach((v) => io.observe(v));
   }
 </script>

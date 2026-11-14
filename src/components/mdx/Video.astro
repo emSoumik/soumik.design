@@ -48,13 +48,20 @@ const { src, webm, poster, alt, caption, wide = false, phone = false } = Astro.p
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // paused by hand stays paused; scrolling away and back doesn't restart it
   const held = new WeakSet<HTMLVideoElement>();
+  // seen: the ones on screen, so a hidden tab can stop them and start them again
+  const seen = new Set<HTMLVideoElement>();
+  const run = (v: HTMLVideoElement) => {
+    if (seen.has(v) && !held.has(v) && !document.hidden) v.play().catch(() => { v.controls = true; });
+    else v.pause();
+  };
   const io = new IntersectionObserver((entries) => {
     for (const { target, isIntersecting } of entries) {
       const v = target as HTMLVideoElement;
-      if (isIntersecting && !held.has(v)) v.play().catch(() => { v.controls = true; });
-      else v.pause();
+      if (isIntersecting) seen.add(v); else seen.delete(v);
+      run(v);
     }
   }, { threshold: 0.4 });
+  document.addEventListener('visibilitychange', () => seen.forEach(run));
   for (const fig of document.querySelectorAll('.vid')) {
     const v = fig.querySelector('video')!, pp = fig.querySelector<HTMLButtonElement>('.pp')!;
     if (reduced) { v.controls = true; v.preload = 'metadata'; continue; }

@@ -3,23 +3,26 @@
 // the timeline is a hairline cut into chapters; the chapters also sit behind one small button. click or tap the
 // picture to play or pause; on a phone a double tap on either side skips 10s.
 // with the player focused: space or k plays, ← → skip 5s, shift ← → jump chapters, m sound, f full screen.
-// it plays muted on its own once it's on screen (never under reduced motion).
+// nothing but the poster loads until someone plays it: no source is attached before then, and `small` (a lighter file)
+// is picked over `src` on Save-Data, a 2g/3g connection, or a narrow low-density screen. once started it pauses off
+// screen and picks up again on the way back. `autoplay` starts it muted by itself once it's on screen (never under
+// reduced motion, Save-Data or a slow connection), which costs the whole film on every visit, so it's off by default.
 // expand: the film grows from the column to a centred maximum (1240px, never edge to edge, never taller than 86% of
 // the screen) as you scroll, holds, then lets go. it's driven by the scroll itself (css scroll timelines), moves only
 // transform, clip-path and opacity, and the controls never scale with the picture: they are laid out at the full
 // size and slid into place
-interface Props { src: string; poster: string; label: string; duration: number; chapters: [number, string][]; caption?: string; expand?: boolean }
-const { src, poster, label, duration, chapters, caption, expand = false } = Astro.props;
+interface Props { src: string; small?: string; poster: string; label: string; duration: number; chapters: [number, string][]; caption?: string; expand?: boolean; autoplay?: boolean }
+const { src, small, poster, label, duration, chapters, caption, expand = false, autoplay = false } = Astro.props;
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const spans = chapters.map(([t], i) => (chapters[i + 1]?.[0] ?? duration) - t);
 const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)).toString(36)}`;
 ---
-<figure class="pl pj-figure" data-player data-duration={duration} data-chapters={JSON.stringify(chapters)} data-expand={expand ? '' : undefined}>
+<figure class="pl pj-figure" data-player data-src={src} data-small={small} data-duration={duration} data-chapters={JSON.stringify(chapters)} data-expand={expand ? '' : undefined} data-autoplay={autoplay ? '' : undefined}>
   <div class="pl-run">
     <div class="pl-frame" tabindex="0" role="group" aria-label={`${label} Space plays or pauses, the arrow keys skip, M turns the sound on, F is full screen.`}>
       <span class="pl-dark" aria-hidden="true"><i></i></span>
       <div class="pl-box">
-        <video playsinline muted preload="metadata" poster={poster} aria-hidden="true"><source src={src} type="video/mp4" /></video>
+        <video playsinline muted preload="none" poster={poster} aria-hidden="true"></video>
         <span class="pl-shade" aria-hidden="true"></span>
       </div>
       <div class="pl-ui">
@@ -128,6 +131,21 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
     // held: they paused it themselves, so scrolling past never starts it again. heard: sound has been on once
     let held = false, heard = false, idle = 0, last = -1, chapT = 0;
 
+    // the file is attached on the first play or seek, not before. a seek that comes first waits for the metadata.
+    // begun: it has been played once, so coming back on screen may start it again
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } };
+    const lean = !!nav.connection && (!!nav.connection.saveData || /^(slow-2g|2g|3g)$/.test(nav.connection.effectiveType ?? ''));
+    let loaded = false, begun = 'autoplay' in fig.dataset, pending: number | null = null;
+    const load = () => {
+      if (loaded) return;
+      loaded = true;
+      v.preload = 'auto';
+      const small = fig.dataset.small;
+      v.src = (small && (lean || (innerWidth <= 600 && devicePixelRatio < 2)) ? small : fig.dataset.src)!;
+      v.addEventListener('loadedmetadata', () => { if (pending !== null) { v.currentTime = pending; pending = null; } }, { once: true });
+    };
+    const cur = () => pending ?? v.currentTime;
+
     const chapterAt = (t: number) => { let i = 0; ch.forEach(([s], k) => { if (t >= s) i = k; }); return i; };
     // the chapter's name shows at the foot for a moment when it begins
     const name = (c: number) => {
@@ -137,7 +155,7 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       chapT = window.setTimeout(() => chap.classList.remove('on'), 2400);
     };
     const tick = () => {
-      const t = v.currentTime, c = chapterAt(t);
+      const t = cur(), c = chapterAt(t);
       segs.forEach((s, i) => s.style.setProperty('--p', String(Math.max(0, Math.min(1, (t - ch[i][0]) / (ends[i] - ch[i][0]))))));
       chBtns.forEach((b, i) => (i === c ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current')));
       now.textContent = fmt(t);
@@ -168,12 +186,17 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       flash.dataset.kind = kind;
       flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
     };
-    const go = () => { held = false; v.play().catch(() => {}); };
+    const go = () => { held = false; begun = true; load(); v.play().catch(() => {}); };
     const toggle = () => {
       if (v.paused) { go(); pulse('play'); }
       else { held = true; v.pause(); pulse('pause'); }
     };
-    const seekTo = (t: number) => { v.currentTime = Math.max(0, Math.min(D - .1, t)); tick(); wake(); };
+    const seekTo = (t: number) => {
+      load();
+      const to = Math.max(0, Math.min(D - .1, t));
+      if (v.readyState === 0) pending = to; else v.currentTime = to;
+      tick(); wake();
+    };
     const sound = (on: boolean) => {
       v.muted = !on;
       frame.classList.toggle('loud', on);
@@ -183,9 +206,9 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       if (on) go();
     };
     const chapter = (d: number) => {
-      const c = chapterAt(v.currentTime);
+      const c = chapterAt(cur());
       // back goes to the start of this chapter first, unless you're already at its start
-      const to = d < 0 && v.currentTime - ch[c][0] > 2 ? c : Math.max(0, Math.min(ch.length - 1, c + d));
+      const to = d < 0 && cur() - ch[c][0] > 2 ? c : Math.max(0, Math.min(ch.length - 1, c + d));
       seekTo(ch[to][0]);
       name(to);
     };
@@ -195,7 +218,7 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       menu.hidden = !yes;
       chs.setAttribute('aria-expanded', String(yes));
       frame.classList.toggle('menu', yes);
-      if (yes) (chBtns[chapterAt(v.currentTime)] ?? chBtns[0]).focus();
+      if (yes) (chBtns[chapterAt(cur())] ?? chBtns[0]).focus();
       else if (focus) chs.focus();
       wake();
     };
@@ -233,7 +256,7 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       if (t - lastTap < 280 && (x < .35 || x > .65)) {
         clearTimeout(tapT); lastTap = 0;
         const fwd = x > .5;
-        seekTo(v.currentTime + (fwd ? 10 : -10));
+        seekTo(cur() + (fwd ? 10 : -10));
         const s = fig.querySelector<HTMLElement>(fwd ? '.is-fwd' : '.is-back')!;
         s.classList.remove('go'); void s.offsetWidth; s.classList.add('go');
         return;
@@ -277,8 +300,8 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       if ((k === ' ' || k === 'enter') && t.tagName === 'BUTTON') return;
       let done = true;
       if (k === ' ' || k === 'k') toggle();
-      else if (k === 'arrowright' || k === 'l') e.shiftKey ? chapter(1) : seekTo(v.currentTime + (k === 'l' ? 10 : 5));
-      else if (k === 'arrowleft' || k === 'j') e.shiftKey ? chapter(-1) : seekTo(v.currentTime - (k === 'j' ? 10 : 5));
+      else if (k === 'arrowright' || k === 'l') e.shiftKey ? chapter(1) : seekTo(cur() + (k === 'l' ? 10 : 5));
+      else if (k === 'arrowleft' || k === 'j') e.shiftKey ? chapter(-1) : seekTo(cur() - (k === 'j' ? 10 : 5));
       else if (k === 'm') sound(v.muted);
       else if (k === 'f') full.click();
       else if (k === 'p' && document.pictureInPictureEnabled) (document.pictureInPictureElement ? document.exitPictureInPicture() : v.requestPictureInPicture()).catch(() => {});
@@ -288,17 +311,19 @@ const id = `pl-${Math.abs([...src].reduce((h, c) => (h * 31 + c.charCodeAt(0)) |
       if (done) e.preventDefault();
     });
 
-    // on screen it plays, muted; off screen it pauses. under reduced motion it waits for play
+    // once begun: on screen it plays, off screen it pauses. under reduced motion it waits for play
     let seen = false;
-    const auto = () => { if (seen && !reduced && !held && !document.hidden) v.play().catch(() => {}); };
+    const auto = () => { if (seen && begun && !reduced && !lean && !held && !document.hidden) { load(); v.play().catch(() => {}); } };
     const io = new IntersectionObserver(([e]) => {
       seen = e.isIntersecting;
       if (seen) auto();
       else if (!v.paused) v.pause();
     }, { threshold: .4 });
     io.observe(box);
-    // a tab opened in the background starts it when you come to it
-    document.addEventListener('visibilitychange', auto);
+    // a tab opened in the background starts it when you come to it; a silent film stops while the tab is hidden
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (v.muted && !v.paused) v.pause(); } else auto();
+    });
     tick(); wake();
   });
 </script>

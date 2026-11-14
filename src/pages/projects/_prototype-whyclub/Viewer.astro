@@ -125,6 +125,13 @@
     if (!reduced) media.animate([{ transform: a }, { transform: b }], { duration: 460, easing: EASE });
   };
 
+  // a hidden tab stops the open recording; it picks up when the tab shows again
+  document.addEventListener('visibilitychange', () => {
+    const v = media?.querySelector('video');
+    if (!v || reduced) return;
+    if (document.hidden) v.pause(); else v.play().catch(() => {});
+  });
+
   const close = async () => {
     if (!media || !from || busy) return;
     busy = true;

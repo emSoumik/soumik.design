@@ -21,8 +21,8 @@ const { src, alt, video = false, ratio = '392 / 848', kind = 'screen', caption, 
     {video ? (
       <>
         <video muted loop playsinline disablepictureinpicture preload="none" poster={`${src}.webp`} aria-label={alt} data-lab-video>
-          <source src={`${src}.webm`} type="video/webm">
-          <source src={`${src}.mp4`} type="video/mp4">
+          <source src={`${src}.v2.webm`} type="video/webm">
+          <source src={`${src}.v2.mp4`} type="video/mp4">
         </video>
         <button type="button" class="vbtn" aria-label="Pause" data-lab-vbtn>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path class="i-pause" d="M5 3.5v9M11 3.5v9" /><path class="i-play" d="M5.5 3.2v9.6L13 8z" /></svg>
