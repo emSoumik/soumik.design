@@ -92,12 +92,12 @@ const passSpecs = [
             {it.id === 'safari' && (
               <span class="crops" data-comp>
                 {crops.map(([k, name, line]) => (
-                  <span class="crop"><span class="cimg"><picture><source srcset={`${A}ios/${k}.avif`} type="image/avif"><img src={`${A}ios/${k}.webp`} alt="" loading="lazy" decoding="async" draggable="false"></picture></span>
+                  <span class="crop"><span class="cimg"><picture><source srcset={`${A}ios/${k}.s.avif 400w, ${A}ios/${k}.avif 720w`} sizes="110px" type="image/avif"><img src={`${A}ios/${k}.webp`} srcset={`${A}ios/${k}.s.webp 400w, ${A}ios/${k}.webp 720w`} sizes="110px" alt="" loading="lazy" decoding="async" draggable="false"></picture></span>
                     <span class="cl"><b>{name}</b>{line}</span></span>
                 ))}
               </span>
             )}
-            {it.id === 'loading' && <span class="ph solo" data-comp><picture><source srcset={`${A}p-loading.avif`} type="image/avif"><img src={`${A}p-loading.webp`} alt="" loading="lazy" decoding="async" draggable="false"></picture></span>}
+            {it.id === 'loading' && <span class="ph solo" data-comp><picture><source srcset={`${A}p-loading.s.avif 400w, ${A}p-loading.avif 784w`} sizes="110px" type="image/avif"><img src={`${A}p-loading.webp`} srcset={`${A}p-loading.s.webp 400w, ${A}p-loading.webp 784w`} sizes="110px" alt="" loading="lazy" decoding="async" draggable="false"></picture></span>}
             {it.id === 'entrance' && <span class="ph solo" data-comp><picture><source srcset={`${A}p-splash.avif`} type="image/avif"><img src={`${A}p-splash.webp`} alt="" loading="lazy" decoding="async" draggable="false"></picture></span>}
             {it.id === 'footer' && <DetailFoot card />}
           </span>
