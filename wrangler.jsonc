@@ -1,6 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "soumik-design",
+  // the site lives in the soumikhalder026 account; pinned so a local deploy from another login fails instead of landing elsewhere
+  "account_id": "ea51ade2b2acadbece74ac9e07d7e25a",
   "compatibility_date": "2026-11-14",
   "main": "worker/index.ts",
   "assets": {
