@@ -731,14 +731,23 @@ export function createGarden(canvas, opts = {}) {
 
   // ---- drawing -------------------------------------------------------------------------
   const px = (g, u) => Math.round(g * u * dpr);
+  // what a frame touches, as device-px boxes (one per flower, petal or spark): the next frame clears only those,
+  // and the grain goes only over them, instead of the whole canvas twice a step
+  let boxes = [], drawn = [], bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
   function rect(gx, gy, col, u = cell) {
-    const x = px(gx, u), y = px(gy, u);
+    const x = px(gx, u), y = px(gy, u), x1 = px(gx + 1, u), y1 = px(gy + 1, u);
     ctx.fillStyle = col;
-    ctx.fillRect(x, y, px(gx + 1, u) - x, px(gy + 1, u) - y);
+    ctx.fillRect(x, y, x1 - x, y1 - y);
+    if (x < bx0) bx0 = x; if (y < by0) by0 = y; if (x1 > bx1) bx1 = x1; if (y1 > by1) by1 = y1;
+  }
+  function mark() {
+    if (bx1 > bx0 && by1 > by0) boxes.push(bx0, by0, bx1 - bx0, by1 - by0);
+    bx0 = by0 = Infinity; bx1 = by1 = -Infinity;
   }
 
   function draw(t) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < drawn.length; i += 4) ctx.clearRect(drawn[i], drawn[i + 1], drawn[i + 2], drawn[i + 3]);
+    boxes = [];
     let busy = false;
     const paint = (f, k) => {
       const n = Math.min(f.cells.length, k), fresh = Math.max(2, Math.round(24 / (f.step || STEP)));
@@ -750,6 +759,7 @@ export function createGarden(canvas, opts = {}) {
         // the newest stitch flashes paler for a step
         rect(f.gx + c.x + dx, f.gy + c.y + (c.hd ? dip : 0), i >= n - fresh && n < f.cells.length ? FLASH : c.col, f.u);
       }
+      mark();
     };
     const ds = f => f.dstep || STEP * .6;
     for (const f of dying) {
@@ -770,6 +780,7 @@ export function createGarden(canvas, opts = {}) {
         for (const c of m.keep) rect(c.gx + dx, c.gy + dy, c.col, f.u);
         for (const c of m.out) if (e < c.at) rect(c.gx + dx, c.gy + dy, c.col, f.u);
         for (const c of m.in) if (e >= c.at) rect(c.gx + dx, c.gy + dy, lit(c) ? FLASH : c.col, f.u);
+        mark();
         busy = true;
         continue;
       }
@@ -786,6 +797,7 @@ export function createGarden(canvas, opts = {}) {
       if (e > p.life) { petals.splice(i, 1); continue; }
       const fall = Math.floor(e / 62);
       rect(p.gx + (Math.floor(fall / 3) % 2 ? p.side : 0), p.gy + fall, p.col);
+      mark();
       busy = true;
     }
     for (let i = sparks.length - 1; i >= 0; i--) {
@@ -800,12 +812,20 @@ export function createGarden(canvas, opts = {}) {
       busy = true;
       const sh = SPARK[fr], o = Math.floor(sh.length / 2);
       sh.forEach((row, r) => [...row].forEach((ch, c) => { if (ch === 'X') rect(s.gx + c - o, s.gy + r - o, s.col); }));
+      mark();
     }
-    // grain sits only on the stitches
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = grainPat;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = 'source-over';
+    mark();
+    // grain sits only on the stitches: one path of this frame's boxes, so where they overlap it still lands once.
+    // the pattern keeps its origin at the canvas corner, so it lines up as before
+    if (boxes.length) {
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = grainPat;
+      ctx.beginPath();
+      for (let i = 0; i < boxes.length; i += 4) ctx.rect(boxes[i], boxes[i + 1], boxes[i + 2], boxes[i + 3]);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    drawn = boxes;
     api._stats.frames++;
     return busy;
   }

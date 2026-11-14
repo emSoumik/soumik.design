@@ -36,6 +36,9 @@ export const BEE_CSS = `
 .bee.rest .wa { animation: rwa 2.6s steps(1) infinite; } .bee.rest .wd { animation: rwd 2.6s steps(1) infinite; }
 @keyframes rwa { 0% { opacity: 1; } 88% { opacity: 0; } 92% { opacity: 1; } 95% { opacity: 0; } 98% { opacity: 1; } }
 @keyframes rwd { 0% { opacity: 0; } 88% { opacity: 1; } 92% { opacity: 0; } 95% { opacity: 1; } 98% { opacity: 0; } }
+/* scrolled away from the hero: the wings stop too (they repaint on the main thread) */
+.bee.away .wa, .bee.away .wd { animation-play-state: paused; }
+.bee-hero { position: absolute; left: 0; top: 0; width: 1px; height: 110vh; visibility: hidden; pointer-events: none; }
 .bee .say { position: absolute; left: 70%; bottom: 95%; padding: 3px 8px; border-radius: 10px 10px 10px 2px;
   background: #fff; color: #1d1c1b; font: 500 11.5px/1.2 "Instrument Sans", system-ui, sans-serif; white-space: nowrap;
   box-shadow: 0 0 0 1px rgba(42, 40, 38, .14), 0 6px 14px -8px rgba(0, 0, 0, .3);
@@ -61,6 +64,11 @@ export function createBee({ spots, start = 1.4 }) {
   el.innerHTML = `<div class="tilt"><div class="flip"><div class="jig">${beeSVG()}</div></div></div><span class="say"></span>`;
   document.body.appendChild(el);
   const say = el.querySelector('.say'), tilt = el.querySelector('.tilt');
+  // its size, read once (and on resize) so placing it every frame never forces a style recalc
+  let bw = 0, bh = 0;
+  const measure = () => { bw = el.offsetWidth; bh = el.offsetHeight; };
+  measure();
+  addEventListener('resize', measure, { passive: true });
 
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = matchMedia('(pointer: fine)').matches;
@@ -107,15 +115,25 @@ export function createBee({ spots, start = 1.4 }) {
 
   function place(x, y, rotDeg) {
     // the bee tilts; its speech bubble stays upright
-    el.style.transform = `translate3d(${(x - el.offsetWidth / 2).toFixed(1)}px, ${(y - el.offsetHeight * .82).toFixed(1)}px, 0)`;
+    el.style.transform = `translate3d(${(x - bw / 2).toFixed(1)}px, ${(y - bh * .82).toFixed(1)}px, 0)`;
     tilt.style.transform = `rotate(${rotDeg.toFixed(1)}deg)`;
   }
 
+  // the hero (top 110vh of the page) on screen or not: away from it the loop stops, unless the bee is
+  // busy for the about card (flying there or held)
+  let onScreen = true;
+  const busy = () => mode === 'held' || !!arrive;
+  function wake() {
+    if (reduced || raf || document.hidden || !(onScreen || busy())) return;
+    el.classList.remove('away');
+    last = performance.now(); raf = requestAnimationFrame(step);
+  }
+
   function step(now) {
+    if (!onScreen && !busy()) { raf = 0; el.classList.add('away'); return; }
     raf = requestAnimationFrame(step);
     const dt = Math.min(.05, (now - last) / 1000); last = now; t += dt;
     if (mode === 'held') { place(pos.x, pos.y + Math.sin(t * 2.4) * 1.2, Math.sin(t * .9) * 4); return; }
-    if (scrollY > innerHeight * 1.1) return; // hero is offscreen: nothing to watch
     if (mode === 'wait') { timer -= dt; if (timer <= 0) pick(); place(pos.x, pos.y, 0); return; }
     if (mode === 'perch') {
       timer -= dt;
@@ -170,9 +188,14 @@ export function createBee({ spots, start = 1.4 }) {
   } else {
     raf = requestAnimationFrame(step);
     document.addEventListener('visibilitychange', () => {
-      cancelAnimationFrame(raf);
-      if (!document.hidden) { last = performance.now(); raf = requestAnimationFrame(step); }
+      cancelAnimationFrame(raf); raf = 0;
+      wake();
     });
+    const hero = document.createElement('div');
+    hero.className = 'bee-hero';
+    hero.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(hero);
+    new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; wake(); }).observe(hero);
   }
   /** Fly straight to a fresh flower and say so; the next pick after that is business as usual. */
   function visit(spot) {
@@ -181,6 +204,7 @@ export function createBee({ spots, start = 1.4 }) {
     if (reduced) return;
     target = spot; current = null; mode = 'fly';
     el.classList.remove('rest');
+    wake();
   }
   /** Fly briskly to a page point and hover there until release(). Resolves on arrival. */
   function flyTo(x, y) {
@@ -189,6 +213,7 @@ export function createBee({ spots, start = 1.4 }) {
       if (reduced) { pos.x = x; pos.y = y; place(x, y, 0); mode = 'held'; return res(); }
       target = { x, y }; current = null; mode = 'fly'; fast = true; arrive = res;
       el.classList.remove('rest');
+      wake();
     });
   }
   function release(text) {

@@ -108,11 +108,14 @@ export function impulse(ac, { secs = 1.3, pre = .018, decay = 6.5, bright = .8, 
       if (i + 1 < len) { d[i] += a; d[i + 1] += a * .5; }
     }
     let y = 0;
-    const t0 = p0 + Math.floor(sr * .006), fade = sr * .025;
+    const t0 = p0 + Math.floor(sr * .006), fade = sr * .025, n = len - p0;
+    // the lowpass coefficient and the envelope as running products, not an exp per sample (same curves)
+    const ka = Math.exp(k / n), kd = Math.exp(-decay / n);
+    let a = bright * Math.exp(k * (t0 - p0) / n), env = Math.exp(-decay * (t0 - p0) / n);
     for (let i = t0; i < len; i++) {
-      const u = (i - p0) / (len - p0), a = bright * Math.exp(k * u);
       y += a * ((Math.random() * 2 - 1) - y);
-      d[i] += y * Math.exp(-u * decay) * Math.min(1, (i - t0) / fade) * .6;
+      d[i] += y * env * Math.min(1, (i - t0) / fade) * .6;
+      a *= ka; env *= kd;
     }
   }
   return ir;
@@ -139,8 +142,10 @@ function unlock() {
       master.gain.value = .7;
       master.connect(shelf);
       // the room
+      // its impulse is built once the tap is handled, so the first press never waits on it (dry until then)
       const conv = ctx.createConvolver();
-      conv.buffer = impulse(ctx);
+      const fill = () => { try { conv.buffer = impulse(ctx); } catch (e) {} };
+      if ('requestIdleCallback' in window) requestIdleCallback(fill, { timeout: 400 }); else setTimeout(fill, 60);
       verb = ctx.createGain();
       verb.gain.value = .28;
       verb.connect(conv); conv.connect(master);
@@ -150,9 +155,6 @@ function unlock() {
       echo = ctx.createGain();
       echo.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(ret); ret.connect(master);
       const rs = ctx.createGain(); rs.gain.value = .3; lp.connect(rs); rs.connect(verb);
-      noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-      const d = noise.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       if (moodV > 0) applyMood();
       if (DEV) startMeter();
     }
@@ -217,7 +219,8 @@ function gain(g, v) { const n = keep(g, ctx.createGain()); n.gain.value = v; ret
 function osc(type, freq, t, dur, out) {
   const o = ctx.createOscillator();
   o.type = type;
-  o.frequency.setValueAtTime(freq, t);
+  // held to nyquist, where the browser clamps it anyway (no out-of-range warnings)
+  o.frequency.setValueAtTime(Math.min(freq, ctx.sampleRate / 2), t);
   if (out) o.connect(out);
   o.start(t);
   o.stop(t + dur + .02);
@@ -225,11 +228,18 @@ function osc(type, freq, t, dur, out) {
   return o;
 }
 
+// a second of white noise, made the first time something hisses
+function makeNoise() {
+  const b = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return b;
+}
+
 function hiss(t, dur, peak, type, freq, q, o = {}) {
   const g = voice(t, peak, dur, { attack: o.attack ?? .002, pan: o.pan, wet: o.wet ?? .3, echo: o.echo, orn: o.orn });
   if (!g) return null;
   const s = ctx.createBufferSource();
-  s.buffer = noise;
+  s.buffer = noise ||= makeNoise();
   const f = keep(g, ctx.createBiquadFilter());
   f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
   s.connect(f); f.connect(g);
