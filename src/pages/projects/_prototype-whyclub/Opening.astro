@@ -298,6 +298,9 @@ const tiles = [
   const measure = () => {
     const s = stage.getBoundingClientRect();
     W = s.width; H = s.height;
+    // cached so the scroll frames read no layout
+    top = Math.max(0, open.getBoundingClientRect().top + scrollY);
+    span0 = open.offsetHeight - H;
     fills.forEach((f) => (f.style.transform = ''));
     ghead.style.transform = '';
     heroOut = hero.offsetTop + hero.offsetHeight;
@@ -305,7 +308,7 @@ const tiles = [
     // how much of the stage the first screen shows, above the page's dock (fixed low in the middle; not parsed yet on
     // the first pass, so its usual top stands in) and below whatever sits over the stage before it sticks
     const dock = document.querySelector('.rdock');
-    vis = Math.min(H, innerHeight, dock ? dock.getBoundingClientRect().top - 8 : innerHeight - 80) - top0();
+    vis = Math.min(H, innerHeight, dock ? dock.getBoundingClientRect().top - 8 : innerHeight - 80) - top;
 
     if (mode === 'row') {
       // all five whole, on one centre line, home a size up, with room under them for the lines
@@ -364,8 +367,8 @@ const tiles = [
   };
 
   // where the stage starts on the page; a section pulled above the top of the page starts stuck, at 0
-  const top0 = () => Math.max(0, open.getBoundingClientRect().top + scrollY);
-  const progress = () => clamp((scrollY - top0()) / (open.offsetHeight - H));
+  let top = 0, span0 = 1;
+  const progress = () => clamp((scrollY - top) / span0);
 
   const frameRow = (p) => {
     const out = ease(span(p, 0, .14));
@@ -474,13 +477,15 @@ const tiles = [
   };
   const tick = () => { if (!raf) raf = requestAnimationFrame(frame); };
 
+  // the scroll listener is only attached while the opening is on screen (one last frame on the way out)
+  let inView = true;
   const enter = (m) => {
     mode = m;
     open.classList.add('scene', m);
     phones.forEach((el) => { el.classList.add('flying'); floats.append(el); });
     measure();
     frame();
-    addEventListener('scroll', tick, { passive: true });
+    if (inView) addEventListener('scroll', tick, { passive: true });
   };
   const leave = () => {
     open.classList.remove('scene', 'row', 'reel');
@@ -504,14 +509,30 @@ const tiles = [
     setTimeout(() => open.classList.remove('rise'), 2200);
   }
 
-  // the heading's wrap moves the tiles once the fonts are in, so measure again then
-  document.fonts.ready.then(() => { if (mode) { measure(); frame(); } });
-  // and once the dock is in, to keep the names above it
-  document.addEventListener('DOMContentLoaded', () => { if (mode) { measure(); frame(); } });
+  new IntersectionObserver(([e]) => {
+    inView = e.isIntersecting;
+    if (!mode) return;
+    if (inView) { addEventListener('scroll', tick, { passive: true }); tick(); }
+    else { removeEventListener('scroll', tick); frame(); }
+  }).observe(open);
+
+  // one batched re-measure: the heading's wrap moves the tiles once the fonts are in, and the page's dock
+  // arrives late (it keeps the names above it)
+  let again = 0;
+  const remeasure = () => {
+    if (again) return;
+    again = requestAnimationFrame(() => { again = 0; if (mode) { measure(); frame(); } });
+  };
+  document.fonts.ready.then(remeasure);
+  document.addEventListener('DOMContentLoaded', remeasure);
+  let lastW = innerWidth, lastH = innerHeight;
   addEventListener('resize', () => {
+    // the url bar showing or hiding on a phone is not a new layout
+    if (innerWidth === lastW && Math.abs(innerHeight - lastH) < 160 && matchMedia('(pointer: coarse)').matches) return;
+    lastW = innerWidth; lastH = innerHeight;
     const m = pick();
     if (m !== mode) { if (mode) leave(); if (m) enter(m); return; }
-    if (mode) { measure(); frame(); }
+    remeasure();
   });
 })();
 </script>
