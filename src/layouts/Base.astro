@@ -3,6 +3,8 @@
 // The home page keeps its own hand-written head and css in pages/index.astro.
 import { SOCIALS } from '../../js/content.js';
 import '../styles/site.css';
+import Fonts from '../components/Fonts.astro';
+import Speculation from '../components/Speculation.astro';
 import PageTransitions from '../components/transitions/PageTransitions.astro';
 import ProtoHead from '../components/proto/ProtoHead.astro';
 import Titles from '../components/Titles.astro';
@@ -27,6 +29,8 @@ const card = image ?? { src: '/assets/brand/og-card.png', width: 1200, height: 6
 const og = new URL(card.src, Astro.site);
 const ext = (href: string) => (href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {});
 const here = Astro.url.pathname;
+// the faces on screen before any scrolling: the blog's titles are the serif, everything else the sans and pixel labels
+const faces = here.startsWith('/blog/') ? ['sans', 'serif'] as const : ['sans', 'pixel'] as const;
 ---
 <!doctype html>
 <html lang="en">
@@ -59,10 +63,9 @@ const here = Astro.url.pathname;
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/brand/favicon-16.png">
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=Pixelify+Sans:wght@500..600&display=swap" rel="stylesheet">
+<Fonts preload={[...faces]} />
 <PageTransitions />
+<Speculation />
 {import.meta.env.DEV && <ProtoHead />}
 <Titles />
 </head>

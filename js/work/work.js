@@ -8,7 +8,6 @@
 import { WHYCLUB, VAYU, FONTPREVIEW } from '../content.js';
 import { endMarkup, wireEnd } from './end.js';
 
-const FONTS = 'https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap';
 const MONO = 'ui-monospace, "SF Mono", Menlo, monospace';
 const A = (n) => `/assets/work/whyclub/${n}`;
 const V = (n) => `/assets/work/vayu/${n}`;
@@ -16,12 +15,6 @@ const F = (n) => `/assets/work/font-preview/${n}`;
 
 function injectCSS() {
   if (document.getElementById('wk-css')) return;
-  if (![...document.querySelectorAll('link[rel=stylesheet]')].some((l) => /Instrument\+Sans/.test(l.href))) {
-    const l = document.createElement('link');
-    l.rel = 'stylesheet';
-    l.href = FONTS;
-    document.head.appendChild(l);
-  }
   const s = document.createElement('style');
   s.id = 'wk-css';
   s.textContent = STYLE;

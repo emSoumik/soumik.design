@@ -29,6 +29,8 @@ const FRINGE = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http:/
 
 const css = `
 @view-transition { navigation: auto; }
+/* a page prerendered by the speculation rules (components/Speculation.astro) holds its intro until it's shown */
+html.pt-held *, html.pt-held *::before, html.pt-held *::after { animation-play-state: paused !important; }
 :root { --pt-ios: cubic-bezier(.32, .72, 0, 1); --pt-out: cubic-bezier(.23, 1, .32, 1); --pt-inout: cubic-bezier(.65, 0, .35, 1); }
 
 /* the overlays that exist only for the length of a transition */
@@ -178,6 +180,11 @@ const css = `
   var root = document.documentElement;
   var KEY = 'pt.trip';
   var reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  // prerendered in the background: keep the intro animations at their first frame until the page is shown
+  if (document.prerendering) {
+    root.classList.add('pt-held');
+    document.addEventListener('prerenderingchange', function () { root.classList.remove('pt-held'); }, { once: true });
+  }
   // the faces a title flicks through on its way in, the way font preview steps through a folder
   var FACES = [['"Pixelify Sans", monospace', 'normal', '500'], ['"Instrument Serif", Georgia, serif', 'italic', '400'], ['ui-monospace, "SF Mono", Menlo, monospace', 'normal', '400'], ['Georgia, "Times New Roman", serif', 'normal', '700']];
 
