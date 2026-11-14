@@ -14,7 +14,7 @@ const LINKS: [string, string][] = [['projects', '/projects/'], ['vault', '/vault
   <a class="rd-me" href="/#about">
     <span class="rd-ic">
       <picture><source srcset="/assets/brand/avatar.avif" type="image/avif"><img src="/assets/brand/avatar.webp" alt="" width="30" height="30" decoding="async"></picture>
-      <svg class="rd-ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20.5" pathLength="1" /></svg>
+      <svg class="rd-ring" viewBox="0 0 44 44" aria-hidden="true"><circle class="rd-track" cx="22" cy="22" r="20.5" /><circle class="rd-arc" cx="22" cy="22" r="20.5" pathLength="1" /></svg>
     </span>
     <span class="rd-lb">about me</span>
   </a>
@@ -24,13 +24,23 @@ const LINKS: [string, string][] = [['projects', '/projects/'], ['vault', '/vault
 </nav>
 
 <style is:global>
+  /* the dock's layout never changes: tucking clips the pill down to the yellow avatar circle and carries it to the corner,
+     so only translate, clip-path and opacity move. open, the clip is the pill grown 48px all round (radius 26 + 48), so the shadow shows */
   .rdock { --rd-low: max(20px, calc(env(safe-area-inset-bottom) + 10px)); position: fixed; z-index: 30; left: 50%; bottom: var(--rd-low); translate: -50% 0;
-    display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 99px; font: 500 15px/1 var(--pixel); letter-spacing: .01em;
-    background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
+    display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 99px; font: 500 15px/1 var(--pixel); letter-spacing: .01em; contain: layout;
+    background: rgba(255, 255, 255, .94);
+    clip-path: inset(-48px round 74px);
+    transition: translate 420ms cubic-bezier(.32, .72, 0, 1), clip-path 420ms cubic-bezier(.32, .72, 0, 1); }
+  /* the shadow lives on its own layer so it can fade before the clip closes on it, instead of being cut */
+  .rdock::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
     box-shadow: 0 0 0 1px rgba(31, 29, 27, .1), 0 16px 36px -18px rgba(31, 29, 27, .5), 0 2px 6px -3px rgba(31, 29, 27, .18);
-    transition: left .55s var(--ease), translate .55s var(--ease); }
+    transition: opacity 200ms var(--ease) 120ms; }
+  /* frosted glass only where it's cheap to keep re-blurring: fine pointers. touch gets a plain near-opaque pill */
+  @media (hover: hover) and (pointer: fine) {
+    .rdock { background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4); }
+  }
   .rdock a { position: relative; display: inline-flex; align-items: center; min-height: 44px; border-radius: 99px; color: var(--ink); white-space: nowrap; -webkit-tap-highlight-color: transparent;
-    transition: background-color .25s var(--ease), color .25s var(--ease), padding .5s var(--ease), transform .16s var(--ease); }
+    transition: background-color .25s var(--ease), color .25s var(--ease), transform .16s var(--ease); }
   .rdock a:active { transform: scale(.96); }
   .rdock a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 99px; }
   .rd-back { justify-content: center; width: 44px; color: var(--ink-2); }
@@ -39,14 +49,25 @@ const LINKS: [string, string][] = [['projects', '/projects/'], ['vault', '/vault
   .rd-ic { position: relative; width: 34px; height: 34px; display: grid; place-items: center; }
   .rd-ic picture { display: contents; }
   .rd-ic img { width: 30px; height: 30px; object-fit: contain; mix-blend-mode: multiply; translate: 0 2px; transition: transform .5s var(--spring); }
-  /* the reading ring: only on the bud */
-  .rd-ring { position: absolute; inset: -5px; width: 44px; height: 44px; rotate: -90deg; fill: none; stroke: #1f1d1b; stroke-width: 2; stroke-linecap: round;
-    stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--rd-p, 0)); opacity: 0; transition: opacity .3s; }
+  /* the reading ring: only on the bud, a hairline track under the arc. the arc follows the page's scroll timeline where
+     there is one, else js writes --rd-p onto it while it shows */
+  .rd-ring { position: absolute; inset: -5px; width: 44px; height: 44px; rotate: -90deg; fill: none; stroke-width: 2; stroke-linecap: round;
+    opacity: 0; transition: opacity .3s; }
+  .rd-track { stroke: rgba(31, 29, 27, .12); }
+  .rd-arc { stroke: #1f1d1b; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--rd-p, 0)); }
+  @supports (animation-timeline: scroll()) {
+    html.rd-tuck .rd-arc { animation: rd-p linear both; }
+    /* a rule of its own: the minifier folds a timeline in the same rule into the shorthand, which chrome drops */
+    html.rd-tuck .rd-ring .rd-arc { animation-timeline: scroll(root); }
+  }
+  @keyframes rd-p { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
   .rd-seg { padding: 0 15px; }
   .rd-more { display: inline-flex; gap: 2px; }
   .rd-more .rd-seg + .rd-seg::before { content: ""; position: absolute; left: -2px; top: 13px; bottom: 13px; width: 1px; background: rgba(31, 29, 27, .12); }
   .rd-seg[aria-current="page"]::after { content: ""; position: absolute; left: 50%; bottom: 7px; width: 4px; height: 4px; margin-left: -2px; background: currentColor; }
-  .rd-back, .rd-lb, .rd-more { overflow: hidden; max-width: 320px; opacity: 1; transition: max-width .5s var(--ease), opacity .3s var(--ease) .1s, width .5s var(--ease); }
+  .rd-back, .rd-lb, .rd-more { overflow: hidden; max-width: 320px; opacity: 1; }
+  /* the rest comes back once the pill has opened a little */
+  .rdock :is(.rd-back, .rd-lb, .rd-more) { transition: opacity 200ms var(--ease) 120ms, background-color .25s var(--ease), color .25s var(--ease), transform .16s var(--ease); }
   .rd-lb { padding-left: 9px; }
   @media (hover: hover) and (pointer: fine) {
     .rd-seg:hover, .rd-back:hover { background: rgba(128, 128, 128, .14); color: var(--ink); }
@@ -55,12 +76,12 @@ const LINKS: [string, string][] = [['projects', '/projects/'], ['vault', '/vault
     .rd-me:hover img { transform: rotate(-8deg) scale(1.08); }
   }
 
-  /* tucked: only the bud, moved to the corner where no text runs */
-  html.rd-tuck .rdock { left: calc(100% - var(--gut) - 26px); }
-  html.rd-tuck :is(.rd-back, .rd-lb, .rd-more) { max-width: 0; width: 0; opacity: 0; padding: 0; transition: max-width .4s var(--ease), width .4s var(--ease), opacity .15s, padding .4s var(--ease); }
-  html.rd-tuck .rdock { gap: 0; }
-  html.rd-tuck .rd-me { padding: 0 5px; }
+  /* tucked: only the bud, carried to the corner where no text runs (--rd-* come from the script) */
+  html.rd-tuck .rdock { translate: calc(-50% + var(--rd-half, 0px) - var(--gut) - 26px - var(--rd-c, 0px)) 0; clip-path: inset(var(--rd-t, 4px) var(--rd-r, 0px) var(--rd-t, 4px) var(--rd-l, 0px) round 22px); }
+  html.rd-tuck .rdock :is(.rd-back, .rd-lb, .rd-more), html.rd-tuck .rdock::before { opacity: 0; transition: opacity 150ms ease-out; }
   html.rd-tuck .rd-ring { opacity: 1; }
+  /* the clip would cut a focus ring outside the bud, so it goes inside */
+  html.rd-tuck .rd-me:focus-visible { outline-offset: -2px; }
 
   /* room under the footer, so at the very bottom the dock floats on paper, not on the credits */
   body > .foot { padding-bottom: calc(max(20px, calc(env(safe-area-inset-bottom) + 10px)) + 72px); }
@@ -75,8 +96,9 @@ const LINKS: [string, string][] = [['projects', '/projects/'], ['vault', '/vault
   /* narrow phones: the avatar alone says about me, so back and the three stops still fit at 320 */
   @media (max-width: 380px) { .rd-lb { max-width: 0; padding: 0; opacity: 0; } .rd-me { padding: 0 5px; } }
   @media (max-width: 350px) { .rdock { font-size: 12.5px; } .rd-seg { padding: 0 8px; } }
+  /* reduced motion: the bud jumps to the corner and the rest cross-fades */
   @media (prefers-reduced-motion: reduce) {
-    .rdock, .rdock a, .rd-back, .rd-lb, .rd-more, .rd-ring { transition: opacity .15s !important; }
+    .rdock, .rdock::before, .rdock a, .rd-back, .rd-lb, .rd-more, .rd-ring { transition: opacity .15s !important; }
   }
 </style>
 
@@ -84,23 +106,66 @@ const LINKS: [string, string][] = [['projects', '/projects/'], ['vault', '/vault
 (function () {
   var html = document.documentElement, dock = document.querySelector('.rdock');
   if (!dock) return;
-  var y0 = scrollY, ticking = false;
+  var ic = dock.querySelector('.rd-ic'), arc = dock.querySelector('.rd-arc'), away = dock.querySelectorAll('.rd-back, .rd-more');
+  var timeline = !!(window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()'));
+  var y0 = 0, sh = 0, ih = 0, tl = null, tucked = false, lastP = '', ticking = false;
+  function tuck(on) {
+    if (on === tucked) return;
+    tucked = on; lastP = '';
+    html.classList.toggle('rd-tuck', on);
+    // links clipped out of sight can't take focus either
+    for (var i = 0; i < away.length; i++) away[i].inert = on;
+  }
+  // where the page is scrolled to. chrome flushes style and layout to answer scrollY (and innerHeight), so where it can
+  // the position comes from a scroll timeline, which is snapshotted once a frame and costs nothing to read
+  function pos() {
+    if (!tl) return scrollY;
+    var t = tl.currentTime;
+    return t ? t.value / 100 * Math.max(0, sh - ih) : 0;
+  }
+  // scroll frames read no layout: the page and viewport heights are cached by the observer below
   function read() {
     ticking = false;
-    var y = scrollY, max = document.documentElement.scrollHeight - innerHeight;
-    dock.style.setProperty('--rd-p', max > 0 ? Math.min(1, y / max).toFixed(3) : '0');
+    if (!sh) return;
+    var y = pos(), max = sh - ih;
     var end = y >= max - 80;
-    if (y < 120 || end) html.classList.remove('rd-tuck');
-    else if (y - y0 > 8) html.classList.add('rd-tuck');
-    else if (y0 - y > 8) html.classList.remove('rd-tuck');
+    if (y < 120 || end) tuck(false);
+    else if (y - y0 > 8) tuck(true);
+    else if (y0 - y > 8) tuck(false);
     if (Math.abs(y - y0) > 8) y0 = y;
+    // without a scroll timeline, write the ring only while it shows and only when it moves
+    if (tucked && !timeline) {
+      var p = max > 0 ? Math.min(1, y / max).toFixed(3) : '0';
+      if (p !== lastP) { lastP = p; arc.style.setProperty('--rd-p', p); }
+    }
   }
+  // geometry is read only when something resizes (viewport, page, the dock once its font lands), inside the observer
+  // where layout is already clean: the page height, and where the avatar sits in the dock for the clip and the carry.
+  // the clip closes on the 44px yellow circle around the 34px icon; the bud's centre lands gut + 26px from the right edge
+  function measure() {
+    var first = !sh;
+    sh = html.scrollHeight; ih = innerHeight;
+    if (first) { y0 = scrollY; if (window.ScrollTimeline) tl = new ScrollTimeline({ source: html }); }
+    var d = dock.getBoundingClientRect(), r = ic.getBoundingClientRect(), s = dock.style;
+    s.setProperty('--rd-t', (r.top - d.top - 5) + 'px');
+    s.setProperty('--rd-l', (r.left - d.left - 5) + 'px');
+    s.setProperty('--rd-r', (d.right - r.right - 5) + 'px');
+    // half the fixed box's width (no scrollbar) and the avatar's offset from the dock's centre; css adds the gut
+    s.setProperty('--rd-half', html.clientWidth / 2 + 'px');
+    s.setProperty('--rd-c', (r.left + r.width / 2 - d.left - d.width / 2) + 'px');
+    read();
+  }
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(measure);
+    ro.observe(html); ro.observe(document.body); ro.observe(dock);
+  } else requestAnimationFrame(measure);
   addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(read); } }, { passive: true });
-  read();
+  // the viewport's height alone can change (a phone's url bar) without resizing anything observed
+  addEventListener('resize', function () { ih = innerHeight; }, { passive: true });
   // a tap on the bud opens the dock; it doesn't go to about until it's open
   dock.querySelector('.rd-me').addEventListener('click', function (e) {
-    if (!html.classList.contains('rd-tuck')) return;
-    e.preventDefault(); html.classList.remove('rd-tuck'); y0 = scrollY;
+    if (!tucked) return;
+    e.preventDefault(); tuck(false); y0 = pos();
   });
 })();
 </script>
