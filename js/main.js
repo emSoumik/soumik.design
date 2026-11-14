@@ -108,6 +108,28 @@ function grown() { showClear(); invite(1500); }
 
 // ---- clear: everything unstitches, the butterflies scatter, fresh soil
 const clearBtn = document.getElementById('clear');
+const root = document.documentElement;
+
+// ---- the dock tucks into its yellow bud while you garden; a tap on the bud opens it again. its layout never changes:
+// the pill clips shut round the avatar and carries it to the middle (index.astro), from offsets measured whenever its size does
+const nav = document.querySelector('.nav'), navMe = nav.querySelector('.me'), navMore = nav.querySelector('.more');
+new ResizeObserver(() => {
+  const n = nav.getBoundingClientRect(), m = navMe.getBoundingClientRect(), d = m.height, s = nav.style;
+  s.setProperty('--dk-t', `${m.top - n.top}px`); s.setProperty('--dk-b', `${n.bottom - m.bottom}px`);
+  s.setProperty('--dk-l', `${m.left - n.left}px`); s.setProperty('--dk-r', `${n.right - m.left - d}px`);
+  s.setProperty('--dk-dx', `${n.left + n.width / 2 - (m.left + d / 2)}px`);
+}).observe(nav);
+// tucked after you've scrolled away, the next scroll opens it again (as crossing the top line does)
+const untuckOnScroll = () => tuck(false);
+function tuck(on) {
+  root.classList.toggle('tuck', on);
+  navMore.inert = on;
+  if (on) {
+    root.classList.remove('open');
+    if (root.classList.contains('moved')) addEventListener('scroll', untuckOnScroll, { once: true, passive: true });
+  } else removeEventListener('scroll', untuckOnScroll);
+}
+
 let clearing = false;
 function showClear(on = true) {
   if (!garden.clear) return;
@@ -132,8 +154,7 @@ clearBtn.addEventListener('click', async () => {
 });
 function plant(x, y, slop) {
   const p = garden.plant(x, y, slop);
-  // the dock tucks into its yellow bud while you garden; a tap on the bud opens it again
-  document.documentElement.classList.add('tuck'); document.documentElement.classList.remove('open');
+  tuck(true);
   cursor.tapped(p);
   // a tap on a flower turns it into another of its kind; that's not a new planting, though the bee may come and look
   if (p?.morphed) {
@@ -209,14 +230,20 @@ const work = document.getElementById('projects');
 const toWork = () => work.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
 // the about card's work link closes the card first, then scrolls. binding it here too would scroll under the open card
 document.querySelectorAll('[data-work]').forEach(b => { if (!b.closest('.ab')) b.addEventListener('click', toWork); });
-// the dock arrives quiet and fills in once you leave the top (which also untucks it); projects gets its dot while the list is on screen
-const root = document.documentElement;
-const moved = () => { const m = scrollY > 24; root.classList.toggle('moved', m); if (m) root.classList.remove('tuck'); };
-addEventListener('scroll', moved, { passive: true }); moved();
+// the dock arrives quiet and fills in once you leave the top (which also untucks it): a line 24px down the hero says when,
+// so a scroll never reads or writes anything. projects gets its dot while the list is on screen
+new IntersectionObserver(es => { const m = !es[es.length - 1].isIntersecting; root.classList.toggle('moved', m); if (m) tuck(false); })
+  .observe(document.querySelector('.moved-at'));
+// the hint's breeze stops while the hero is out of sight
+const hero = document.querySelector('.hero');
+new IntersectionObserver(es => hero.classList.toggle('off', !es[es.length - 1].isIntersecting)).observe(hero);
 if ('IntersectionObserver' in window) new IntersectionObserver(es => root.classList.toggle('at-work', es[es.length - 1].isIntersecting), { rootMargin: '-40% 0px -40% 0px' }).observe(work);
 let mounted = false;
 const mountWork = async () => {
   if (mounted) return; mounted = true;
+  // skullet's element comes along to draw the waiting section, but the work never waits for it: whichever lands
+  // second simply finds the other done (work.js falls back to plain markup if skullet isn't up yet)
+  import('skullet/element').catch(() => {});
   try {
     (await import('./work/work.js')).mountWork(work);
     // mochi rides along: one line per project, then one at the end
@@ -224,7 +251,7 @@ const mountWork = async () => {
     mochi.watch(document.querySelector('#work-vayu .wk-head'), 'a watch that warns you about bad air.');
     mochi.watch(document.querySelector('#work-fontpreview .wk-head'), 'press space on a font. that’s it.');
     mochi.watch(document.querySelector('.wk-end'), 'say hi. he reads every email.', { threshold: .6 });
-  } catch (e) { console.warn('work unavailable', e); }
+  } catch (e) { console.warn('work unavailable', e); work.querySelector('skullet-reveal')?.remove(); }
 };
 // nothing below the fold is fetched up front: the work mounts when you head towards it, or once the garden
 // has grown and the phone has a quiet moment. its videos and webgl wait until they're nearly on screen
@@ -237,7 +264,7 @@ if (!lean) addEventListener('load', () => setTimeout(() => whenIdle(mountWork), 
 // (the dock's about is the bud while it's tucked: then a tap opens the dock, not the card)
 document.querySelectorAll('[data-about]').forEach(b => b.addEventListener('click', e => {
   e.preventDefault();
-  if (b.closest('.nav') && root.classList.contains('tuck')) { root.classList.remove('tuck'); root.classList.add('open'); return; }
+  if (b.closest('.nav') && root.classList.contains('tuck')) { tuck(false); root.classList.add('open'); return; }
   if (about.isOpen) about.close(); else { mochi.hush(); about.open(b); }
 }));
 
