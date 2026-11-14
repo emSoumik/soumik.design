@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "soumik-design",
+  "compatibility_date": "2026-11-14",
+  "main": "worker/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    // only video paths hit the worker (range requests); everything else is free static serving
+    "run_worker_first": ["/assets/*.mp4", "/assets/*.webm"]
+  },
+  "observability": { "enabled": true }
+}

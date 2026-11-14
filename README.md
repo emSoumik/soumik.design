@@ -69,7 +69,7 @@ npm run dev
 
 Open http://localhost:4321. Edits to the scripts, pages and posts reload the page. `npm run build` makes the real site in `dist/`, and `npm run preview` serves that.
 
-Anything only for your own machine (like the Agentation toolbar or the night prototype) loads behind `import.meta.env.DEV`, so it never reaches the live site. Load it with `import.meta.glob` rather than a plain `import()`: a file that isn't committed would break the build on Vercel, and glob just finds nothing.
+Anything only for your own machine (like the Agentation toolbar or the night prototype) loads behind `import.meta.env.DEV`, so it never reaches the live site. Load it with `import.meta.glob` rather than a plain `import()`: a file that isn't committed would break the remote build, and glob just finds nothing.
 
 Add `?garden=ink` to the address to see the old watercolour garden, which is still in the repo.
 
@@ -123,7 +123,11 @@ public/                 served as is, at the same URLs as always
     work/font-preview/  Font Preview's demo loop for the home page (fp-demo) and its Quick Look windows
   robots.txt
 assets/readme/          the flower strip at the top of this file (not deployed)
-vercel.json             tells Vercel to build with Astro and serve dist/
+wrangler.jsonc           Cloudflare Workers config: serves dist/ as static assets, runs the range worker on videos
+worker/index.ts         the range worker (206 partial content for /assets videos); worker/range.test.mjs tests it
+public/_headers         cache and security headers for static files
+public/_redirects       /work and /projects redirects
+vercel.json             the old Vercel setup, kept as a fallback
 ```
 
 `_drafts/` holds old prototypes. It's git-ignored and never deployed.
@@ -190,7 +194,13 @@ The speaker button in the top right mutes it, and the page remembers your choice
 
 ## deploy
 
-The site is on Vercel, connected to this repo. A push to `main` builds and goes live at soumik.design within a minute or so. Other branches and PRs get preview deploys. `vercel.json` sets the build (`npm run build`, output `dist/`), so it doesn't depend on the dashboard settings. `.vercelignore` keeps this file, the drafts and the README art out of the upload.
+The site runs on Cloudflare Workers with static assets, connected to this repo through Workers Builds. A push to `main` runs `npm run build` and deploys `dist/` (`wrangler.jsonc` points at it), so it goes live at soumik.design within a minute or so. Other branches get preview URLs, and `_headers` marks `*.workers.dev` hosts `noindex`.
+
+- `public/_headers` sets caching (`/_astro/*` and fonts are immutable for a year, images a day with stale-while-revalidate) and the security headers. It only applies to static files, not to anything the worker answers.
+- `public/_redirects` has the `/work` and `/projects` redirects.
+- Static assets answer a `Range` request with the whole file and no `Content-Range`, which Safari won't play as video. So `worker/index.ts` runs first for `/assets/*.mp4` and `/assets/*.webm`, returns `206` with the right bytes (streamed, never buffered), and sets its own cache headers (immutable for `name.v2.mp4`-style versioned files). Everything else never touches the worker. Test it with `npm run build && npx wrangler dev --port 8791`, then `node worker/range.test.mjs`.
+- No file in `dist/` can be 25 MiB or more (Cloudflare's limit); keep videos under 20 MB.
+- `npm run preview:cf` builds and serves the site locally the way Cloudflare will; `npm run deploy` is the manual route.
 
 <br>
 

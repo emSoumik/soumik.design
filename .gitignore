@@ -5,3 +5,4 @@ _drafts/
 node_modules/
 dist/
 .astro/
+.wrangler/

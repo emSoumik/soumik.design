@@ -8,10 +8,15 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "preview:cf": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/mdx": "^8.1.1",
     "astro": "^7.4.2"
+  },
+  "devDependencies": {
+    "wrangler": "4.162.0"
   }
 }

@@ -1,0 +1,39 @@
+# security on every static response (worker-generated video responses set their own)
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=63072000
+
+# hashed build output
+/_astro/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
+# self-hosted fonts
+/assets/fonts/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
+# images: a day, then stale-while-revalidate for a week
+/assets/*.avif
+  ! Cache-Control
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/assets/*.webp
+  ! Cache-Control
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/assets/*.jpg
+  ! Cache-Control
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/assets/*.png
+  ! Cache-Control
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/assets/*.svg
+  ! Cache-Control
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# keep workers.dev and preview hosts out of search
+https://:version.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex
+https://:subdomain.workers.dev/*
+  X-Robots-Tag: noindex
