@@ -50,8 +50,8 @@ const at = (i: number) => PIECES[(i + PIECES.length) % PIECES.length];
                 <div class="vlt-demo vlt-film" data-demo data-film={p.video}>
                   <picture><source srcset={`/assets/vault/${p.video}-poster.avif`} type="image/avif"><img src={`/assets/vault/${p.video}-poster.webp`} alt="" width="1080" height="1350" loading="lazy" decoding="async"></picture>
                   <video muted loop playsinline preload="none" aria-hidden="true" tabindex="-1">
-                    <source src={`/assets/vault/${p.video}.webm`} type="video/webm">
-                    <source src={`/assets/vault/${p.video}.mp4`} type="video/mp4">
+                    <source src={`/assets/vault/${p.video}.v2.webm`} type="video/webm">
+                    <source src={`/assets/vault/${p.video}.v2.mp4`} type="video/mp4">
                   </video>
                   <button type="button" class="vlt-sound" aria-pressed="false" aria-label="Sound"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2.5 6h2.2L8 3.2v9.6L4.7 10H2.5z" fill="currentColor"/><path class="on" d="M10.4 5.6a3.4 3.4 0 0 1 0 4.8M12.2 3.8a6 6 0 0 1 0 8.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path class="off" d="m10.5 6 3.5 4m0-4-3.5 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
                 </div>
