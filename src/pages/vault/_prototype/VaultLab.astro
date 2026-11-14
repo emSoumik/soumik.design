@@ -1,6 +1,6 @@
 ---
-// PROTOTYPE (dev only): the vault as a wall of cards that open in place, five ways to open and five ways to arrive.
-// markup and css here, the behaviour in vault.ts. the old vault stays in index.astro for production
+// the vault as a wall of cards that open in place. markup and css here, the behaviour in vault.ts.
+// in dev a bar (components/proto) can switch how cards open and arrive; production uses the picks
 import DockLive from '../../projects/_prototype-whyclub/DockLive.astro';
 import { fixedHeight } from '../../projects/_prototype-whyclub/dock';
 import { SCENES } from '../../../../js/work/reel.js';
@@ -13,6 +13,10 @@ const shape = (r: number) => (r >= 1.3 ? 'wide' : 'square');
 const ext = (href: string) => href.startsWith('http');
 const at = (i: number) => PIECES[(i + PIECES.length) % PIECES.length];
 ---
+<script is:inline>
+  // the picked motion (window to open, focus for the wall, white cards). in dev ProtoHead has already set these from its bar
+  (function (r) { [['open', 'window'], ['enter', 'focus'], ['surface', 'white']].forEach(function (d) { if (!r.hasAttribute('data-proto-' + d[0])) r.setAttribute('data-proto-' + d[0], d[1]); }); })(document.documentElement);
+</script>
 <div class="vlt" data-page="wall">
   <div class="vlt-under">
     <header class="vlt-intro">
@@ -205,7 +209,7 @@ const at = (i: number) => PIECES[(i + PIECES.length) % PIECES.length];
   .vlt-film video { opacity: 0; transition: opacity .32s var(--ease); }
   .vlt-film[data-ready] video { opacity: 1; }
   /* sound sits top-left on the card and on the stage alike, so a film can be heard without opening it */
-  .vlt-sound { position: absolute; left: 12px; top: 12px; z-index: 3; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 99px;
+  .vlt-sound { position: absolute; right: 12px; bottom: 12px; z-index: 3; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 99px;
     background: rgba(255, 255, 255, .86); box-shadow: 0 0 0 1px var(--line); color: var(--ink); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
   .vlt-sound::after { content: ""; position: absolute; inset: -4px; }
   .vlt-sound .on, .vlt-sound[aria-pressed="true"] .off { display: none; }

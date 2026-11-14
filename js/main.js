@@ -254,7 +254,6 @@ if (location.hash === '#about') setTimeout(() => about.open(document.querySelect
 // dev only, never on the live site: the Agentation annotation toolbar, and the night garden prototype when
 // its untracked folder is there. glob finds nothing for a missing file, so the build never breaks over it
 if (import.meta.env.DEV) {
-  // work/end-proto.js: three footers behind a switcher above the projects footer (prototype, throwaway)
-  const local = import.meta.glob(['./agentation-dev.js', './night-prototype/index.js', './work/end-proto.js']);
+  const local = import.meta.glob(['./agentation-dev.js', './night-prototype/index.js']);
   for (const load of Object.values(local)) load().catch(err => console.warn('[dev]', err));
 }

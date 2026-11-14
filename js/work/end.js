@@ -73,31 +73,41 @@ const BED = [
   ['forget', 2, 0, 4, 3, 1], ['blossom', 1, 2, 10, 0, 0], ['tulip', 0, 3, 8, 1, -1], ['cosmos', 1, 0, 7, 2, 0],
 ];
 
-const bed = () => BED.map(([n, f, p, s, t, side], i) => {
+// the bed is planted fresh on every visit: a random flower in every slot, never the same family twice in a row, the
+// tall ones kept off the edges. the slots' tiers (how wide a screen shows them) and grass tufts come from BED
+const pick = (n) => Math.floor(Math.random() * n);
+const FAMS = Object.keys(FLOWERS);
+function plantBed() {
+  let prev = '';
+  return BED.map(([, , , , t, side], i) => {
+    let n; do n = FAMS[pick(FAMS.length)]; while (n === prev && FAMS.length > 1);
+    prev = n;
+    const forms = FLOWERS[n].forms, f = pick(forms.length), p = pick(forms[f].pals.length);
+    const edge = i < 2 || i > BED.length - 3;
+    const s = edge ? 4 + pick(5) : 4 + pick(11);
+    return [n, f, p, s, t, side];
+  });
+}
+const slot = ([n, f, p, s, t, side], i) => {
   const fl = `<span class="end-fl"><span class="end-sw">${flower(n, f, p, s, i % 2 ? 'r' : 'l')}</span></span>`;
   const g = side ? tuft(i) : '';
-  return `<span class="end-sl t${t}" style="--i:${i}">${side < 0 ? g + fl : fl + g}</span>`;
-}).join('');
-
-const link = (label, href, ext) =>
-  `<li><a href="${href}"${ext ? ' target="_blank" rel="noopener"' : ''}><span class="end-u">${label}</span>${ext ? out : ''}</a></li>`;
+  return `<span class="end-sl t${t}" style="--i:${i}" data-fl="${n},${f},${p},${s},${i % 2 ? 'r' : 'l'}">${side < 0 ? g + fl : fl + g}</span>`;
+};
+const bed = () => plantBed().map(slot).join('');
 
 export function endMarkup() {
   return `
       <footer class="wk-end end-bed" aria-labelledby="end-h">
         <div class="end-main">
-          <div class="end-say" data-end-r>
-            <h2 class="end-h" id="end-h"><span class="end-w">say</span> <span class="end-w" style="--d:.07s"><em>hi</em></span></h2>
-            <p class="end-sub">i read every email.</p>
+          <p class="end-kick" data-end-r>the end of the garden</p>
+          <h2 class="end-h" id="end-h" data-end-r style="--d:.06s">something growing? <em>write to me.</em></h2>
+          <div class="end-mailrow" data-end-r style="--d:.14s">
+            <button type="button" class="end-seed" data-end-copy aria-label="copy ${EMAIL}">
+              <span class="end-seed-t" data-end-addr>${EMAIL}</span>
+              <span class="end-seed-i" aria-hidden="true"><svg class="end-i-a" viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="1.5"/><path d="M10.5 3.2V3a1.5 1.5 0 0 0-1.5-1.5H3.5A1.5 1.5 0 0 0 2 3v5.5A1.5 1.5 0 0 0 3.5 10h.3"/></svg><svg class="end-i-b" viewBox="0 0 16 16"><path d="m3 8.5 3.2 3L13 4.5"/></svg></span>
+            </button>
+            <span class="end-sr" role="status" data-end-status></span>
           </div>
-          <div class="end-mailrow" data-end-r style="--d:.12s">
-            <a class="end-mail" href="mailto:${EMAIL}" data-end-addr><span class="end-u">${EMAIL}</span></a>
-            ${copyBtn()}
-          </div>
-          <nav class="end-idx" aria-label="More" data-end-r style="--d:.2s">
-            <div><p class="end-k" id="end-k-p">pages</p><ul aria-labelledby="end-k-p">${PAGES.map(([l, h]) => link(l, h)).join('')}</ul></div>
-            <div><p class="end-k" id="end-k-e">elsewhere</p><ul aria-labelledby="end-k-e">${ELSEWHERE.map(([l, h]) => link(l, h, true)).join('')}</ul></div>
-          </nav>
         </div>
         <div class="end-beds" aria-hidden="true" data-end-grow>${bed()}</div>
         <div class="end-base">
@@ -159,48 +169,43 @@ body:has(.wk-end) > .foot { display: none; }
 }
 `;
 
-// the bed's own: a ruled-off section on a 12 column grid; say hi and the index on top, the address as its own band,
-// then the flowers standing on a ground line that runs the full width, the credits under it
+// the bed's own: one line and the address centred over a bed that runs the full width. copying the address stitches
+// one more flower in, and a tap on a flower turns it into the next of its kind
 const BED_CSS = `
-.end-bed { padding-top: clamp(64px, 8vw, 104px); }
-/* the rule that ends the projects: full bleed, so the closing reads as its own section */
+.end-bed { padding-top: clamp(72px, 9vw, 120px); }
 .end-bed::before { content: ""; position: absolute; top: 0; left: calc(50% - 50vw); width: 100vw; height: 1px; background: var(--e-line); }
-.end-bed .end-main { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px;
-  grid-template-areas: "say say say say say say say idx idx idx idx idx" "mail mail mail mail mail mail mail mail mail mail mail mail"; }
-.end-bed .end-say { grid-area: say; }
-.end-bed .end-h { margin: 0 0 0 -.04em; font: 500 clamp(64px, 10vw, 136px)/.84 var(--e-sans); letter-spacing: -.055em; padding-bottom: .06em;
-  clip-path: inset(-.2em -.2em -.08em -.2em); }
-.end-bed .end-w { display: inline-block; }
-.end-bed .end-h em { font-style: normal; color: var(--e-ink2); }
-.end-bed .end-sub { margin-top: clamp(16px, 1.8vw, 22px); font: 400 clamp(15px, 1.3vw, 17px)/1.5 var(--e-sans); color: var(--e-text); }
+.end-bed .end-main { display: grid; justify-items: center; text-align: center; }
+.end-kick { font: 500 14px/1 "Pixelify Sans", var(--e-mono); letter-spacing: .01em; color: var(--e-ink2); }
+.end-bed .end-h { margin: 18px 0 0; max-width: 14ch; font: 500 clamp(44px, 7.2vw, 96px)/.98 var(--e-sans); letter-spacing: -.045em; text-wrap: balance; }
+.end-bed .end-h em { font: italic 400 1.1em/1 "Instrument Serif", Georgia, serif; letter-spacing: -.02em; }
+.end-bed .end-mailrow { display: grid; justify-items: center; gap: 14px; margin-top: clamp(32px, 4vw, 48px); }
 
-/* the address: the one thing to do here, so it gets the biggest line after the greeting and a band of its own */
-.end-bed .end-mailrow { grid-area: mail; display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  margin-top: clamp(48px, 6vw, 72px); padding: clamp(18px, 2.2vw, 26px) 0; border-block: 1px solid var(--e-line); }
-.end-bed .end-mail { min-width: 0; padding: 6px 0; font: 500 clamp(26px, 4.2vw, 44px)/1.15 var(--e-sans); letter-spacing: -.035em; overflow-wrap: anywhere;
-  transition: opacity .2s; }
-.end-bed .end-mail:active { opacity: .7; }
-/* links underline from the left on hover or focus; at rest the address keeps a faint line so it reads as one */
+/* the address is the button: tap it and it copies. the icon swaps for a tick and the pill fills in */
+.end-seed { display: inline-flex; align-items: center; gap: 14px; max-width: 100%; min-height: 64px; padding: 0 10px 0 28px; border: 0; border-radius: 99px; cursor: pointer;
+  font: 500 clamp(17px, 2.2vw, 26px)/1 var(--e-sans); letter-spacing: -.025em; color: var(--e-ink); background: var(--e-paper);
+  box-shadow: inset 0 0 0 1px var(--e-line2), 0 18px 40px -26px rgba(31,29,27,.45); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: background-color .3s var(--e-ease), color .3s var(--e-ease), box-shadow .3s var(--e-ease), transform .16s var(--e-ease); }
+.end-seed-t { min-width: 0; overflow-wrap: anywhere; }
+.end-seed-i { position: relative; flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #ffd84d; color: #1f1d1b; }
+.end-seed-i svg { grid-area: 1 / 1; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: opacity .2s, transform .35s var(--e-spring); }
+.end-seed .end-i-b { opacity: 0; transform: scale(.6); }
+.end-seed[data-copied] { background: var(--e-ink); color: var(--e-paper); box-shadow: inset 0 0 0 1px var(--e-ink); }
+.end-seed[data-copied] .end-i-a { opacity: 0; transform: scale(.6); }
+.end-seed[data-copied] .end-i-b { opacity: 1; transform: none; }
+.end-seed:active { transform: scale(.97); }
+.wk-end .end-seed:focus-visible { border-radius: 99px; outline-offset: 4px; }
+@media (hover: hover) and (pointer: fine) { .end-seed:not([data-copied]):hover { box-shadow: inset 0 0 0 1px var(--e-ink2), 0 22px 44px -24px rgba(31,29,27,.5); } }
 .end-u { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .5s var(--e-ease); padding-bottom: .08em; }
-.end-mail .end-u { background-image: linear-gradient(currentColor, currentColor), linear-gradient(var(--e-line2), var(--e-line2));
-  background-size: 0 .05em, 100% .05em; background-position: 0 100%, 0 100%; }
 .wk-end a:focus-visible .end-u { background-size: 100% 1px; }
-.end-mail:focus-visible .end-u { background-size: 100% .05em, 100% .05em; }
-@media (hover: hover) and (pointer: fine) {
-  .wk-end a:hover .end-u { background-size: 100% 1px; }
-  .end-mail:hover .end-u { background-size: 100% .05em, 100% .05em; }
-}
+@media (hover: hover) and (pointer: fine) { .wk-end a:hover .end-u { background-size: 100% 1px; } }
 
-.end-bed .end-idx { grid-area: idx; align-self: end; display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
-.end-bed .end-idx .end-k { margin-bottom: 8px; }
-.end-bed .end-idx a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding-right: 8px; font: 400 16px/1 var(--e-sans); letter-spacing: -.01em; }
-.end-bed .end-idx li + li { margin-top: -4px; }
-
-/* the bed: flowers and grass on a ground line across the whole page; how many depends on the width */
+/* the bed: flowers, grass and the markers on one ground line across the whole page; how many flowers depends on the width */
 .end-bed .end-beds { --c: 3px; position: relative; display: flex; justify-content: space-evenly; align-items: flex-end;
-  margin: clamp(72px, 7.5vw, 104px) calc(50% - 50vw) 0; padding: 0 max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+  margin: clamp(64px, 7vw, 96px) calc(50% - 50vw) 0; padding: 16px max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
   border-bottom: 1px solid var(--e-line2); }
 .end-sl { display: flex; align-items: flex-end; gap: var(--c); }
+.end-sl .end-fl { cursor: pointer; }
+.end-sw.is-new svg { animation: end-grow .7s steps(10, end) both; }
 .end-sl.t1, .end-sl.t2, .end-sl.t3, .end-bed .end-tuft { display: none; }
 .end-fl, .end-sw { display: block; transform-origin: 50% 100%; }
 .end-beds svg { display: block; width: calc(var(--w) * var(--c)); height: calc(var(--h) * var(--c)); overflow: visible; }
@@ -214,11 +219,8 @@ const BED_CSS = `
 .end-bed .end-top { justify-self: end; }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* the reveal: each block rises and fades in, the greeting rises out of its own line */
   .end-armed [data-end-r] { opacity: 0; transform: translateY(20px); transition: opacity .8s var(--e-ease) var(--d, 0s), transform 1s var(--e-ease) var(--d, 0s); }
-  .end-armed .end-w { transform: translateY(.9em); transition: transform 1.1s var(--e-ease) var(--d, 0s); }
   .end-armed.is-in [data-end-r] { opacity: 1; transform: none; }
-  .end-armed.is-in .end-w { transform: none; }
 
   /* the flowers stitch in from the soil up, row by row, once the bed is on screen */
   .end-bed.end-armed:not(.is-grown) .end-beds svg { clip-path: inset(100% 0 0 0); }
@@ -226,7 +228,6 @@ const BED_CSS = `
   .end-bed.is-grown .end-beds .end-tuft { animation-duration: .5s; animation-timing-function: steps(4, end); animation-delay: calc(var(--i) * 45ms + .3s); }
   @keyframes end-grow { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0); } }
 
-  /* then a breeze crosses the bed now and then, only while it's on screen; a touch or a pointer sways one flower */
   .end-bed.is-grown .end-fl { animation: end-breeze 9s steps(2, end) infinite; animation-delay: calc(1.6s + var(--i) * 60ms); animation-play-state: paused; }
   .end-bed.is-grown.is-live .end-fl { animation-play-state: running; }
   @keyframes end-breeze { 0%, 13%, 100% { rotate: 0deg; } 3% { rotate: -2.5deg; } 6% { rotate: 1.5deg; } 9% { rotate: -.75deg; } }
@@ -234,19 +235,12 @@ const BED_CSS = `
   @keyframes end-sway { 25% { rotate: -6deg; } 60% { rotate: 4deg; } 85% { rotate: -1.5deg; } }
 }
 
-/* tablets and phones: the index drops under the greeting */
-@media (max-width: 860px) {
-  .end-bed .end-main { grid-template-areas: "say say say say say say say say say say say say" "mail mail mail mail mail mail mail mail mail mail mail mail" "idx idx idx idx idx idx idx idx idx idx idx idx"; }
-  .end-bed .end-idx { max-width: 420px; margin-top: 40px; }
-}
+/* phones */
 @media (max-width: 640px) {
   .wk-end { margin-top: 112px; }
   .end-bed { padding-top: 56px; }
-  .end-bed .end-h { font-size: clamp(60px, 18vw, 76px); }
-  .end-bed .end-mailrow { margin-top: 36px; padding: 14px 0; gap: 12px; }
-  .end-bed .end-mail { font-size: clamp(18px, 5.4vw, 24px); letter-spacing: -.03em; }
-  .end-bed .end-idx { max-width: none; margin-top: 36px; gap: 0 16px; }
-  .end-bed .end-beds { margin-top: 72px; }
+  .end-bed .end-h { font-size: clamp(40px, 12vw, 56px); }
+  .end-seed { min-height: 56px; padding-left: 20px; gap: 10px; font-size: clamp(15px, 4.4vw, 18px); }
   .end-bed .end-base { grid-template-columns: 1fr auto; padding-top: 4px; }
   .end-bed .end-made { display: none; }
 }
@@ -256,6 +250,18 @@ const BED_CSS = `
 `;
 
 export const END_CSS = END_BASE_CSS + BED_CSS;
+
+// copying plants one more flower somewhere in the bed (at most six), stitched in like the rest
+const GIFTS = [['sunflower', 0, 0, 12], ['tulip', 0, 1, 8], ['rose', 0, 1, 9], ['daisy', 1, 0, 10], ['poppy', 0, 0, 8], ['cosmos', 1, 1, 9]];
+let gifts = 0;
+function plantOne(footer) {
+  const beds = footer.querySelector('.end-beds');
+  if (!beds || gifts >= GIFTS.length) return;
+  const [n, f, p, st] = GIFTS[gifts++];
+  const shown = [...beds.children].filter((c) => c.offsetParent !== null);
+  const at = shown[1 + Math.floor(Math.random() * Math.max(1, shown.length - 2))];
+  at?.insertAdjacentHTML('beforebegin', `<span class="end-sl t0 is-gift" style="--i:0" data-fl="${n},${f},${p},${st},l"><span class="end-fl"><span class="end-sw">${flower(n, f, p, st)}</span></span></span>`);
+}
 
 // css once, then copy the address, back to the garden, reveal on sight and grow the bed. works on any footer with the data hooks
 export function wireEnd(footer, reduced) {
@@ -279,6 +285,7 @@ export function wireEnd(footer, reduced) {
     btn.dataset.copied = '';
     if (status) status.textContent = 'email address copied';
     footer.dispatchEvent(new CustomEvent('end:copied'));
+    plantOne(footer);
     clearTimeout(timer);
     timer = setTimeout(() => { delete btn.dataset.copied; if (status) status.textContent = ''; }, 2000);
   });
@@ -296,6 +303,18 @@ export function wireEnd(footer, reduced) {
     footer.classList.add('end-armed');
     watch(footer, (on, io) => { if (on) { footer.classList.add('is-in'); io.disconnect(); } }, { rootMargin: '0px 0px -12% 0px' });
     watch(grow, (on) => { if (on) footer.classList.add('is-grown'); footer.classList.toggle('is-live', on); }, { threshold: 0.35 });
+    // a tap on a flower turns it into the next of its kind (the next family on the last form), stitched in again
+    on(grow, 'click', (e) => {
+      const sl = e.target.closest?.('.end-sl'), sw = sl?.querySelector('.end-sw');
+      if (!sl || !sw) return;
+      let [n, f, p, st, side] = sl.dataset.fl.split(',');
+      f = +f + 1;
+      if (f >= FLOWERS[n].forms.length) { n = FAMS[(FAMS.indexOf(n) + 1) % FAMS.length]; f = 0; }
+      p = pick(FLOWERS[n].forms[f].pals.length);
+      sl.dataset.fl = [n, f, p, st, side].join(',');
+      sw.innerHTML = flower(n, f, p, +st, side);
+      sw.classList.remove('is-new'); void sw.offsetWidth; sw.classList.add('is-new');
+    });
     // a flower sways when a pointer or a finger comes onto it; one sway at a time each
     on(grow, 'pointerover', (e) => {
       const sw = e.target.closest?.('.end-sw');

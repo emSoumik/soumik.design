@@ -1,0 +1,106 @@
+---
+// the reading pages' nav: the home page's dock, low in the middle, so every page is steered from the same place.
+// back · about me (yellow) · projects · vault · blog. reading down it tucks into the yellow bud in the corner, out of the
+// text's way, with a ring that fills as you read; scroll up, reach the end, or tap the bud and it opens out again
+interface Props { back: { href: string; label: string } }
+const { back } = Astro.props;
+const here = Astro.url.pathname;
+const LINKS: [string, string][] = [['projects', '/projects/'], ['vault', '/vault/'], ['blog', '/blog/']];
+---
+<nav class="rdock" aria-label="Main">
+  <a class="rd-back" href={back.href} aria-label={`back to ${back.label}`}>
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  </a>
+  <a class="rd-me" href="/#about">
+    <span class="rd-ic">
+      <picture><source srcset="/assets/brand/avatar.avif" type="image/avif"><img src="/assets/brand/avatar.webp" alt="" width="30" height="30" decoding="async"></picture>
+      <svg class="rd-ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20.5" pathLength="1" /></svg>
+    </span>
+    <span class="rd-lb">about me</span>
+  </a>
+  <span class="rd-more">
+    {LINKS.map(([l, h]) => <a class="rd-seg" href={h} aria-current={here.startsWith(h) ? 'page' : undefined}>{l}</a>)}
+  </span>
+</nav>
+
+<style is:global>
+  .rdock { --rd-low: max(20px, calc(env(safe-area-inset-bottom) + 10px)); position: fixed; z-index: 30; left: 50%; bottom: var(--rd-low); translate: -50% 0;
+    display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 99px; font: 500 15px/1 var(--pixel); letter-spacing: .01em;
+    background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
+    box-shadow: 0 0 0 1px rgba(31, 29, 27, .1), 0 16px 36px -18px rgba(31, 29, 27, .5), 0 2px 6px -3px rgba(31, 29, 27, .18);
+    transition: left .55s var(--ease), translate .55s var(--ease); }
+  .rdock a { position: relative; display: inline-flex; align-items: center; min-height: 44px; border-radius: 99px; color: var(--ink); white-space: nowrap; -webkit-tap-highlight-color: transparent;
+    transition: background-color .25s var(--ease), color .25s var(--ease), padding .5s var(--ease), transform .16s var(--ease); }
+  .rdock a:active { transform: scale(.96); }
+  .rdock a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 99px; }
+  .rd-back { justify-content: center; width: 44px; color: var(--ink-2); }
+  .rd-back svg { transition: transform .3s var(--spring); }
+  .rd-me { padding: 0 18px 0 5px; background: #ffd84d; color: #1f1d1b; }
+  .rd-ic { position: relative; width: 34px; height: 34px; display: grid; place-items: center; }
+  .rd-ic picture { display: contents; }
+  .rd-ic img { width: 30px; height: 30px; object-fit: contain; mix-blend-mode: multiply; translate: 0 2px; transition: transform .5s var(--spring); }
+  /* the reading ring: only on the bud */
+  .rd-ring { position: absolute; inset: -5px; width: 44px; height: 44px; rotate: -90deg; fill: none; stroke: #1f1d1b; stroke-width: 2; stroke-linecap: round;
+    stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--rd-p, 0)); opacity: 0; transition: opacity .3s; }
+  .rd-seg { padding: 0 15px; }
+  .rd-more { display: inline-flex; gap: 2px; }
+  .rd-more .rd-seg + .rd-seg::before { content: ""; position: absolute; left: -2px; top: 13px; bottom: 13px; width: 1px; background: rgba(31, 29, 27, .12); }
+  .rd-seg[aria-current="page"]::after { content: ""; position: absolute; left: 50%; bottom: 7px; width: 4px; height: 4px; margin-left: -2px; background: currentColor; }
+  .rd-back, .rd-lb, .rd-more { overflow: hidden; max-width: 320px; opacity: 1; transition: max-width .5s var(--ease), opacity .3s var(--ease) .1s, width .5s var(--ease); }
+  .rd-lb { padding-left: 9px; }
+  @media (hover: hover) and (pointer: fine) {
+    .rd-seg:hover, .rd-back:hover { background: rgba(128, 128, 128, .14); color: var(--ink); }
+    .rd-back:hover svg { transform: translateX(-2px); }
+    .rd-me:hover { background: #ffcc1f; }
+    .rd-me:hover img { transform: rotate(-8deg) scale(1.08); }
+  }
+
+  /* tucked: only the bud, moved to the corner where no text runs */
+  html.rd-tuck .rdock { left: calc(100% - var(--gut) - 26px); }
+  html.rd-tuck :is(.rd-back, .rd-lb, .rd-more) { max-width: 0; width: 0; opacity: 0; padding: 0; transition: max-width .4s var(--ease), width .4s var(--ease), opacity .15s, padding .4s var(--ease); }
+  html.rd-tuck .rdock { gap: 0; }
+  html.rd-tuck .rd-me { padding: 0 5px; }
+  html.rd-tuck .rd-ring { opacity: 1; }
+
+  /* room under the footer, so at the very bottom the dock floats on paper, not on the credits */
+  body > .foot { padding-bottom: calc(max(20px, calc(env(safe-area-inset-bottom) + 10px)) + 72px); }
+
+  @media (max-width: 640px) {
+    .rdock { font-size: 13.5px; }
+    .rd-seg { padding: 0 10px; }
+    .rd-back { width: 40px; }
+    .rd-me { padding-right: 13px; }
+    .rd-lb { padding-left: 6px; }
+  }
+  /* narrow phones: the avatar alone says about me, so back and the three stops still fit at 320 */
+  @media (max-width: 380px) { .rd-lb { max-width: 0; padding: 0; opacity: 0; } .rd-me { padding: 0 5px; } }
+  @media (max-width: 350px) { .rdock { font-size: 12.5px; } .rd-seg { padding: 0 8px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .rdock, .rdock a, .rd-back, .rd-lb, .rd-more, .rd-ring { transition: opacity .15s !important; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  var html = document.documentElement, dock = document.querySelector('.rdock');
+  if (!dock) return;
+  var y0 = scrollY, ticking = false;
+  function read() {
+    ticking = false;
+    var y = scrollY, max = document.documentElement.scrollHeight - innerHeight;
+    dock.style.setProperty('--rd-p', max > 0 ? Math.min(1, y / max).toFixed(3) : '0');
+    var end = y >= max - 80;
+    if (y < 120 || end) html.classList.remove('rd-tuck');
+    else if (y - y0 > 8) html.classList.add('rd-tuck');
+    else if (y0 - y > 8) html.classList.remove('rd-tuck');
+    if (Math.abs(y - y0) > 8) y0 = y;
+  }
+  addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(read); } }, { passive: true });
+  read();
+  // a tap on the bud opens the dock; it doesn't go to about until it's open
+  dock.querySelector('.rd-me').addEventListener('click', function (e) {
+    if (!html.classList.contains('rd-tuck')) return;
+    e.preventDefault(); html.classList.remove('rd-tuck'); y0 = scrollY;
+  });
+})();
+</script>

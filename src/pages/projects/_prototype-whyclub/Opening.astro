@@ -1,6 +1,7 @@
 ---
-// PROTOTYPE: the opening, after michael andreuzza's halden scroll. you land on the title with the five screens peeking
-// from the bottom; they slide up on load. on a wide screen, scrolling lines all five up whole with a line under each,
+// PROTOTYPE: the opening, after michael andreuzza's halden scroll. you land on the title with the five screens and their
+// names under it, as the home page's row (so opening it from there carries them across); on load they slide up into
+// place. on a wide screen, scrolling grows all five into one big row with a line under each,
 // then four leave upward and home drops into the middle tile. on a phone the five sit tiny in a row with their names,
 // the camera zooms into home, and it becomes a reel: one screen at a time in the middle, the next one at the edge,
 // in the order you'd shop, ending on the bag. without the scene it's a plain row
@@ -100,7 +101,7 @@ const tiles = [
 
   /* the line under a screen: its name, then what you do there, small and quiet */
   .cap { font: 400 12px/1.45 var(--display); color: var(--ink-3); text-align: center; text-wrap: balance; }
-  .cap span { display: block; margin-bottom: 2px; font-weight: 500; font-size: 12.5px; color: var(--ink); }
+  .cap span { display: block; width: fit-content; margin: 0 auto 2px; font-weight: 500; font-size: 12.5px; color: var(--ink); }
 
   .grid { width: min(var(--wide), 100% - var(--gut) * 2); margin: clamp(56px, 9vw, 96px) auto 0; }
   .ghead { display: flex; justify-content: space-between; align-items: end; gap: 24px; }
@@ -135,6 +136,17 @@ const tiles = [
   .still li.main { width: min(16.5vw, 240px); }
   .still .cap { margin-top: 18px; }
 
+  /* wide screens: the title and summary on the left, the facts beside them, so the five and their names fit under
+     them in the first screen at the home page's size */
+  @media (min-width: 900px) {
+    .hero { max-width: calc(880px + var(--gut) * 2); display: grid; grid-template-columns: minmax(0, 1fr) 240px; column-gap: 56px; text-align: left; }
+    .hero > :not(.facts) { grid-column: 1; }
+    .eyebrow { justify-content: flex-start; }
+    .hero h1 { font-size: clamp(48px, 5.4vw, 64px); margin-top: 16px; }
+    .hero .lede { font-size: 18px; margin: 14px 0 0; text-wrap: pretty; }
+    .facts { grid-column: 2; grid-row: 1 / span 3; align-self: end; display: grid; gap: 12px; margin: 0; }
+    .facts .scope dd { max-width: none; }
+  }
   @media (max-width: 760px) {
     .ghead { display: block; } .ghead p { margin-top: 10px; }
     .tiles { grid-template-columns: 1fr; gap: 36px; }
@@ -171,9 +183,15 @@ const tiles = [
   .reel .dots i.on { opacity: .7; }
   /* on phones the screens are placed by their centre, so the zoom scales them in place */
   .reel :global(.phone.flying) { transform-origin: 50% 50%; }
+  /* the names under the screens on landing, the same type as the home page's row so they can carry across. on a wide
+     screen they stay under their screens as the row grows, standing in for the names in the lines */
   .names { display: none; }
-  .reel .names { display: block; position: absolute; inset: 0; }
+  .scene .names { display: block; position: absolute; inset: 0; pointer-events: none; }
   .names span { position: absolute; left: 0; top: 0; translate: -50% 0; font: 500 12px/1 var(--display); color: var(--ink-2); white-space: nowrap; opacity: 0; }
+  .row .names span { font-size: 12.5px; line-height: 1.45; color: var(--ink); will-change: opacity, transform; }
+  .scene.row .caps .cap span { visibility: hidden; }
+  /* phones: the title sits closer to the top, so the row and its names fit under it */
+  .reel .hero { top: clamp(12px, 3vh, 32px); }
 
 
   /* on landing the phones start low, only their tops showing, then slide up into place, rise a touch past it and settle */
@@ -205,11 +223,18 @@ const tiles = [
     .open:not(.scene) .grid { order: 1; width: 100%; margin-top: 56px; padding: 0 16px; }
     .open:not(.scene) .tiles { display: none; }
     .open:not(.scene) .ghead h2 { font-size: 28px; }
-    .open:not(.scene) .still { order: 2; justify-content: flex-start; align-items: flex-start; gap: 12px; margin-top: 28px; padding: 0 19vw 4px;
+    .open:not(.scene) .still { order: 2; justify-content: flex-start; align-items: flex-start; gap: 12px; margin: 28px 0 0; padding: 0 19vw 4px;
       overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
     .still::-webkit-scrollbar { display: none; }
     .open:not(.scene) .still li, .open:not(.scene) .still li.main { width: 62vw; scroll-snap-align: center; }
     .still li.main { order: -1; }
+  }
+  /* short phones (an se, a phone in a small window): the words set a size down, so the row and its names still fit */
+  @media (max-width: 640px) and (max-height: 760px) {
+    .reel .hero { top: 8px; }
+    .hero h1 { font-size: 40px; margin-top: 12px; }
+    .hero .lede { font-size: 16px; line-height: 1.45; margin-top: 10px; }
+    .facts { margin-top: 14px; gap: 8px 20px; font-size: 12.5px; }
   }
 </style>
 
@@ -251,10 +276,12 @@ const tiles = [
   };
 
   let mode = null, W = 0, H = 0, raf = 0, base = [];
-  let peek = [], row = [], land = { x: 0, y: 0, w: 0, floor: 0 };
+  let low = [], row = [], land = { x: 0, y: 0, w: 0, floor: 0 };
   let step = 0, capW = 0, capY = 0, heroOut = 0, wellTop = 0, wellH = 0, gap = 0, cyM = 0, mwM = 0, mhM = 0;
-  let tiny = [], lowY = 0;
+  let tiny = [], lowY = 0, vis = 0;
   const names = [...open.querySelectorAll('.names span')];
+  // a name's top under its screen on a wide screen, as on the home page (its line's margin there)
+  const NM = 24;
 
   const place = (el, b, i, floor = H) => {
     const k = b.w / base[i], h = base[i] / R;
@@ -275,6 +302,10 @@ const tiles = [
     ghead.style.transform = '';
     heroOut = hero.offsetTop + hero.offsetHeight;
     gap = clamp(H * .045, 28, 48);
+    // how much of the stage the first screen shows, above the page's dock (fixed low in the middle; not parsed yet on
+    // the first pass, so its usual top stands in) and below whatever sits over the stage before it sticks
+    const dock = document.querySelector('.rdock');
+    vis = Math.min(H, innerHeight, dock ? dock.getBoundingClientRect().top - 8 : innerHeight - 80) - top0();
 
     if (mode === 'row') {
       // all five whole, on one centre line, home a size up, with room under them for the lines
@@ -287,11 +318,15 @@ const tiles = [
       const floor = (H + mw / R - capH) / 2 + capH * .1, cy = floor - mw / R / 2;
       let x = (W - total) / 2;
       row = phones.map((_, i) => { const w = i === MAIN ? mw : sw; const b = { x, y: floor - w / R, w }; x += w + g; return b; });
-      // landing: the same row a little larger, lowered so home starts just under the title and the bottom edge cuts it
-      const kp = Math.min(1.12, W * .96 / total);
-      const big = row.map((b) => ({ x: W / 2 + (b.x - W / 2) * kp, y: cy + (b.y - cy) * kp, w: b.w * kp }));
-      const dy = Math.max(0, heroOut + gap - big[MAIN].y);
-      peek = big.map((b) => ({ ...b, y: b.y + dy }));
+      // landing: the home page's row (js/work/work.js) at its size, centred on one line under the title with the names
+      // under it, all in the first screen, so the page transition only slides them. smaller only if it can't fit
+      const col = Math.min(880, W - 2 * clamp(W * .04, 16, 48)) / 100;
+      const nmH = NM + 18, room = vis - heroOut - gap - nmH - 20;
+      const k0 = Math.min(1, room / (17.5 * col / R));
+      const lw = 17.5 * col * k0, ls = 14.5 * col * k0, lg = 1.8 * col * k0;
+      const ly = heroOut + gap + Math.max(0, room - lw / R) / 2 + lw / R / 2;
+      let lx = (W - lw - 4 * ls - 4 * lg) / 2;
+      low = phones.map((_, i) => { const w = i === MAIN ? lw : ls; const b = { x: lx, y: ly - w / R / 2, w }; lx += w + lg; return b; });
       capW = sw + g * .6;
       // home lands in the middle tile; tiles are measured settled
       const slot = homes[MAIN].getBoundingClientRect(), fill = homes[MAIN].parentElement.getBoundingClientRect();
@@ -299,7 +334,7 @@ const tiles = [
       wellTop = fill.top - s.top; wellH = H + 80 - wellTop;
       Object.assign(well.style, { left: `${fill.left - s.left}px`, width: `${fill.width}px`, height: `${wellH}px` });
       base = phones.map((_, i) => (i === MAIN ? land.w : row[i].w));
-      caps.forEach((c, i) => { c.style.width = `${capW}px`; c.style.left = `${row[i].x + row[i].w / 2}px`; c.style.top = `${floor + 18}px`; });
+      caps.forEach((c, i) => { c.style.width = `${capW}px`; c.style.left = `${row[i].x + row[i].w / 2}px`; c.style.top = `${floor + NM}px`; });
     } else {
       // reel: the heading on top, one screen in the middle, its neighbours smaller at the edges, the line and dots below
       const top = ghead.getBoundingClientRect().bottom - s.top + 20;
@@ -315,8 +350,11 @@ const tiles = [
       const g = 8, hw = (W - 32 - 4 * g) / (1 + 4 * .8), sw = hw * .8;
       tiny = phones.map((_, i) => ({ c: W / 2 + Math.sign(SPOT[i]) * ((hw + sw) / 2 + g + (Math.abs(SPOT[i]) - 1) * (sw + g)) * Math.min(1, Math.abs(SPOT[i])), w: i === MAIN ? hw : sw }));
       step = ((hw + sw) / 2 + g) * mw / hw;
-      // on landing the row sits in the bottom quarter, just above the edge, never over the title
-      lowY = Math.max(heroOut + gap + hw / R / 2, H - 64 - hw / R / 2);
+      // on landing the row and its names sit under the title, in the middle of what's left of the first screen
+      // the gap under the title gives way first on a short screen, down to 16px
+      const g0 = clamp(vis - heroOut - hw / R - 19 - 12 - 12, 16, gap);
+      const room = vis - heroOut - g0 - hw / R - 19 - 12 - 20;
+      lowY = heroOut + g0 + Math.max(0, room) / 2 + hw / R / 2;
       capW = Math.min(W - 48, 320);
       capY = cy + mh / 2 + 16;
       caps.forEach((c) => { c.style.width = `${capW}px`; c.style.left = `${W / 2}px`; c.style.top = `${capY}px`; });
@@ -325,7 +363,9 @@ const tiles = [
     phones.forEach((p, i) => (p.style.width = `${base[i]}px`));
   };
 
-  const progress = () => { const r = open.getBoundingClientRect(); return clamp(-r.top / (r.height - H)); };
+  // where the stage starts on the page; a section pulled above the top of the page starts stuck, at 0
+  const top0 = () => Math.max(0, open.getBoundingClientRect().top + scrollY);
+  const progress = () => clamp((scrollY - top0()) / (open.offsetHeight - H));
 
   const frameRow = (p) => {
     const out = ease(span(p, 0, .14));
@@ -346,21 +386,27 @@ const tiles = [
     well.style.transform = `translateY(${wellTop + shift}px)`;
     well.style.clipPath = `inset(0 0 ${Math.max(0, wellTop + shift + wellH - floor)}px 0 round clamp(12px, 1.6vw, 18px))`;
 
+    const nmOut = span(p, .38, .44);
     phones.forEach((el, i) => {
-      const at = mix(peek[i], row[i], rise), d = Math.abs(i - MAIN);
+      const at = mix(low[i], row[i], rise), d = Math.abs(i - MAIN);
+      let b = at;
       if (i === MAIN) {
         // home drops into the middle tile, cut by the tile's bottom edge once it's there
-        const m = ease(span(p, .46, .78));
-        place(el, mix(at, land, m), i, floor);
-        return;
+        b = mix(at, land, ease(span(p, .46, .78)));
+        place(el, b, i, floor);
+      } else {
+        // the other four leave upward, the outer pair first
+        const e = ease(span(p, .42 + (d === 2 ? 0 : .04), .62 + (d === 2 ? 0 : .04)));
+        b = { ...at, y: at.y - e * (at.y + at.w / R + 60) };
+        place(el, b, i);
+        el.style.opacity = String(1 - span(e, .55, 1));
+        el.inert = e > .5;
       }
-      // the other four leave upward, the outer pair first
-      const e = ease(span(p, .42 + (d === 2 ? 0 : .04), .62 + (d === 2 ? 0 : .04)));
-      place(el, { ...at, y: at.y - e * (at.y + at.w / R + 60) }, i);
-      el.style.opacity = String(1 - span(e, .55, 1));
-      el.inert = e > .5;
+      // its name under it from the first frame, riding with it into the row, and going with the lines
+      names[i].style.opacity = String(1 - nmOut);
+      names[i].style.transform = `translate(${b.x + b.w / 2}px, ${b.y + b.w / R + NM - nmOut * 8}px)`;
     });
-    // each line fades in under its screen once the row is up, from the middle out, and goes before the screens leave
+    // each line fades in under its name once the row is up, from the middle out, and goes before the screens leave
     caps.forEach((c, i) => {
       const d = Math.abs(i - MAIN), t = ease(span(p, .13 + d * .015, .23 + d * .015)), o = span(p, .38, .44);
       c.style.opacity = String(t * (1 - o));
@@ -460,6 +506,8 @@ const tiles = [
 
   // the heading's wrap moves the tiles once the fonts are in, so measure again then
   document.fonts.ready.then(() => { if (mode) { measure(); frame(); } });
+  // and once the dock is in, to keep the names above it
+  document.addEventListener('DOMContentLoaded', () => { if (mode) { measure(); frame(); } });
   addEventListener('resize', () => {
     const m = pick();
     if (m !== mode) { if (mode) leave(); if (m) enter(m); return; }

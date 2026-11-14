@@ -7,7 +7,7 @@
 //           each name data-pt-nm): the screens and their names slide across as themselves, the rest rises in under them
 //   wake    a watch taps twice, its black screen grows to fill the view, then the page wakes out of it
 //   type    the page zooms out of a quick look window like pressing space, its title flicking through typefaces
-//   quiet   everything else: the masthead stays, the page fades and rises 8px
+//   quiet   everything else: the dock stays, the page fades and rises 8px
 // a case study picks window, wake or type with `transition` in its frontmatter; the element it opens out of carries
 // data-pt-src="<slug>" (home: js/work/work.js, the projects list: pages/projects/index.astro).
 // browsers without cross-document view transitions just navigate. reduced motion gets a 120ms crossfade.
@@ -296,7 +296,7 @@ const css = `
     var from = path(location.href);
     var t = reduced.matches ? { kind: 'quiet' } : trip(from, to);
     var note = { from: from, to: to, t: Date.now() };
-    if (t.mast) name(document.querySelector('.mast'), 'pt-mast');
+    if (t.mast) name(document.querySelector('.rdock'), 'pt-mast');
     // a row of screens travels as itself, if the next page has the same row (it decides; see pagereveal)
     var row = t.kind === 'window' && t.dir ? lineup(t.slug) : null;
     if (row) {
@@ -336,7 +336,7 @@ const css = `
     done(vt);
     if (reduced.matches) return;
 
-    if (t.mast) name(document.querySelector('.mast'), 'pt-mast');
+    if (t.mast) name(document.querySelector('.rdock'), 'pt-mast');
     if (t.kind === 'seam') {
       root.style.setProperty('--pt-paper', getComputedStyle(document.body).backgroundColor);
       add('pt-seam', { 'data-dir': t.dir });

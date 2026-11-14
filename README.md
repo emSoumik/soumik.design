@@ -133,7 +133,7 @@ vercel.json             tells Vercel to build with Astro and serve dist/
 1. Make a folder: `src/content/work/<slug>/` for a case study, `src/content/blog/<slug>/` for a post. The slug becomes the URL (`/projects/<slug>/`, `/blog/<slug>/`). Set `kind: concept` for a concept, or `kind: open source` for a tool, rather than a case study.
 2. Put an `index.mdx` in it, and its images next to it. Start from `src/content/work/whyclub/index.mdx` or `src/content/blog/a-garden-that-tends-itself/index.mdx`.
 3. Fill in the frontmatter. `src/content.config.ts` lists the fields, and the build stops with a clear message if one is missing or wrong.
-4. Set `draft: true` while you write. Drafts show in `npm run dev` and on Vercel preview deploys (every branch and PR gets one), and nowhere else, so a production build can never publish one by accident. `DRAFTS=1 npm run build` shows them in a local build. Remove it, or set it to `false`, to publish.
+4. Set `draft: true` while you write. Drafts are published everywhere, production included, with a "draft" label on the page. Remove it, or set it to `false`, when it's finished.
 
 Markdown images (`![alt](./shot.png)`) are optimised automatically. For more, these work in any post without importing:
 

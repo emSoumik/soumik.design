@@ -113,6 +113,9 @@ export function liveDock(root: HTMLElement, o: Opts) {
     // the frame is same-origin, so a press inside it is heard directly; the blur check below is the fallback
     frame.addEventListener('load', () => {
       try { for (const ev of ['pointerdown', 'keydown']) frame!.contentDocument!.addEventListener(ev, (e) => { if (e.isTrusted) takeOver(); }, true); } catch { /* cross-origin: blur covers it */ }
+      // a swipe over the frame scrolls this page, not the store inside it: its own scrolling is locked (the tour still
+      // moves it with scrollTo) and its overscroll lock lifted, so the gesture chains out. taps still reach the dock
+      try { frame!.contentDocument!.head.insertAdjacentHTML('beforeend', '<style>html, body { overflow: hidden !important; overscroll-behavior: auto !important; }</style>'); } catch { /* cross-origin */ }
     });
     host.append(frame);
     size();

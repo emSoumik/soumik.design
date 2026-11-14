@@ -23,8 +23,8 @@ const { Content } = await render(entry);
 const cover = data.cover && await getImage({ src: data.cover, format: 'png', width: 1200 });
 const card = cover && { src: cover.src, width: cover.attributes.width as number, height: cover.attributes.height as number, alt: data.coverAlt };
 const domain = data.link && new URL(data.link).hostname;
-// PROTOTYPE: in dev the whyclub case study shows three layout variants instead of its mdx
-const proto = import.meta.env.DEV && entry.id === 'whyclub';
+// whyclub's case study is the hand-built page in _prototype-whyclub/, not its mdx (the mdx stays as a fallback)
+const proto = entry.id === 'whyclub';
 // some projects are built by hand, with live demos, instead of written in mdx
 const Page = ({ vayu: Vayu, 'font-preview': FontPreview } as Record<string, any>)[entry.id];
 ---

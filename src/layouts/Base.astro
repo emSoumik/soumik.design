@@ -1,11 +1,12 @@
 ---
-// Every page but the home page: the head, the little masthead back to the garden, the footer.
+// Every page but the home page: the head, the dock (back, about, sections) low on the screen, the footer.
 // The home page keeps its own hand-written head and css in pages/index.astro.
 import { SOCIALS } from '../../js/content.js';
 import '../styles/site.css';
 import PageTransitions from '../components/transitions/PageTransitions.astro';
 import ProtoHead from '../components/proto/ProtoHead.astro';
 import Titles from '../components/Titles.astro';
+import ReadDock from '../components/ReadDock.astro';
 
 interface Props {
   title: string;
@@ -66,16 +67,6 @@ const here = Astro.url.pathname;
 <Titles />
 </head>
 <body>
-<header class="mast">
-  <a class="back" href={back.href} aria-label={`back to ${back.label}`}>
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-  </a>
-  <nav class="sections" aria-label="Sections">
-    <a href="/#projects" aria-current={here.startsWith('/projects') ? 'page' : undefined}>projects</a>
-    <a href="/vault/" aria-current={here.startsWith('/vault') ? 'page' : undefined}>vault</a>
-    <a href="/blog/" aria-current={here.startsWith('/blog') ? 'page' : undefined}>blog</a>
-  </nav>
-</header>
 <main class="page">
   <slot />
 </main>
@@ -93,5 +84,6 @@ const here = Astro.url.pathname;
     import('../../js/agentation-dev.js').catch((err) => console.warn('[dev]', err));
   </script>
 )}
+<ReadDock back={back} />
 </body>
 </html>

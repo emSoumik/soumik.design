@@ -261,6 +261,8 @@ const STYLE = `
 .wk-lineup { list-style: none; margin: 0; padding: clamp(8px, 1.5vw, 16px) 0 0; display: flex; justify-content: center; align-items: center; gap: 1.8cqw; }
 .wk-lineup li { width: 14.5cqw; flex: none; }
 .wk-lineup li.is-main { width: 17.5cqw; }
+/* a name is only as wide as its word, like the case study's, so the page transition carries it across unstretched */
+.wk-lineup .wk-cap span { width: fit-content; margin-inline: auto; }
 .wk-scr { container-type: inline-size; }
 .wk-glass { position: relative; aspect-ratio: 392 / 848; border-radius: 12.5cqw; overflow: hidden; background: #fff;
   box-shadow: 0 0 0 2.6cqw var(--wk-bezel), 0 0 0 calc(2.6cqw + 1px) var(--wk-bezel-edge), 0 30px 50px -28px var(--wk-shadow); }
