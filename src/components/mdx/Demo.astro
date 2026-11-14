@@ -43,7 +43,9 @@ const Inner = { stitch: Stitch, tune: Tune, lift: Lift, room: Room, idle: Idle, 
       if (!e.isIntersecting) continue;
       io.unobserve(e.target);
       const el = e.target as HTMLElement;
-      DEMOS[el.dataset.demo!]?.().then((m) => {
+      DEMOS[el.dataset.demo!]?.().then(async (m) => {
+        // yield first, so the mount never lands inside the scroll
+        await new Promise((r) => ('requestIdleCallback' in window ? requestIdleCallback(r, { timeout: 300 }) : setTimeout(r, 0)));
         const d = m.mount(el);
         el.classList.add('live');
         const reset = el.querySelector<HTMLButtonElement>(':scope > .demo-frame > [data-reset]');
