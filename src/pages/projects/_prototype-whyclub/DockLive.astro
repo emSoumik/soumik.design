@@ -483,9 +483,11 @@ const hasCredit = Astro.slots.has('credit');
           // the note above may now need to move too
           for (let j = i - 1; j >= 0 && tops[j] + items[j].h + GAP > tops[j + 1]; j--) tops[j] = tops[j + 1] - items[j].h - GAP;
         }
+        // write every top first, then read: one layout for all the notes, not one each
+        items.forEach((it, i) => { it.el.style.top = `${tops[i]}px`; });
+        const rects = items.map((it) => it.el.getBoundingClientRect());
         items.forEach((it, i) => {
-          it.el.style.top = `${tops[i]}px`;
-          const nr = it.el.getBoundingClientRect();
+          const nr = rects[i];
           const sx = Math.round((side === 'l' ? nr.right + 12 : nr.left - 12) - B.left);
           const sy = px(nr.top - B.top + LH / 2);
           const { x, y } = it.pt;

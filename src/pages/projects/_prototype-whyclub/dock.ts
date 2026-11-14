@@ -67,7 +67,9 @@ export function liveDock(root: HTMLElement, o: Opts) {
 
   const mode = (m: Mode) => { root.dataset.mode = m; o.onMode?.(m); };
   const send = (msg: object) => { lastSent = Date.now(); frame?.contentWindow?.postMessage({ wc: 'dock', ...msg }, '*'); };
-  const scale = () => Math.min(o.maxScale ?? 1, host.clientWidth / FW);
+  // the host's width, kept by the ResizeObserver so the per-frame tracking reads no layout
+  let hostW = host.clientWidth, lastT = '';
+  const scale = () => Math.min(o.maxScale ?? 1, hostW / FW);
 
   // ---- the window: as tall as the dock plus a little air, tracked every frame while anything moves ----
   function readTop(): number | null {
@@ -80,7 +82,10 @@ export function liveDock(root: HTMLElement, o: Opts) {
   }
   function size() {
     const s = scale();
-    if (frame) { frame.style.transform = `scale(${s})`; frame.style.left = `${(host.clientWidth - FW * s) / 2}px`; }
+    if (frame) {
+      const t = `translate(${(hostW - FW * s) / 2}px, 0) scale(${s})`;
+      if (t !== lastT) { lastT = t; frame.style.transform = t; }
+    }
     if (o.fixed) { const dh = String(n((FH - top) * s)); if (root.style.getPropertyValue('--dock') !== `${dh}px`) { root.style.setProperty('--dock', `${dh}px`); o.onFit?.(); } return; }
     const h = Math.ceil((FH - top + head) * s);
     if (host.style.height !== `${h}px`) { host.style.height = `${h}px`; o.onFit?.(); }
@@ -120,7 +125,7 @@ export function liveDock(root: HTMLElement, o: Opts) {
     host.append(frame);
     size();
   }, { rootMargin: '400px' }).observe(root);
-  new ResizeObserver(() => { size(); if (last && !last.moving) o.onSettle?.(last); }).observe(host);
+  new ResizeObserver(() => { hostW = host.clientWidth; size(); if (last && !last.moving) o.onSettle?.(last); }).observe(host);
 
   // ---- the moves. the frame is same-origin, so the pill is tapped for real; messages are the fallback ----
   const doc = () => { try { return frame?.contentDocument ?? null; } catch { return null; } };
@@ -265,7 +270,7 @@ export function liveDock(root: HTMLElement, o: Opts) {
       const s = scale();
       const h = host.getBoundingClientRect();
       const b = to.getBoundingClientRect();
-      const fl = (host.clientWidth - FW * s) / 2;
+      const fl = (hostW - FW * s) / 2;
       return { x: h.left - b.left + fl + (rect.x + rect.w * fx) * s, y: h.bottom - b.top - (FH - (rect.y + rect.h * fy)) * s };
     },
   };
