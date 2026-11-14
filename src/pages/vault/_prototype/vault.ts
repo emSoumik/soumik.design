@@ -59,6 +59,7 @@ function init(root: HTMLElement) {
     const el = q('.vlt-demo', art);
     const canvas = q<HTMLCanvasElement>('canvas', el);
     const title = el.querySelector<HTMLElement>('[data-title]');
+    const count = el.querySelector<HTMLElement>('.vlt-count');
     const list = p.scenes;
     let reel: ReturnType<typeof createReel> | null = null;
     let at = 0, timer = 0, seen = false;
@@ -67,12 +68,19 @@ function init(root: HTMLElement) {
       reel?.show(list[k]);
       el.dataset.dark = String(SCENES[list[k]].dark);
       if (title) title.textContent = SCENES[list[k]].title;
+      if (count) count.textContent = `${k + 1} / ${list.length}`;
     };
     // walks its scenes only while on screen, never under reduced motion
     const walk = () => {
       clearInterval(timer);
       if (seen && list.length > 1 && !reduced.matches) timer = window.setInterval(() => pick((at + 1) % list.length), 4200);
     };
+    // the arrows step by hand and restart the walk, so the next stage never lands right after a tap
+    qa<HTMLButtonElement>('[data-step]', el).forEach((b) => b.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      pick((at + Number(b.dataset.step) + list.length) % list.length);
+      walk();
+    }));
     new IntersectionObserver(([e]) => {
       seen = e.isIntersecting;
       if (seen && !reel) {
@@ -84,7 +92,7 @@ function init(root: HTMLElement) {
     return { el, home: art, tilt: (x, y) => reel?.setTilt(x, y) };
   }
   // a film plays muted and looped while it's on screen. under reduced motion it stays the finished flower until someone
-  // asks for sound, which plays it from the start. the sound button only shows on the stage
+  // asks for sound, which plays it from the start. the sound button shows on the card and the stage
   function mountFilm(art: HTMLElement): Demo {
     const el = q('.vlt-demo', art);
     const video = q<HTMLVideoElement>('video', el);

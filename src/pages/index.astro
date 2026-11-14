@@ -119,18 +119,8 @@ const cases = (await published('work')).map((e) => e.id);
   .ui a, .ui button { pointer-events: auto; }
 
   .top { position: absolute; left: var(--gut); right: calc(var(--gut) - 12px); top: calc(max(var(--gut), env(safe-area-inset-top)) - 3px); display: flex; justify-content: flex-end; align-items: center; }
-  /* going somewhere lives up here: projects scrolls to the list below, vault and blog leave. then sound after a hairline */
   .tr-r { display: flex; align-items: center; }
   @media (pointer: coarse) { .hint { min-height: 44px; } }
-  .links { display: flex; gap: 4px; font: 500 14px/1 var(--pixel); letter-spacing: .01em; }
-  .links a { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink-2); transition: color .2s, transform .16s var(--ease); }
-  .links a:active { transform: scale(.96); }
-  .links [data-work] { color: var(--ink); }
-  .links .arr { display: inline-block; margin-left: 6px; transition: transform .4s var(--spring); }
-  /* a dot under projects while its list is on screen */
-  .links [data-work]::after { content: ""; position: absolute; left: 50%; bottom: 7px; width: 4px; height: 4px; margin-left: -2px; background: currentColor; opacity: 0; transition: opacity .2s; }
-  html.at-work .links [data-work]::after { opacity: 1; }
-  .rule { width: 1px; height: 20px; background: var(--line); margin: 0 4px 0 4px; }
   .snd { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; color: var(--ink-2); transition: color .2s, background .2s, transform .16s var(--ease); position: relative; }
     .snd:active { transform: scale(.96); }
   .snd svg { width: 18px; height: 18px; } .snd .x { display: none; }
@@ -150,25 +140,46 @@ const cases = (await published('work')).map((e) => e.id);
   .cw { position: absolute; font: 500 clamp(11px, .95vw, 13px)/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
   .cw.tl { left: 6%; top: -2.6em; } .cw.tr { right: 2%; top: -2.6em; } .cw.bl { left: 0; bottom: -2.6em; } .cw.br { right: 0; bottom: -2.6em; }
 
-  /* the dock: one yellow about me, low in the middle and fixed, so it's there all the way down.
-     --dock is its gap from the bottom; the hint and clear stack above it */
+  /* the dock: about me (yellow), projects, vault, blog, fixed low in the middle so it's there all the way down.
+     it arrives quiet, just words on the white; once you scroll it fills in. planting tucks it into the yellow bud,
+     out of the garden's way, and a tap on the bud opens it again. --dock is the hero's gap; the hint and clear stack above it */
   :root { --dock: calc(max(22px, calc(env(safe-area-inset-bottom) + 12px)) + max(0px, 560px - 100svh)); --dock-f: max(22px, calc(env(safe-area-inset-bottom) + 12px)); }
-  .nav { position: fixed; z-index: 50; left: 50%; bottom: var(--dock-f); translate: -50% 0; display: flex; padding: 4px; border-radius: 99px;
+  .nav { position: fixed; z-index: 50; left: 50%; bottom: var(--dock-f); translate: -50% 0; display: flex; align-items: center; padding: 4px; border-radius: 99px;
     font: 500 15px/1 var(--pixel); letter-spacing: .01em; background: rgba(255, 255, 255, .86); -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
-    box-shadow: 0 0 0 1px rgba(31, 29, 27, .1), 0 16px 36px -18px rgba(31, 29, 27, .5), 0 2px 6px -3px rgba(31, 29, 27, .18); }
-  .nav button { position: relative; white-space: nowrap; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px 0 5px; border-radius: 99px;
-    background: #ffd84d; color: #1f1d1b; transition: background-color .2s var(--ease), transform .16s var(--ease), padding .5s var(--ease); }
-  .nav button:active { transform: scale(.96); }
-  .nav button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 99px; }
+    box-shadow: 0 0 0 1px rgba(31, 29, 27, .1), 0 16px 36px -18px rgba(31, 29, 27, .5), 0 2px 6px -3px rgba(31, 29, 27, .18);
+    transition: background-color .3s, box-shadow .3s; }
+  .nav :is(.me, .seg) { position: relative; white-space: nowrap; display: inline-flex; align-items: center; min-height: 44px; border-radius: 99px; color: var(--ink);
+    transition: background-color .3s var(--ease), color .3s var(--ease), padding .5s var(--ease), transform .16s var(--ease); }
+  .nav :is(.me, .seg):active { transform: scale(.96); }
+  .nav :is(.me, .seg):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 99px; }
+  .nav .me { padding: 0 18px 0 5px; background: #ffd84d; color: #1f1d1b; }
   .nav .ic { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; }
   .nav .ic picture { display: contents; }
   .nav .ic img { width: 30px; height: 30px; object-fit: contain; mix-blend-mode: multiply; translate: 0 2px; transition: transform .5s var(--spring); }
-  .nav .lb { display: inline-block; overflow: hidden; max-width: 120px; padding-left: 9px; opacity: 1; transition: max-width .5s var(--ease), padding .5s var(--ease), opacity .3s var(--ease) .1s; }
-  /* phone: at the top only the yellow avatar shows, a bud over the garden; the first scroll opens it out */
+  .nav .seg { padding: 0 16px; }
+  .nav .more .seg + .seg::before { content: ""; position: absolute; left: -2px; top: 13px; bottom: 13px; width: 1px; background: rgba(31, 29, 27, .12); }
+  .nav .arr { display: inline-block; margin-left: 6px; transition: transform .4s var(--spring), opacity .2s; }
+  .nav [data-work]::after { content: ""; position: absolute; left: 50%; bottom: 7px; width: 4px; height: 4px; margin-left: -2px; background: currentColor; opacity: 0; transition: opacity .2s; }
+  html.at-work .nav [data-work]::after { opacity: 1; }
+  html.at-work .nav [data-work] .arr { opacity: .35; }
+  .nav .more, .nav .lb { display: inline-flex; overflow: hidden; max-width: 480px; opacity: 1; transition: max-width .5s var(--ease), opacity .3s var(--ease) .1s, margin .5s var(--ease); }
+  .nav .more { gap: 2px; margin-left: 2px; }
+  .nav .lb { padding-left: 9px; }
+  /* tucked: only the yellow bud */
+  html.tuck .nav .more, html.tuck .nav .lb { max-width: 0; opacity: 0; margin: 0; padding: 0; transition: max-width .4s var(--ease), opacity .15s, margin .4s var(--ease), padding .4s var(--ease); }
+  html.tuck .nav .me { padding: 0 5px; }
+  /* quiet: at the top, before any planting or opening */
+  html:not(.moved):not(.open):not(.tuck) .nav { background: transparent; box-shadow: 0 0 0 1px transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  html:not(.moved):not(.open):not(.tuck) .nav .seg { color: var(--ink-2); }
+  html:not(.moved):not(.open):not(.tuck) .nav .me { background: transparent; }
   @media (max-width: 640px) {
-    html:not(.moved) .nav button { padding: 0 5px; }
-    html:not(.moved) .nav .lb { max-width: 0; padding-left: 0; opacity: 0; transition: max-width .4s var(--ease), padding .4s var(--ease), opacity .15s; }
+    .nav { font-size: 13.5px; }
+    .nav .seg { padding: 0 11px; }
+    .nav .me { padding: 0 13px 0 4px; }
+    .nav .lb { padding-left: 6px; }
+    .nav .arr { display: none; }
   }
+  @media (max-width: 360px) { .nav { font-size: 12.5px; } .nav .seg { padding: 0 8px; } .nav .me { padding-right: 10px; } }
   .foot { padding-bottom: calc(var(--dock-f) + 64px) !important; }
   .hint { position: absolute; left: 50%; bottom: calc(var(--dock) + 68px); translate: -50% 0; font: 400 12px/1 var(--mono); color: var(--ink-2); white-space: nowrap;
     padding: 8px 12px; border-radius: 99px; transition: color .2s, transform .16s var(--ease);
@@ -220,10 +231,10 @@ const cases = (await published('work')).map((e) => e.id);
 
   @media (hover: hover) and (pointer: fine) {
     .snd:hover { color: var(--ink); background: rgba(31, 29, 27, .05); }
-    .nav button:hover { background: #ffcc1f; }
-    .nav button:hover .ic img { transform: rotate(-8deg) scale(1.08); }
-    .links a:hover { color: var(--ink); }
-    .links [data-work]:hover .arr { transform: translateY(3px); }
+    html:is(.moved, .open, .tuck) .nav .me:hover { background: #ffcc1f; }
+    .nav .me:hover .ic img { transform: rotate(-8deg) scale(1.08); }
+    .nav .seg:hover { background: rgba(128, 128, 128, .14); color: var(--ink); }
+    .nav [data-work]:hover .arr { transform: translateY(3px); }
     .hint:hover { color: var(--ink); }
     .clear:hover { color: var(--ink); }
     .clear:hover svg { transform: rotate(-14deg) translateY(-1px); }
@@ -250,11 +261,7 @@ const cases = (await published('work')).map((e) => e.id);
     .mark { top: 21svh; }
     .wm { width: min(84vw, 360px); }
     .cw { font-size: 10.5px; }
-    .nav { font-size: 14.5px; }
     .top { right: calc(var(--gut) - 10px); }
-    .links { gap: 0; font-size: 13.5px; }
-    .links a { padding: 0 9px; }
-    .links .arr { display: none; }
     .hint { bottom: calc(var(--dock) + 104px); font-size: 11.5px; min-height: 44px; }
     /* on a phone it sits between the hint and the dock, clear of mochi in the corner */
     .clear { left: 50%; bottom: calc(var(--dock) + 60px); margin: 0; font-size: 12.5px; translate: -50% 8px; }
@@ -274,7 +281,7 @@ const cases = (await published('work')).map((e) => e.id);
     .clear, .clear.on { translate: none; transition: opacity .2s, visibility 0s; } .clear.dig svg { animation: none; }
     @media (max-width: 640px) { .clear, .clear.on { translate: -50% 0; } }
     .load .wm-l path, .load .wm-f rect { animation: none; }
-    .nav button, .nav .lb { transition: opacity .15s !important; }
+    .nav, .nav :is(.me, .seg, .more, .lb) { transition: opacity .15s !important; }
   }
 
   /* ---- from the garden to the work: scrubbed by the scroll itself, off the main thread. no js, nothing to load */
@@ -311,7 +318,7 @@ const cases = (await published('work')).map((e) => e.id);
     <canvas id="garden" aria-hidden="true"></canvas>
     <div class="ui">
       <div class="top in" style="--d:.1s">
-        <div class="tr-r"><nav class="links" aria-label="Sections"><a href="#projects" data-work>projects<span class="arr" aria-hidden="true">↓</span></a><a href="/vault/">vault</a><a href="/blog/">blog</a></nav><span class="rule" aria-hidden="true"></span>
+        <div class="tr-r">
           <button class="snd" id="snd" type="button" aria-pressed="true" aria-label="Sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path class="w1" d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path class="w2" d="M18.2 6.8a7.4 7.4 0 0 1 0 10.4"/><path class="x" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button></div>
       </div>
 
@@ -357,8 +364,13 @@ const cases = (await published('work')).map((e) => e.id);
 </main>
 
 <!-- the dock stays on screen all the way down, so it lives outside the hero (whose ui fades out on scroll) -->
-<nav class="nav in" style="--d:.9s" aria-label="About">
-  <button data-about><span class="ic"><picture><source srcset="/assets/brand/avatar.avif" type="image/avif"><img src="/assets/brand/avatar.webp" alt="" width="28" height="28" decoding="async"></picture></span><span class="lb">about me</span></button>
+<nav class="nav in" style="--d:.9s" aria-label="Main">
+  <button class="me" data-about><span class="ic"><picture><source srcset="/assets/brand/avatar.avif" type="image/avif"><img src="/assets/brand/avatar.webp" alt="" width="28" height="28" decoding="async"></picture></span><span class="lb">about me</span></button>
+  <span class="more">
+    <a class="seg" href="#projects" data-work>projects<span class="arr" aria-hidden="true">↓</span></a>
+    <a class="seg" href="/vault/">vault</a>
+    <a class="seg" href="/blog/">blog</a>
+  </span>
 </nav>
 
 <footer class="foot">

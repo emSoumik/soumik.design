@@ -54,7 +54,7 @@ export const PIECES: Piece[] = [
     r: 4 / 5,
   },
   {
-    slug: 'order-pass', kind: 'Shader', title: 'Order pass', tone: 'ink', scenes: [0, 1, 2, 3],
+    slug: 'order-pass', kind: 'Shader', title: 'Order stage shaders', tone: 'ink', scenes: [0, 1, 2, 3],
     line: 'Every WhyClub order gets a pass that changes as the order moves. Each stage has its own light, written by hand in WebGL.',
     about: [
       'One fragment shader draws all four stages. A bloom opens when the order is confirmed, a glowing box bobs once it’s packed, a comet runs the route to a pin when it ships, and a bouquet sits at different depths of focus when it’s home.',

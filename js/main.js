@@ -132,6 +132,8 @@ clearBtn.addEventListener('click', async () => {
 });
 function plant(x, y, slop) {
   const p = garden.plant(x, y, slop);
+  // the dock tucks into its yellow bud while you garden; a tap on the bud opens it again
+  document.documentElement.classList.add('tuck'); document.documentElement.classList.remove('open');
   cursor.tapped(p);
   // a tap on a flower turns it into another of its kind; that's not a new planting, though the bee may come and look
   if (p?.morphed) {
@@ -207,9 +209,9 @@ const work = document.getElementById('projects');
 const toWork = () => work.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
 // the about card's work link closes the card first, then scrolls. binding it here too would scroll under the open card
 document.querySelectorAll('[data-work]').forEach(b => { if (!b.closest('.ab')) b.addEventListener('click', toWork); });
-// the dock opens out once you leave the top (a phone shows only the avatar before), and projects gets its dot while the list is on screen
+// the dock arrives quiet and fills in once you leave the top (which also untucks it); projects gets its dot while the list is on screen
 const root = document.documentElement;
-const moved = () => root.classList.toggle('moved', scrollY > 24);
+const moved = () => { const m = scrollY > 24; root.classList.toggle('moved', m); if (m) root.classList.remove('tuck'); };
 addEventListener('scroll', moved, { passive: true }); moved();
 if ('IntersectionObserver' in window) new IntersectionObserver(es => root.classList.toggle('at-work', es[es.length - 1].isIntersecting), { rootMargin: '-40% 0px -40% 0px' }).observe(work);
 let mounted = false;
@@ -232,7 +234,12 @@ const whenIdle = f => 'requestIdleCallback' in window ? requestIdleCallback(f, {
 if (!lean) addEventListener('load', () => setTimeout(() => whenIdle(mountWork), 5200), { once: true });
 
 // ---- about: the bee flies over and becomes the panel; mochi steps aside
-document.querySelectorAll('[data-about]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); if (about.isOpen) about.close(); else { mochi.hush(); about.open(b); } }));
+// (the dock's about is the bud while it's tucked: then a tap opens the dock, not the card)
+document.querySelectorAll('[data-about]').forEach(b => b.addEventListener('click', e => {
+  e.preventDefault();
+  if (b.closest('.nav') && root.classList.contains('tuck')) { root.classList.remove('tuck'); root.classList.add('open'); return; }
+  if (about.isOpen) about.close(); else { mochi.hush(); about.open(b); }
+}));
 
 // ---- mochi wakes up, then nudges once, unless they're already looking at the work
 setTimeout(() => mochi.arrive(), reduced ? 0 : 2600);
