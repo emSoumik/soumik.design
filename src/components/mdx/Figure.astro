@@ -18,10 +18,25 @@ const widths = [...new Set([Math.round(src.width / 2), src.width])];
 <figure class:list={['fig', { wide, phone }]}>
   <Picture src={src} alt={alt} widths={widths} sizes={sizes} formats={['avif']} fallbackFormat="webp" />
   {caption && <figcaption>{caption}</figcaption>}
+  <script is:inline>
+    // only script adds data-wait, so with no script the image just shows. a cached image is complete and never fades
+    (function (f, i) {
+      if (!i || i.complete) return;
+      f.setAttribute('data-wait', '');
+      var go = function () { f.removeAttribute('data-wait'); };
+      i.addEventListener('load', go, { once: true });
+      i.addEventListener('error', go, { once: true });
+      if (i.decode) i.decode().then(go, function () {});
+    })(document.currentScript.parentNode, document.currentScript.parentNode.querySelector('img'));
+  </script>
 </figure>
 
 <style>
   .fig :global(img) { width: 100%; border-radius: clamp(12px, 1.6vw, 18px); background: var(--wash); box-shadow: 0 0 0 .5px var(--line); }
+  /* the frame stays pure white while the picture decodes, then it fades in */
+  .fig :global(img) { transition: opacity 240ms cubic-bezier(.23, 1, .32, 1); }
+  .fig[data-wait] :global(img) { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .fig :global(img) { transition: none; } }
   .phone { max-width: 320px; margin-left: auto; margin-right: auto; }
   .phone :global(img) { border-radius: 28px; }
   figcaption { font: 400 13px/1.5 var(--mono); color: var(--ink-2); margin-top: 12px; text-wrap: pretty; }

@@ -205,12 +205,15 @@ export function demo(root: HTMLElement) {
     await wait(750, g);
   };
   const click = async (g: number) => { cur.classList.add('down'); await wait(130, g); cur.classList.remove('down'); };
+  let warmed = false;
   const play = async () => {
     if (reduced || driving) return;
     const g = ++run;
     try {
       for (;;) {
         set({ dir: 'Downloads', sel: -1, ql: false, dark: false });
+        // hold the first quick look until its face is in (1.2 s at most), so the specimen never swaps in view
+        if (!warmed) { warmed = true; await Promise.race([document.fonts.load(`400 1em "${FONTS[0].family}"`).catch(() => {}), wait(1200, g)]); }
         cur.classList.add('on');
         await wait(700, g);
         await to(rowEl(0), g); await click(g); set({ sel: 0 }); await wait(160, g); await click(g); open(0);
