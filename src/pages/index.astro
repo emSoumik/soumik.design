@@ -1,6 +1,8 @@
 ---
 import Wordmark from '../components/Wordmark.astro';
 import { published } from '../lib/content';
+import Fonts from '../components/Fonts.astro';
+import Speculation from '../components/Speculation.astro';
 import PageTransitions from '../components/transitions/PageTransitions.astro';
 import ProtoHead from '../components/proto/ProtoHead.astro';
 import Titles from '../components/Titles.astro';
@@ -84,17 +86,15 @@ const cases = (await published('work')).map((e) => e.id);
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/brand/favicon-16.png">
 <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
 <noscript><style is:inline>.wait { display: none; }</style></noscript>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=Pixelify+Sans:wght@500..600&display=swap" rel="stylesheet">
+<Fonts preload={['pixel']} />
 <style is:inline>
   @font-face { font-family: "Faculty Glyphic"; src: url(/assets/fonts/faculty-glyphic.woff2) format("woff2"); font-display: swap; }
   :root {
     --paper: #ffffff; --ink: #1f1d1b; --ink-2: rgba(31, 29, 27, .68); --ink-3: rgba(31, 29, 27, .62); --line: rgba(31, 29, 27, .12);
     --ease: cubic-bezier(.23, 1, .32, 1); --spring: cubic-bezier(.3, 1.4, .5, 1);
-    --display: "Instrument Sans", -apple-system, system-ui, sans-serif;
+    --display: "Instrument Sans", "Instrument Sans fallback", -apple-system, system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, monospace; --ui: -apple-system, system-ui, sans-serif;
-    --pixel: "Pixelify Sans", ui-monospace, "SF Mono", Menlo, monospace;
+    --pixel: "Pixelify Sans", "Pixelify Sans fallback", ui-monospace, "SF Mono", Menlo, monospace;
     --gut: clamp(16px, 2.6vw, 36px);
   }
   * { box-sizing: border-box; margin: 0; }
@@ -309,6 +309,7 @@ const cases = (await published('work')).map((e) => e.id);
   }
 </style>
 <PageTransitions />
+<Speculation />
 {import.meta.env.DEV && <ProtoHead />}
 <Titles />
 </head>

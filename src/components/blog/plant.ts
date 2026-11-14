@@ -78,19 +78,28 @@ export function grow(kind: string, { seed = 1, form = 0, pal = 0, green, len }: 
   return { kind, cells, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] };
 }
 
-// cells as svg rects, runs of one colour along a row merged into one rect. (dx, dy) shifts them, in cells
+// cells as svg: runs of one colour along a row merged into a one-rectangle path, and the runs of one colour in a group
+// that carries the fill (a <rect> with its own fill per run weighed a post down). one rectangle per path: chrome
+// antialiases a path of several, even with crispEdges. a run landing on another colour's starts a new batch, so
+// what's drawn on top stays on top. (dx, dy) shifts them, in cells
 export function rects(cells: Cell[], dx = 0, dy = 0) {
   const rows = new Map<number, Cell[]>();
   for (const c of cells) (rows.get(c.y) ?? rows.set(c.y, []).get(c.y)!).push(c);
   let s = '';
+  let groups = new Map<string, string>(), at = new Map<string, string>();
+  const flush = () => { for (const [col, r] of groups) s += `<g fill="${col}">${r}</g>`; groups = new Map(); at = new Map(); };
   for (const [y, row] of rows) {
     row.sort((a, b) => a.x - b.x);
     for (let i = 0; i < row.length;) {
       let j = i + 1;
       while (j < row.length && row[j].x === row[j - 1].x + 1 && row[j].col === row[i].col) j++;
-      s += `<rect x="${row[i].x + dx}" y="${y + dy}" width="${j - i}" height="1" fill="${row[i].col}"/>`;
+      const col = row[i].col, x = row[i].x + dx, w = j - i;
+      for (let k = x; k < x + w; k++) if ((at.get(`${k},${y}`) ?? col) !== col) { flush(); break; }
+      for (let k = x; k < x + w; k++) at.set(`${k},${y}`, col);
+      groups.set(col, (groups.get(col) ?? '') + `<path d="M${x} ${y + dy}h${w}v1h-${w}"/>`);
       i = j;
     }
   }
+  flush();
   return s;
 }

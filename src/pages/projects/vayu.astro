@@ -1,0 +1,12 @@
+---
+// vayu is built by hand, with live demos, instead of written in mdx (the frontmatter still drives the title, meta and
+// listing). its own page file, so only its css ships with it
+import Base from '../../layouts/Base.astro';
+import { caseStudy } from './_case';
+import Vayu from '../../components/vayu/Vayu.astro';
+
+const { data, card } = await caseStudy('vayu');
+---
+<Base title={data.title} description={data.summary} type="article" published={data.date} image={card} back={{ href: '/#projects', label: 'projects' }}>
+  <Vayu />
+</Base>

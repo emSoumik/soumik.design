@@ -1,0 +1,12 @@
+---
+// font preview is built by hand, with a live demo, instead of written in mdx (the frontmatter still drives the title,
+// meta and listing). its own page file, so only its css ships with it
+import Base from '../../layouts/Base.astro';
+import { caseStudy } from './_case';
+import FontPreview from '../../components/fontpreview/FontPreview.astro';
+
+const { data, card } = await caseStudy('font-preview');
+---
+<Base title={data.title} description={data.summary} type="article" published={data.date} image={card} back={{ href: '/#projects', label: 'projects' }}>
+  <FontPreview />
+</Base>

@@ -1,38 +1,26 @@
 ---
-import { getImage } from 'astro:assets';
+// a case study written in mdx. the ones built by hand (whyclub, vayu, font-preview) have their own page files beside
+// this one, so each page ships only its own css
 import { render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Cover from '../../components/Cover.astro';
 import { components } from '../../components/mdx';
 import { published } from '../../lib/content';
-import Prototype from './_prototype-whyclub/Prototype.astro';
-import Opening from './_prototype-whyclub/Opening.astro';
-import Details from './_prototype-whyclub/Details.astro';
-import Process from './_prototype-whyclub/Process.astro';
-import Credits from './_prototype-whyclub/Credits.astro';
-import Vayu from '../../components/vayu/Vayu.astro';
-import FontPreview from '../../components/fontpreview/FontPreview.astro';
+import { HAND_BUILT, cardOf } from './_case';
 
 export async function getStaticPaths() {
-  return (await published('work')).map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+  return (await published('work')).filter((entry) => !HAND_BUILT.includes(entry.id)).map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
 }
 const { entry } = Astro.props;
 const { data } = entry;
 const { Content } = await render(entry);
-// link previews want a png: some scrapers won't show webp or avif
-const cover = data.cover && await getImage({ src: data.cover, format: 'png', width: 1200 });
-const card = cover && { src: cover.src, width: cover.attributes.width as number, height: cover.attributes.height as number, alt: data.coverAlt };
+const card = await cardOf(entry);
 const domain = data.link && new URL(data.link).hostname;
-// whyclub's case study is the hand-built page in _prototype-whyclub/, not its mdx (the mdx stays as a fallback)
-const proto = entry.id === 'whyclub';
-// some projects are built by hand, with live demos, instead of written in mdx
-const Page = ({ vayu: Vayu, 'font-preview': FontPreview } as Record<string, any>)[entry.id];
 ---
 <Base title={data.title} description={data.summary} type="article" published={data.date} image={card} back={{ href: '/#projects', label: 'projects' }}>
-  {Page ? <Page /> : (
   <article>
-    {proto ? <Opening title={data.title} summary={data.summary} year={data.date.getUTCFullYear()} role={data.role} tags={data.tags} link={data.link} /> : <Cover src={data.cover} alt={data.coverAlt} phones={data.coverPhones} link={data.link} />}
-    {!proto && <header class="article-head">
+    <Cover src={data.cover} alt={data.coverAlt} phones={data.coverPhones} link={data.link} />
+    <header class="article-head">
       <p class="eyebrow"><a href="/projects/">{data.kind}</a><span aria-hidden="true">·</span>{data.date.getUTCFullYear()}{data.draft && <span class="draft">draft</span>}</p>
       <h1>{data.title}</h1>
       <p class="lede">{data.summary}</p>
@@ -41,15 +29,9 @@ const Page = ({ vayu: Vayu, 'font-preview': FontPreview } as Record<string, any>
         {data.tags.length > 0 && <div><dt>Work</dt><dd>{data.tags.join(', ')}</dd></div>}
         {data.link && <div><dt>{data.kind === 'concept' ? 'Link' : 'Live'}</dt><dd><a href={data.link} target="_blank" rel="noopener">{domain} <span aria-hidden="true">↗</span></a></dd></div>}
       </dl>
-    </header>}
-    {proto ? <Prototype /> : (
-      <div class="prose">
-        <Content components={components} />
-      </div>
-    )}
-    {proto && <Details />}
-    {proto && <Process />}
-    {proto && <Credits />}
+    </header>
+    <div class="prose">
+      <Content components={components} />
+    </div>
   </article>
-  )}
 </Base>

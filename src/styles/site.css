@@ -3,9 +3,9 @@
   --paper: #ffffff; --ink: #1f1d1b; --ink-2: rgba(31, 29, 27, .68); --ink-3: rgba(31, 29, 27, .62); --line: rgba(31, 29, 27, .12);
   --body: rgba(31, 29, 27, .86); --wash: #fff;
   --ease: cubic-bezier(.23, 1, .32, 1); --spring: cubic-bezier(.3, 1.4, .5, 1);
-  --display: "Instrument Sans", -apple-system, system-ui, sans-serif;
+  --display: "Instrument Sans", "Instrument Sans fallback", -apple-system, system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace; --ui: -apple-system, system-ui, sans-serif;
-  --pixel: "Pixelify Sans", ui-monospace, "SF Mono", Menlo, monospace;
+  --pixel: "Pixelify Sans", "Pixelify Sans fallback", ui-monospace, "SF Mono", Menlo, monospace;
   --gut: clamp(16px, 2.6vw, 36px);
   --measure: 680px; --wide: 1080px;
   /* the garden's stitched border: four little flowers, one cell per pixel */
@@ -144,8 +144,7 @@ img, video { display: block; max-width: 100%; height: auto; }
 /* ---- the blog: the wordmark's serif for titles, pixel labels for the small things of the garden, and a
    text column with a real margin beside it on a wide screen. everything here sits under .blog */
 :root { --serif: "Instrument Serif", "Instrument Serif fallback", Georgia, serif; }
-/* holds the serif's place while it loads, so titles don't jump when it lands */
-@font-face { font-family: "Instrument Serif fallback"; src: local("Georgia"), local("Times New Roman"); size-adjust: 88%; ascent-override: 98%; descent-override: 26%; }
+/* the fallback holds the serif's place while it loads, so titles don't jump when it lands (components/Fonts.astro) */
 
 .blog { --text: 660px; --gap: 56px; --side: 212px; --comp: calc(var(--text) + var(--gap) + var(--side)); font-synthesis: none; }
 .blog :where(h1, h2, h3) { text-wrap: balance; }
@@ -259,8 +258,8 @@ img, video { display: block; max-width: 100%; height: auto; }
   .bi-post:hover .go i { transform: translateX(4px); }
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .bi-post:hover .ph-mini-garden g { animation: bi-sway 1.4s steps(1) calc(var(--i) * -170ms) infinite; }
-  .bi-post:hover svg.ph-mini:not(.ph-mini-garden) g { animation: bi-hop 1.5s steps(1) calc(var(--i) * 140ms) infinite; }
+  .bi-post:hover .ph-mini-garden > g { animation: bi-sway 1.4s steps(1) calc(var(--i) * -170ms) infinite; }
+  .bi-post:hover svg.ph-mini:not(.ph-mini-garden) > g { animation: bi-hop 1.5s steps(1) calc(var(--i) * 140ms) infinite; }
   .bi-post:hover .ph-mini .xr { --k: var(--bi-k); animation: bi-stitch 2.4s steps(100, jump-none) both; }
 }
 @keyframes bi-sway { 0%, 100% { transform: none; } 25% { transform: translateX(1px); } 50% { transform: none; } 75% { transform: translateX(-1px); } }

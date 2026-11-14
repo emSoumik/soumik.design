@@ -1,0 +1,24 @@
+---
+// instant navigation (speculation rules, chromium only; other browsers ignore the script). a link to another page of
+// the site starts prerendering when you hover it or press it, and a link to a case study is fetched sooner ("eager":
+// chrome takes it as on screen for a moment on a phone, a brief hover on a desktop). the home page is only
+// fetched, never prerendered: its garden, wordmark and hint play an intro on load that a hidden prerender would use
+// up. pages that are prerendered hold their css animations until they're shown (components/transitions/PageTransitions.astro)
+// this renders in <head> of Base.astro and index.astro
+const rules = {
+  prerender: [{
+    source: 'document',
+    where: { and: [
+      { href_matches: '/*' },
+      { not: { href_matches: ['/', '/index.html', '/assets/*', '/_astro/*', '/*.xml'] } },
+      { not: { selector_matches: '[rel~=nofollow], [target], [download], [href^="#"]' } },
+    ] },
+    eagerness: 'moderate',
+  }],
+  prefetch: [
+    { source: 'document', where: { and: [{ href_matches: '/projects/*' }, { not: { selector_matches: '[target], [download]' } }] }, eagerness: 'eager' },
+    { source: 'document', where: { href_matches: '/' }, eagerness: 'moderate' },
+  ],
+};
+---
+<script type="speculationrules" is:inline set:html={JSON.stringify(rules)}></script>

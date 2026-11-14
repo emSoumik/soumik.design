@@ -1,0 +1,22 @@
+---
+// whyclub's case study is the hand-built page in _prototype-whyclub/, not its mdx (the frontmatter still drives the
+// title, meta and listing). its own page file, so only its css ships with it
+import Base from '../../layouts/Base.astro';
+import { caseStudy } from './_case';
+import Prototype from './_prototype-whyclub/Prototype.astro';
+import Opening from './_prototype-whyclub/Opening.astro';
+import Details from './_prototype-whyclub/Details.astro';
+import Process from './_prototype-whyclub/Process.astro';
+import Credits from './_prototype-whyclub/Credits.astro';
+
+const { data, card } = await caseStudy('whyclub');
+---
+<Base title={data.title} description={data.summary} type="article" published={data.date} image={card} back={{ href: '/#projects', label: 'projects' }}>
+  <article>
+    <Opening title={data.title} summary={data.summary} year={data.date.getUTCFullYear()} role={data.role} tags={data.tags} link={data.link} />
+    <Prototype />
+    <Details />
+    <Process />
+    <Credits />
+  </article>
+</Base>
