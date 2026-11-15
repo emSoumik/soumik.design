@@ -161,6 +161,9 @@ function plant(x, y, slop) {
     if (Math.random() < .3) setTimeout(() => bee.visit(p.flowers[0]), reduced ? 0 : 600);
     return;
   }
+  const gardenVariant = ink ? 'watercolour' : 'pixel';
+  window.posthog?.capture('garden_flower_planted', { garden_variant: gardenVariant });
+  window.posthogLog?.info('garden flower planted', { garden_variant: gardenVariant });
   if (ink) feel.plant(1);
   planted++; sinceClear++;
   nudgeHint();

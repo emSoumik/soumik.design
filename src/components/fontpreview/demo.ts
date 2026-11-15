@@ -8,6 +8,10 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SIZES = [72, 48, 36, 24, 18, 14];
 const SAMPLE = 'The quick brown fox jumps over the lazy dog';
 const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+type PostHogClient = { capture: (event: string) => void };
+type PostHogLogClient = { info: (message: string, attributes?: Record<string, string | number | boolean>) => void };
+const capture = (event: string) => (window as Window & { posthog?: PostHogClient }).posthog?.capture(event);
+const log = (message: string, attributes?: Record<string, string | number | boolean>) => (window as Window & { posthogLog?: PostHogLogClient }).posthogLog?.info(message, attributes);
 
 const ICON = {
   folder: '<svg viewBox="0 0 20 16"><path d="M1 3.2C1 2 2 1 3.2 1h4.3c.6 0 1.1.3 1.5.7L10 3h6.8C18 3 19 4 19 5.2v8.6c0 1.2-1 2.2-2.2 2.2H3.2C2 16 1 15 1 13.8z" fill="#5ab0f7"/><path d="M1 5.6C1 4.7 1.7 4 2.6 4h14.8c.9 0 1.6.7 1.6 1.6v8.2c0 1.2-1 2.2-2.2 2.2H3.2C2 16 1 15 1 13.8z" fill="#84c6fb"/></svg>',
@@ -139,6 +143,8 @@ export function demo(root: HTMLElement) {
   const takeOver = () => {
     if (driving) return;
     driving = true;
+    capture('font_preview_demo_interacted');
+    log('font preview demo taken over', { interaction_mode: 'manual' });
     run++;
     root.classList.add('driving');
     hint.textContent = 'You’re driving. Space opens and closes, ↑ ↓ move, Esc closes.';

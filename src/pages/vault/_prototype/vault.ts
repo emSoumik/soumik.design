@@ -25,6 +25,8 @@ const enterKind = () => (ENTERS.includes(html.dataset.protoEnter ?? '') ? html.d
 const box = (el: Element): Box => { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; };
 const scrollTo0 = (y = 0) => window.scrollTo({ top: y, behavior: 'instant' });
 const hasVT = () => typeof document.startViewTransition === 'function';
+type PostHogClient = { capture: (event: string, properties?: Record<string, string>) => void };
+const capture = (event: string, properties?: Record<string, string>) => (window as Window & { posthog?: PostHogClient }).posthog?.capture(event, properties);
 
 const root = document.querySelector<HTMLElement>('.vlt');
 if (root) init(root);
@@ -550,6 +552,7 @@ function init(root: HTMLElement) {
   cards.forEach((c, slug) => c.hit.addEventListener('click', (e) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
+    capture('vault_piece_opened', { piece_slug: slug });
     open(slug);
   }));
   home.addEventListener('click', () => close());
@@ -564,6 +567,7 @@ function init(root: HTMLElement) {
       if (document.fullscreenElement) document.exitFullscreen?.();
       else stageOf(cur).requestFullscreen?.().catch(() => {});
     } else if (act === 'share') {
+      capture('vault_piece_shared', { piece_slug: cur });
       const data = { title: byslug.get(cur)!.title, url: location.href };
       if (navigator.share) navigator.share(data).catch(() => {});
       else navigator.clipboard?.writeText(location.href).then(() => flash(b, 'copied')).catch(() => {});
@@ -645,6 +649,7 @@ function init(root: HTMLElement) {
     kind = b.dataset.filter!;
     seg.forEach((s) => { s.setAttribute('aria-checked', String(s === b)); s.tabIndex = s === b ? 0 : -1; });
     if (focus) b.focus();
+    capture('vault_filter_applied', { piece_type: kind });
     applyFilter();
   };
   seg.forEach((b, i) => {

@@ -3,6 +3,10 @@
 // runs off screen, and under reduced motion nothing plays by itself: the steps still work, they just jump
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ease = (t: number) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+type PostHogClient = { capture: (event: string, properties?: Record<string, string | number>) => void };
+type PostHogLogClient = { info: (message: string, attributes?: Record<string, string | number | boolean>) => void };
+const capture = (event: string, properties?: Record<string, string | number>) => (window as Window & { posthog?: PostHogClient }).posthog?.capture(event, properties);
+const log = (message: string, attributes?: Record<string, string | number | boolean>) => (window as Window & { posthogLog?: PostHogLogClient }).posthogLog?.info(message, attributes);
 
 type Step = { s: string; d: number; clock?: string; tap?: string; path?: 'a' | 'b'; from?: number; to?: number; air?: boolean; routes?: boolean; aqi?: [number, number] };
 
@@ -134,6 +138,7 @@ function walk(root: HTMLElement) {
     map.dataset.air = st.air ? 'bad' : 'ok';
     map.toggleAttribute('data-routes', !!st.routes);
     place(st, reduced ? 1 : 0);
+    if (user) capture('vayu_walk_step_selected', { step_index: k + 1, step_screen: st.s });
     if (user && !held) pause(true);
     run();
   };
@@ -285,7 +290,10 @@ export function stories() {
     const buzz: number[] = JSON.parse(b.dataset.buzz!);
     const total = buzz.reduce((a, n) => a + n, 0);
     b.addEventListener('click', () => {
-      tap(b.querySelector<HTMLElement>('[data-watch]')!, b.dataset.tone!);
+      const alertTone = b.dataset.tone!;
+      capture('vayu_alert_played', { alert_tone: alertTone });
+      log('vayu alert preview played', { alert_tone: alertTone });
+      tap(b.querySelector<HTMLElement>('[data-watch]')!, alertTone);
       navigator.vibrate?.(buzz);
       if (!pat || reduced) return;
       pat.style.setProperty('--ms', `${total}ms`);

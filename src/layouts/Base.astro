@@ -8,6 +8,7 @@ import Speculation from '../components/Speculation.astro';
 import PageTransitions from '../components/transitions/PageTransitions.astro';
 import ProtoHead from '../components/proto/ProtoHead.astro';
 import Titles from '../components/Titles.astro';
+import PostHog from '../components/posthog.astro';
 import ReadDock from '../components/ReadDock.astro';
 
 interface Props {
@@ -66,6 +67,7 @@ const faces = here.startsWith('/blog/') ? ['sans', 'serif'] as const : ['sans', 
 <Fonts preload={[...faces]} />
 <PageTransitions />
 <Speculation />
+<PostHog />
 {import.meta.env.DEV && <ProtoHead />}
 <Titles />
 </head>
