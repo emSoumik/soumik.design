@@ -19,7 +19,7 @@ Query flags: `?garden=ink` loads the old watercolour garden (`js/garden/watercol
 
 ## Architecture
 
-- `src/pages/index.astro` holds the home page's markup, **all its CSS** (an inline `<style is:inline>`, deliberately unprocessed), and the SEO/social/JSON-LD tags. The reading pages (`/projects`, `/blog`, `/vault`) use `src/layouts/Base.astro` and `src/styles/site.css`. `/work` redirects to `/projects` in `public/_redirects` (`vercel.json` stays as the fallback host's copy); the content collection is still called `work`. Companion modules (`bee.js`, `butterflies.js`) inject their own CSS at runtime via `css()` from `content.js`.
+- `src/pages/index.astro` holds the home page's markup, **all its CSS** (an inline `<style is:inline>`, deliberately unprocessed), and the SEO/social/JSON-LD tags. The reading pages (`/projects`, `/blog`, `/vault`) use `src/layouts/Base.astro` and `src/styles/site.css`. `/work` redirects to `/projects` in `public/_redirects`; the content collection is still called `work`. Companion modules (`bee.js`, `butterflies.js`) inject their own CSS at runtime via `css()` from `content.js`.
 - `js/main.js` is the home page's only entry point (`<script src="../../js/main.js">` in `index.astro`, bundled by Vite). It builds the garden, bee, butterflies and About card, and wires sound/mute, the hint line, the clear button and planting. Modules don't import each other sideways; `main.js` passes them shared callbacks and a `spots()` function that exposes the garden's live flowers.
 - **Garden → companions contract:** `pixels.js` exposes `plant / patches / flowerAt / clear / destroy` and `onStitch / onBloom / onMorph / onSparkle / onGrown` callbacks. `patches()` is deliberately shaped like the watercolour garden's patches, so the bee and butterflies work with either implementation. Keep that shape if you change either garden.
 - `js/garden/flora.js` holds only sprite data (pixel-grid flower families, each with `forms` for tap-to-morph, plus butterfly sprites). `pixels.js` owns placement, spacing (`REACH/CLOSE/APART/MEMORY`), growth, and the self-clearing loop (`FULL`: oldest flowers unpick once the garden is full). The canvas draws in stepped frames and stops rendering entirely when idle, so keep new animation inside that idle-stop model.
@@ -42,7 +42,7 @@ Query flags: `?garden=ink` loads the old watercolour garden (`js/garden/watercol
 - Tap targets ≥ 44px. The garden canvas is hidden from assistive tech; real content stays in plain HTML.
 - Images ship as AVIF with WebP fallback; keep both when adding assets under `public/assets/`. Images inside a post go next to its `index.mdx` and Astro optimises them.
 - Code comments are short, lowercase, and explain intent (match the existing style). Copy in the UI is lowercase and informal.
-- `_drafts/` is git-ignored and never deployed. `.vercelignore` (fallback host) also excludes `README.md` and `assets/readme/` (README art, not part of the site).
+- `_drafts/` is git-ignored and never deployed.
 
 ## Localhost-only dev tooling (untracked)
 

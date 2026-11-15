@@ -127,7 +127,6 @@ wrangler.jsonc           Cloudflare Workers config: serves dist/ as static asset
 worker/index.ts         the range worker (206 partial content for /assets videos); worker/range.test.mjs tests it
 public/_headers         cache and security headers for static files
 public/_redirects       /work and /projects redirects
-vercel.json             the old Vercel setup, kept as a fallback
 ```
 
 `_drafts/` holds old prototypes. It's git-ignored and never deployed.
