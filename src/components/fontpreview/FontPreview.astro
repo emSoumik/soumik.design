@@ -110,9 +110,15 @@ const calls = [
 
 <script>
   import { demo } from './demo';
+  type PostHogClient = { capture: (event: string) => void };
+  const capture = (event: string) => (window as Window & { posthog?: PostHogClient }).posthog?.capture(event);
   document.querySelectorAll<HTMLElement>('[data-fp]').forEach(demo);
   document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = 'Copied'; } catch { b.textContent = 'Select and copy'; }
+    try {
+      await navigator.clipboard.writeText(b.dataset.copy!);
+      capture('installation_command_copied');
+      b.textContent = 'Copied';
+    } catch { b.textContent = 'Select and copy'; }
     setTimeout(() => (b.textContent = 'Copy'), 1600);
   }));
 </script>
