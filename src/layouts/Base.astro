@@ -6,6 +6,7 @@ import '../styles/site.css';
 import Fonts from '../components/Fonts.astro';
 import Speculation from '../components/Speculation.astro';
 import PageTransitions from '../components/transitions/PageTransitions.astro';
+import Analytics from '../components/Analytics.astro';
 import ProtoHead from '../components/proto/ProtoHead.astro';
 import Titles from '../components/Titles.astro';
 import ReadDock from '../components/ReadDock.astro';
@@ -68,6 +69,7 @@ const faces = here.startsWith('/blog/') ? ['sans', 'serif'] as const : ['sans', 
 <Speculation />
 {import.meta.env.DEV && <ProtoHead />}
 <Titles />
+<Analytics />
 </head>
 <body>
 <main class="page">
